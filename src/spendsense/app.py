@@ -328,11 +328,13 @@ def user_detail(request: Request, user_id: int):
         # Get user
         user = get_user(user_id)
         if not user:
-            return templates.TemplateResponse("error.html", {
+            response = templates.TemplateResponse("error.html", {
                 "request": request,
                 "error_code": 404,
                 "error_message": f"User {user_id} not found"
             })
+            response.status_code = 404
+            return response
         
         # Get signals
         signals = get_user_signals_display(user_id)

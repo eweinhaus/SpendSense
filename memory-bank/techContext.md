@@ -27,10 +27,18 @@
 
 ### Required (MVP)
 ```
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-jinja2>=3.1.0
+# Core dependencies
 faker>=19.0.0
+
+# Web framework (Phase 3)
+fastapi>=0.104.0
+uvicorn>=0.24.0
+jinja2>=3.1.2
+python-multipart>=0.0.6
+
+# Testing
+pytest>=7.4.0
+httpx>=0.25.0
 ```
 
 ### Optional (Post-MVP)
@@ -105,7 +113,11 @@ python3 detect_signals.py
 python3 -m pytest tests/ -v
 
 # Run development server (Phase 3)
-# uvicorn app:app --reload
+PYTHONPATH=/path/to/SpendSense/src python3 -m uvicorn spendsense.app:app --reload --host 0.0.0.0 --port 8000
+
+# Or from project root:
+cd /path/to/SpendSense
+PYTHONPATH=/path/to/SpendSense/src python3 -m uvicorn spendsense.app:app --reload
 ```
 
 ### File Structure (Current - Phase 2 Complete)
@@ -132,30 +144,39 @@ spendsense/
 └── [planning/, memory-bank/] # Documentation
 ```
 
-### File Structure (Target - Phase 3 Complete)
+### File Structure (Phase 3 Complete ✅)
 ```
-spendsense/
+src/spendsense/
 ├── database.py               # SQLite setup ✅
 ├── generate_data.py          # Synthetic data generator ✅
 ├── detect_signals.py         # Signal detection ✅
-├── personas.py               # Persona assignment (Phase 2)
-├── recommendations.py        # Recommendation engine (Phase 2)
-├── app.py                    # Main FastAPI app (Phase 3)
-├── templates/                # Jinja2 templates (Phase 3)
+├── personas.py               # Persona assignment (Phase 2) ✅
+├── recommendations.py        # Recommendation engine (Phase 2) ✅
+├── rationales.py             # Rationale generation (Phase 2) ✅
+├── traces.py                 # Decision trace generation (Phase 2) ✅
+├── eligibility.py            # Eligibility checks (Phase 3) ✅
+├── app.py                    # FastAPI app (Phase 3) ✅
+├── templates/                # Jinja2 templates (Phase 3) ✅
 │   ├── base.html
 │   ├── dashboard.html
-│   └── user_detail.html
-├── static/                   # CSS/JS (Phase 3)
+│   ├── user_detail.html
+│   └── error.html
+├── static/                   # CSS/JS (Phase 3) ✅
 │   ├── css/style.css
 │   └── js/consent.js
 ├── tests/                    # Test suite ✅
 │   ├── __init__.py
-│   ├── test_database.py
-│   ├── test_signals.py
-│   └── [more tests...]
-├── requirements.txt
-├── spendsense.db
-└── [planning/, memory-bank/]
+│   ├── test_database.py      # 4 tests
+│   ├── test_signals.py       # 6 tests
+│   ├── test_personas.py      # 15 tests
+│   ├── test_recommendations.py # 12 tests
+│   ├── test_integration.py   # 3 tests
+│   ├── test_app.py           # 6 tests (Phase 3)
+│   └── test_eligibility.py  # 8 tests (Phase 3)
+├── requirements.txt          # Dependencies ✅
+├── pytest.ini               # Test configuration ✅
+├── spendsense.db             # SQLite database (generated)
+└── [planning/, memory-bank/] # Documentation
 ```
 
 ## Technical Constraints
@@ -203,10 +224,14 @@ spendsense/
 
 ## Deployment Considerations
 
-### MVP (Local)
-- **Development server:** `uvicorn app:app --reload`
-- **Database:** SQLite file in project directory
+### MVP (Local) ✅
+- **Development server:** `PYTHONPATH=src python3 -m uvicorn spendsense.app:app --reload`
+- **Database:** SQLite file (`spendsense.db`) in project root
+- **Server URL:** http://localhost:8000
+- **Dashboard:** http://localhost:8000/
+- **User Details:** http://localhost:8000/user/{user_id}
 - **No deployment:** Run locally for demo
+- **Status:** ✅ Tested and working
 
 ### Future Deployment
 - **Database:** PostgreSQL (AWS RDS) - migration path prepared
@@ -250,7 +275,8 @@ spendsense/
 ### Test Coverage Goals
 - **Phase 1:** ✅ 10 tests implemented and passing
 - **Phase 2:** ✅ 30 additional tests (40 total tests passing)
-- **MVP:** ✅ 40 tests (exceeds target of ≥15)
+- **Phase 3:** ✅ 8 additional tests (48 total tests passing)
+- **MVP:** ✅ 48 tests (exceeds target of ≥15)
 - **Full project:** ≥20 unit/integration tests (target exceeded)
 
 ### Test Types

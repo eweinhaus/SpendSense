@@ -9,7 +9,7 @@ SpendSense MVP is a proof-of-concept system that analyzes transaction data to de
 - Demonstrate core signal detection capabilities
 - Show persona assignment logic
 - Generate personalized recommendations with data-driven rationales
-- Build a functional operator view for demo purposes
+- Build a functional operator view
 - Create a solid foundation for full product development
 
 ## Non-Goals (Deferred to Full Release)
@@ -33,7 +33,7 @@ SpendSense MVP is a proof-of-concept system that analyzes transaction data to de
 ### 1. Synthetic Data Generation
 
 **Scope:**
-- Generate 5 demo users with realistic financial profiles
+- Generate 5 users with realistic financial profiles
 - Include accounts (checking, savings, credit cards)
 - Generate transactions with realistic patterns
 - Include credit card liability data
@@ -307,7 +307,7 @@ decision_traces (
 ### Sub-Phase 1: Data Foundation
 - Set up SQLite database
 - Create schema
-- Generate 5 demo users with realistic data
+- Generate 5 users with realistic data
 - Validate data quality
 
 ### Sub-Phase 2: Signal Detection
@@ -338,7 +338,6 @@ decision_traces (
 - Add consent tracking
 - Implement eligibility checks
 - Error handling
-- Demo preparation
 
 ## Success Metrics
 
@@ -353,65 +352,6 @@ decision_traces (
 | Page load time | <2 seconds |
 | Code coverage (tests) | ≥5 key tests |
 
-## Demo Strategy
-
-### Demo Script (5-7 minutes)
-
-**Setup (30 seconds):**
-1. Start FastAPI server: `uvicorn app:app --reload`
-2. Open browser to `http://localhost:8000`
-3. Verify database is populated with 5 users
-
-**Demo Flow:**
-
-**1. Dashboard Overview (1 minute)**
-- "Here are 5 synthetic users with diverse financial profiles"
-- Point out persona badges showing different personas
-- Highlight quick stats (utilization %, subscription counts)
-- "Each user has been analyzed for behavioral signals"
-
-**2. High Utilization User (2 minutes)**
-- Click on User 1 (High Utilization)
-- Show credit utilization signals:
-  - "We detected 75% utilization on their Visa card"
-  - "Interest charges of $87/month"
-  - Point out specific data: balance, limit, utilization %
-- Show persona assignment:
-  - "This matches our High Utilization persona criteria"
-  - Explain priority logic
-- Show recommendations:
-  - Read one rationale aloud: "We noticed your Visa ending in 4523 is at 75% utilization..."
-  - Point out data-driven nature
-  - Show decision trace explaining why this recommendation was made
-
-**3. Subscription-Heavy User (2 minutes)**
-- Navigate back, click User 3 (Subscription-Heavy)
-- Show subscription signals:
-  - "We detected 4 recurring merchants: Netflix, Spotify, Gym, etc."
-  - "Monthly recurring spend of $85"
-  - "Subscription share of 12% of total spend"
-- Explain pattern matching:
-  - "Same merchant, similar amount, monthly cadence"
-- Show recommendations with subscription-focused content
-
-**4. Consent & Guardrails (1 minute)**
-- Toggle consent checkbox
-- Explain: "Consent is tracked and required for recommendations"
-- Show eligibility checks: "We don't recommend products they already have"
-
-**5. Architecture Discussion (1-2 minutes)**
-- "Modular, extensible architecture"
-- "Clear, explainable logic - no black box"
-- "Data-driven rationales citing specific numbers"
-- "Compliance-aware with consent and eligibility guardrails"
-- "Ready for AI integration when needed"
-- "Scalable foundation for 50-100 users"
-
-**Talking Points:**
-- Transparency over sophistication
-- User control over automation
-- Education over sales
-- Every recommendation has a clear, traceable rationale
 
 ## Known Limitations (MVP)
 
@@ -536,7 +476,6 @@ See `planning/post_mvp_roadmap.md` for full list of features to implement for fi
 - Code comments for key logic (signal detection, persona assignment)
 - Decision log explaining technical choices (why SQLite, why FastAPI, etc.)
 - Known limitations documented
-- Demo script prepared (see Demo Strategy section)
 - API documentation (even if simple, document endpoints)
 - Schema documentation with field descriptions
 
@@ -556,7 +495,6 @@ MVP is complete when:
 - [ ] Error handling implemented for edge cases
 - [ ] ≥5 tests passing (critical path coverage)
 - [ ] README and documentation complete
-- [ ] Demo script prepared and tested
 - [ ] Code is clean and commented
 - [ ] Known limitations documented
 - [ ] Disclaimer displayed on all recommendations

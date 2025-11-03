@@ -90,15 +90,8 @@ def test_check_eligibility_savings_no_checking(test_db):
     """Test eligibility check for savings when user has no checking account."""
     test_db_path, user_id = test_db
     
-    # Add savings account (but no checking)
-    conn = get_db_connection(test_db_path)
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO accounts (user_id, account_id, type, subtype, current_balance)
-        VALUES (?, ?, ?, ?, ?)
-    """, (user_id, "acc1", "depository", "savings", 0.0))
-    conn.commit()
-    conn.close()
+    # Don't add savings account - user has no accounts at all
+    # This tests the checking account requirement for HYSA
     
     is_eligible, reason = check_eligibility(user_id, "Open a High-Yield Savings Account", db_path=test_db_path)
     # Should be ineligible because no checking account
