@@ -8,11 +8,12 @@ import sys
 import pytest
 from datetime import date, timedelta
 
-# Add parent directory to path to import modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add src directory to path to import modules
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(project_root, "src"))
 
-from database import init_database, get_db_connection
-from detect_signals import (
+from spendsense.database import init_database, get_db_connection
+from spendsense.detect_signals import (
     is_similar_amount, is_monthly_cadence, 
     detect_credit_signals, detect_subscription_signals
 )

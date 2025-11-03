@@ -1,6 +1,15 @@
 """
 Database module for SpendSense MVP.
 Creates SQLite database with Plaid-compatible schema.
+
+Migration Note: This module is designed for SQLite (MVP) but uses standard SQL
+syntax that will migrate easily to PostgreSQL (production). Key considerations:
+- AUTOINCREMENT → SERIAL in PostgreSQL
+- TEXT → VARCHAR(255) in PostgreSQL (optional, for better compatibility)
+- REAL → NUMERIC(10,2) in PostgreSQL (for financial precision)
+- Parameterized queries use '?' (SQLite) - easily converted to '%s' (PostgreSQL)
+
+See md_files/MIGRATION_GUIDE.md for detailed migration instructions.
 """
 
 import sqlite3
@@ -36,6 +45,8 @@ def init_database(db_path: str = "spendsense.db") -> None:
     cursor = conn.cursor()
     
     # Create users table
+    # Migration Note: AUTOINCREMENT → SERIAL in PostgreSQL
+    # Migration Note: TEXT → VARCHAR(255) in PostgreSQL (optional optimization)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,6 +58,7 @@ def init_database(db_path: str = "spendsense.db") -> None:
     """)
     
     # Create accounts table (Plaid-compatible)
+    # Migration Note: REAL → NUMERIC(10,2) in PostgreSQL for financial precision
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS accounts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,6 +120,46 @@ def init_database(db_path: str = "spendsense.db") -> None:
         )
     """)
     
+    # Create personas table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS personas (
+            user_id INTEGER PRIMARY KEY,
+            persona_type TEXT NOT NULL,
+            assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            criteria_matched TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+    
+    # Create recommendations table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS recommendations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            rationale TEXT NOT NULL,
+            persona_matched TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+    
+    # Create decision_traces table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS decision_traces (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            recommendation_id INTEGER NOT NULL,
+            step INTEGER NOT NULL,
+            reasoning TEXT NOT NULL,
+            data_cited TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (recommendation_id) REFERENCES recommendations(id)
+        )
+    """)
+    
     # Create indexes
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_transactions_account 
@@ -127,6 +179,21 @@ def init_database(db_path: str = "spendsense.db") -> None:
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_accounts_user 
         ON accounts(user_id)
+    """)
+    
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_recommendations_user 
+        ON recommendations(user_id)
+    """)
+    
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_decision_traces_user 
+        ON decision_traces(user_id)
+    """)
+    
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_decision_traces_recommendation 
+        ON decision_traces(recommendation_id)
     """)
     
     conn.commit()
@@ -159,10 +226,16 @@ def validate_schema(db_path: str = "spendsense.db") -> bool:
                         'last_payment_amount', 'is_overdue', 
                         'next_payment_due_date', 'last_statement_balance'],
         'signals': ['id', 'user_id', 'signal_type', 'value', 'metadata',
-                   'window', 'detected_at']
+                   'window', 'detected_at'],
+        'personas': ['user_id', 'persona_type', 'assigned_at', 'criteria_matched'],
+        'recommendations': ['id', 'user_id', 'title', 'content', 'rationale',
+                          'persona_matched', 'created_at'],
+        'decision_traces': ['id', 'user_id', 'recommendation_id', 'step',
+                           'reasoning', 'data_cited', 'created_at']
     }
     
     # Check all tables exist
+    # Migration Note: sqlite_master → information_schema.tables in PostgreSQL
     cursor.execute("""
         SELECT name FROM sqlite_master 
         WHERE type='table' AND name NOT LIKE 'sqlite_%'
@@ -181,6 +254,7 @@ def validate_schema(db_path: str = "spendsense.db") -> bool:
         return False
     
     # Check columns for each table
+    # Migration Note: PRAGMA table_info → information_schema.columns in PostgreSQL
     all_valid = True
     for table_name, expected_columns in expected_schema.items():
         cursor.execute(f"PRAGMA table_info({table_name})")
@@ -201,7 +275,10 @@ def validate_schema(db_path: str = "spendsense.db") -> bool:
         'idx_transactions_account',
         'idx_transactions_date',
         'idx_signals_user',
-        'idx_accounts_user'
+        'idx_accounts_user',
+        'idx_recommendations_user',
+        'idx_decision_traces_user',
+        'idx_decision_traces_recommendation'
     ]
     
     cursor.execute("""

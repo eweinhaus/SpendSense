@@ -28,7 +28,7 @@ Required packages:
 
 Initialize the database schema:
 ```bash
-python3 database.py
+python3 -m spendsense.database
 ```
 
 This will:
@@ -37,11 +37,13 @@ This will:
 - Create indexes for performance
 - Validate schema matches PRD specification
 
+**Note:** The package is located in `src/spendsense/`. Make sure `PYTHONPATH` includes the `src/` directory, or run from the project root with the module path shown above.
+
 ### Data Generation
 
 Generate synthetic data for 5 demo users:
 ```bash
-python3 generate_data.py
+python3 -m spendsense.generate_data
 ```
 
 This will:
@@ -62,7 +64,7 @@ This will:
 
 Run signal detection on all users:
 ```bash
-python3 detect_signals.py
+python3 -m spendsense.detect_signals
 ```
 
 This will:
@@ -258,4 +260,5 @@ After generating data and running signal detection, verify:
 - Seed-based generation ensures reproducibility
 - Foreign keys are enforced for data integrity
 - Indexes improve query performance
+
 

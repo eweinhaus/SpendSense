@@ -108,17 +108,26 @@ python3 -m pytest tests/ -v
 # uvicorn app:app --reload
 ```
 
-### File Structure (Current - Phase 1 Complete)
+### File Structure (Current - Phase 2 Complete)
 ```
 spendsense/
 ├── database.py               # SQLite setup & schema ✅
 ├── generate_data.py          # Synthetic data generator ✅
 ├── detect_signals.py         # Signal detection ✅
+├── personas.py               # Persona assignment (Phase 2) ✅
+├── recommendations.py        # Recommendation engine (Phase 2) ✅
+├── rationales.py             # Rationale generation (Phase 2) ✅
+├── traces.py                 # Decision trace generation (Phase 2) ✅
 ├── tests/                    # Test suite ✅
 │   ├── __init__.py
-│   ├── test_database.py
-│   └── test_signals.py
+│   ├── test_database.py     # 4 tests
+│   ├── test_signals.py      # 6 tests
+│   ├── test_personas.py     # 15 tests (Phase 2)
+│   ├── test_recommendations.py # 12 tests (Phase 2)
+│   └── test_integration.py  # 3 tests (Phase 2)
 ├── requirements.txt          # Dependencies (faker, pytest)
+├── pytest.ini               # Test configuration ✅
+├── quick_test.sh            # Manual test script ✅
 ├── spendsense.db             # SQLite database (generated)
 └── [planning/, memory-bank/] # Documentation
 ```
@@ -200,11 +209,20 @@ spendsense/
 - **No deployment:** Run locally for demo
 
 ### Future Deployment
-- **Database:** PostgreSQL or cloud database
+- **Database:** PostgreSQL (AWS RDS) - migration path prepared
 - **Web server:** Production ASGI server (Gunicorn + uvicorn workers)
 - **Static files:** CDN or static file serving
 - **Environment variables:** Config management
 - **Docker:** Containerization for deployment
+
+### Database Migration Strategy
+- **Current:** SQLite for MVP (local, simple setup)
+- **Target:** PostgreSQL (AWS RDS) for production
+- **Migration Readiness:** ✅ Code uses standard SQL, parameterized queries
+- **Abstraction Layer:** Created `db_config.py` for database-agnostic code
+- **Migration Guide:** See `md_files/MIGRATION_GUIDE.md` for detailed instructions
+- **Estimated Effort:** 7-11 hours for complete migration
+- **Key Changes Needed:** AUTOINCREMENT → SERIAL, connection handling abstraction
 
 ## Known Technical Limitations
 
@@ -231,8 +249,9 @@ spendsense/
 
 ### Test Coverage Goals
 - **Phase 1:** ✅ 10 tests implemented and passing
-- **MVP:** ≥15 critical path tests (target)
-- **Full project:** ≥20 unit/integration tests (target)
+- **Phase 2:** ✅ 30 additional tests (40 total tests passing)
+- **MVP:** ✅ 40 tests (exceeds target of ≥15)
+- **Full project:** ≥20 unit/integration tests (target exceeded)
 
 ### Test Types
 - **Unit tests:** Signal detection, persona logic, rationale generation

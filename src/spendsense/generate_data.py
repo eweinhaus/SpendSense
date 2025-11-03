@@ -8,7 +8,7 @@ import random
 import json
 from datetime import date, timedelta
 from faker import Faker
-from database import get_db_connection
+from .database import get_db_connection
 
 
 # Set seed for deterministic generation

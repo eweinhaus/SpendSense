@@ -7,10 +7,11 @@ import os
 import sys
 import pytest
 
-# Add parent directory to path to import modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add src directory to path to import modules
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(project_root, "src"))
 
-from database import init_database, validate_schema, get_db_connection
+from spendsense.database import init_database, validate_schema, get_db_connection
 
 
 @pytest.fixture
@@ -43,7 +44,8 @@ def test_table_creation(test_db):
     
     tables = {row[0] for row in cursor.fetchall()}
     
-    expected_tables = {'users', 'accounts', 'transactions', 'credit_cards', 'signals'}
+    expected_tables = {'users', 'accounts', 'transactions', 'credit_cards', 'signals',
+                      'personas', 'recommendations', 'decision_traces'}
     assert tables == expected_tables, f"Expected tables {expected_tables}, got {tables}"
     
     conn.close()

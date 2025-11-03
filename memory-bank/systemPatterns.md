@@ -138,18 +138,26 @@ Step 4: Rationale Generated → [data cited]
 
 ## Code Organization Patterns
 
-### Current Structure (Phase 1 Complete)
+### Current Structure (Phase 2 Complete)
 
 ```
 spendsense/
 ├── database.py         # SQLite setup & schema
 ├── generate_data.py     # Synthetic data generator
 ├── detect_signals.py   # Signal detection engine
+├── personas.py         # Persona assignment (Phase 2) ✅
+├── recommendations.py  # Recommendation engine (Phase 2) ✅
+├── rationales.py       # Rationale generation (Phase 2) ✅
+├── traces.py           # Decision trace generation (Phase 2) ✅
 ├── tests/              # Test suite
 │   ├── __init__.py
 │   ├── test_database.py
-│   └── test_signals.py
+│   ├── test_signals.py
+│   ├── test_personas.py      # Phase 2 ✅
+│   ├── test_recommendations.py # Phase 2 ✅
+│   └── test_integration.py    # Phase 2 ✅
 ├── requirements.txt    # Python dependencies
+├── pytest.ini         # Test configuration
 ├── spendsense.db       # SQLite database
 └── [planning/, memory-bank/]  # Documentation
 ```

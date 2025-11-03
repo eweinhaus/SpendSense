@@ -38,6 +38,61 @@ This document outlines everything needed to go from MVP to full submission based
 
 ---
 
+## 1.5. Database Migration to PostgreSQL (AWS RDS)
+
+### Migrate from SQLite to PostgreSQL
+**Current (MVP):** SQLite (local file-based database)
+**Target:** PostgreSQL on AWS RDS (production-ready, scalable)
+
+**Migration Status:**
+- ✅ Database abstraction layer created (`db_config.py`)
+- ✅ Migration guide documented (`md_files/MIGRATION_GUIDE.md`)
+- ✅ Migration readiness assessment completed
+- ✅ Code uses standard SQL (compatible with PostgreSQL)
+- ✅ All queries use parameterized placeholders
+
+**Tasks:**
+- [ ] Update `get_db_connection()` to support both SQLite and PostgreSQL
+- [ ] Create PostgreSQL schema file (convert AUTOINCREMENT → SERIAL, REAL → NUMERIC)
+- [ ] Test schema creation with local PostgreSQL instance
+- [ ] Update schema validation queries (sqlite_master → information_schema)
+- [ ] Test all queries with PostgreSQL
+- [ ] Create data migration script (SQLite → PostgreSQL)
+- [ ] Set up AWS RDS PostgreSQL instance
+- [ ] Configure security groups and networking
+- [ ] Migrate production data
+- [ ] Update application configuration (environment variables)
+- [ ] Test production deployment
+- [ ] Set up automated backups on RDS
+- [ ] Document production connection strings and credentials management
+
+**Key Changes:**
+- `INTEGER PRIMARY KEY AUTOINCREMENT` → `SERIAL PRIMARY KEY`
+- `TEXT` → `VARCHAR(255)` (optional optimization)
+- `REAL` → `NUMERIC(10,2)` (for financial precision)
+- `?` placeholders → `%s` (psycopg2 style)
+- `sqlite_master` → `information_schema.tables`
+- Connection handling: `sqlite3` → `psycopg2`
+
+**Benefits:**
+- Scalability to handle 50-100+ users efficiently
+- Better performance for complex analytical queries
+- Production-ready with automated backups and high availability
+- Better support for financial data precision (NUMERIC vs REAL)
+- Advanced SQL features (window functions, JSONB, etc.)
+
+**Complexity:** Medium
+**Estimated effort:** 7-11 hours (preparation done, implementation remaining)
+
+**Resources:**
+- Migration guide: `md_files/MIGRATION_GUIDE.md`
+- Migration readiness: `md_files/MIGRATION_READINESS.md`
+- Database abstraction: `db_config.py`
+
+**Note:** Migration can be done incrementally - test with PostgreSQL locally before production migration.
+
+---
+
 ## 2. Behavioral Signal Detection
 
 ### Add Missing Signals
@@ -473,8 +528,10 @@ This document outlines everything needed to go from MVP to full submission based
 **Tasks:**
 - [ ] Move hardcoded values to config files
 - [ ] Create config.json or config.py
-- [ ] Environment variable support
+- [ ] Environment variable support (database type, connection strings)
 - [ ] Separate dev/prod configs
+- [ ] Use `db_config.py` for database configuration
+- [ ] Secure credential management (AWS Secrets Manager or environment variables)
 
 **Complexity:** Low
 **Estimated effort:** 1-2 hours
@@ -568,19 +625,23 @@ This document outlines everything needed to go from MVP to full submission based
 ## Recommended Build Order (Post-MVP)
 
 1. **Expand data** (50-100 users, all account types) - 4-6 hours
-2. **Add savings & income signals** - 7-9 hours
-3. **Add 180-day window** - 3-4 hours
-4. **Implement remaining 3 personas** - 7-11 hours
-5. **Integrate AI/LLM** (Gemini) - 5-8 hours
-6. **Add partner offers** - 4-6 hours
-7. **Build evaluation harness** - 6-8 hours
-8. **Expand test suite** - 6-8 hours
-9. **Refactor to modular structure** - 4-6 hours
-10. **Enhanced operator view** - 4-6 hours
-11. **Build end-user interface** - 8-12 hours
-12. **Complete documentation** - 6-9 hours
-13. **Create demo video** - 3-4 hours
-14. **Final polish & testing** - 4-6 hours
+2. **Database migration prep** (test PostgreSQL locally, update connection handling) - 2-3 hours
+3. **Add savings & income signals** - 7-9 hours
+4. **Add 180-day window** - 3-4 hours
+5. **Implement remaining 3 personas** - 7-11 hours
+6. **Integrate AI/LLM** (Gemini) - 5-8 hours
+7. **Add partner offers** - 4-6 hours
+8. **Build evaluation harness** - 6-8 hours
+9. **Expand test suite** - 6-8 hours
+10. **Refactor to modular structure** - 4-6 hours
+11. **Enhanced operator view** - 4-6 hours
+12. **Build end-user interface** - 8-12 hours
+13. **Complete documentation** - 6-9 hours
+14. **AWS RDS setup & production migration** - 2-4 hours (when ready for production)
+15. **Create demo video** - 3-4 hours
+16. **Final polish & testing** - 4-6 hours
+
+**Note:** Database migration can happen anytime after MVP is complete. The abstraction layer is already in place, so migration can be done incrementally without blocking other features.
 
 ---
 
@@ -631,6 +692,8 @@ From `directions.md` requirements:
 ### System
 - [ ] Runs locally without external dependencies (except API calls)
 - [ ] All data is synthetic (no real PII)
+- [ ] Database migration path documented and tested
+- [ ] PostgreSQL compatibility verified (if migrating)
 
 ---
 

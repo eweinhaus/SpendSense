@@ -7,7 +7,7 @@ import sqlite3
 import json
 from datetime import date, timedelta
 from typing import List, Dict, Optional
-from database import get_db_connection
+from .database import get_db_connection
 
 # Today's date for relative calculations
 TODAY = date.today()
