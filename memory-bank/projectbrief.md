@@ -70,3 +70,4 @@ Banks generate massive transaction data through Plaid integrations but struggle 
 
 **Bryce Harris** - bharris@peak6.com
 
+

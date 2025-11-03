@@ -46,3 +46,6 @@ Thumbs.db
 # Logs
 *.log
 
+planning/
+memory-bank/
+md_files/

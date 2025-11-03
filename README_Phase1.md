@@ -259,3 +259,4 @@ After generating data and running signal detection, verify:
 - Foreign keys are enforced for data integrity
 - Indexes improve query performance
 
+
