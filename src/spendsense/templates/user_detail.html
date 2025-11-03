@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.name }} - SpendSense MVP{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="/" class="btn btn-secondary">← Back to Dashboard</a>
+</div>
+
+<!-- User Information -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="mb-0">User Information</h3>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Name:</strong> {{ user.name }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+                <p><strong>User ID:</strong> {{ user.id }}</p>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-check-label">
+                        <input type="checkbox" id="consent-checkbox" 
+                               {% if user.consent_given %}checked{% endif %}
+                               onchange="toggleConsent({{ user.id }})">
+                        User has given consent for data processing
+                    </label>
+                </div>
+                <p><small class="text-muted">Created: {{ user.created_at }}</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detected Signals -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="mb-0">Detected Signals</h3>
+    </div>
+    <div class="card-body">
+        {% if signals.credit %}
+        <h5 class="mb-3">Credit Utilization</h5>
+        <ul class="list-unstyled">
+            <li><strong>Card:</strong> {{ signals.credit.card_name }}</li>
+            <li><strong>Utilization:</strong> {{ "%.0f"|format(signals.credit.utilization) }}%</li>
+            <li><strong>Balance:</strong> ${{ "%.2f"|format(signals.credit.balance) }}</li>
+            <li><strong>Limit:</strong> ${{ "%.2f"|format(signals.credit.limit) }}</li>
+            {% if signals.credit.interest_charges > 0 %}
+            <li><strong>Interest Charges:</strong> ${{ "%.2f"|format(signals.credit.interest_charges) }}/month</li>
+            {% endif %}
+            {% if signals.credit.is_overdue %}
+            <li><span class="badge bg-danger">Overdue</span></li>
+            {% endif %}
+        </ul>
+        {% endif %}
+        
+        {% if signals.subscription %}
+        <hr>
+        <h5 class="mb-3">Subscriptions</h5>
+        <ul class="list-unstyled">
+            <li><strong>Recurring Merchants:</strong> {{ signals.subscription.count }}</li>
+            {% if signals.subscription.merchants %}
+            <li><strong>Merchants:</strong> {{ signals.subscription.merchants|join(", ") }}</li>
+            {% endif %}
+            <li><strong>Monthly Spend:</strong> ${{ "%.2f"|format(signals.subscription.monthly_spend) }}</li>
+            <li><strong>Subscription Share:</strong> {{ "%.1f"|format(signals.subscription.share) }}%</li>
+        </ul>
+        {% endif %}
+        
+        {% if not signals.credit and not signals.subscription %}
+        <p class="text-muted">No signals detected for this user.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Persona Assignment -->
+{% if persona %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="mb-0">Persona Assignment</h3>
+    </div>
+    <div class="card-body">
+        <p>
+            {% if persona.persona_type == 'high_utilization' %}
+                <span class="badge bg-danger">High Utilization</span>
+            {% elif persona.persona_type == 'subscription_heavy' %}
+                <span class="badge bg-primary">Subscription-Heavy</span>
+            {% else %}
+                <span class="badge bg-secondary">Neutral</span>
+            {% endif %}
+        </p>
+        <p><strong>Criteria Matched:</strong> {{ persona.criteria_matched }}</p>
+        <p><small class="text-muted">Assigned: {{ persona.assigned_at }}</small></p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recommendations -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="mb-0">Recommendations</h3>
+    </div>
+    <div class="card-body">
+        {% if recommendations %}
+            {% for rec in recommendations %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ rec.title }}</h5>
+                    <div class="card-text">
+                        <p>{{ rec.content|replace('\n', '<br>')|safe }}</p>
+                        <hr>
+                        <p><strong>Rationale:</strong></p>
+                        <p class="text-muted">{{ rec.rationale|replace('\n', '<br>')|safe }}</p>
+                    </div>
+                    <button class="btn btn-sm btn-outline-info" type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#trace-{{ rec.id }}" 
+                            aria-expanded="false">
+                        View Decision Trace
+                    </button>
+                    <div class="collapse mt-3" id="trace-{{ rec.id }}">
+                        <div class="card card-body bg-light">
+                            {% if traces.get(rec.id) %}
+                                {% for trace_step in traces[rec.id] %}
+                                <p><strong>Step {{ trace_step.step }}:</strong> {{ trace_step.reasoning }}</p>
+                                {% if trace_step.data_cited %}
+                                <small class="text-muted">
+                                    Data cited: {{ trace_step.data_cited }}
+                                </small>
+                                {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No trace data available.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">No recommendations available for this user.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/consent.js"></script>
+{% endblock %}
+

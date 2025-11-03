@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Error - SpendSense MVP{% endblock %}
+
+{% block content %}
+<div class="alert alert-danger">
+    <h4 class="alert-heading">Error {{ error_code }}</h4>
+    <p>{{ error_message }}</p>
+    <hr>
+    <p class="mb-0">
+        <a href="/" class="btn btn-primary">Return to Dashboard</a>
+    </p>
+</div>
+{% endblock %}
+

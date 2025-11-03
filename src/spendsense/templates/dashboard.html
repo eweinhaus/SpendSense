@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SpendSense MVP{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">User Dashboard</h2>
+
+{% if users %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Persona</th>
+                <th>Credit Utilization</th>
+                <th>Subscriptions</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.name }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                    {% if user.persona_type == 'high_utilization' %}
+                        <span class="badge bg-danger">High Utilization</span>
+                    {% elif user.persona_type == 'subscription_heavy' %}
+                        <span class="badge bg-primary">Subscription-Heavy</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Neutral</span>
+                    {% endif %}
+                </td>
+                <td>{{ user.utilization }}</td>
+                <td>{{ user.subscription_count }} recurring</td>
+                <td>
+                    <a href="/user/{{ user.id }}" class="btn btn-sm btn-outline-primary">View Details</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    No users found. Please generate demo data first.
+</div>
+{% endif %}
+{% endblock %}
+
