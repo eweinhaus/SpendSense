@@ -25,7 +25,7 @@ Banks generate massive transaction data through Plaid integrations but struggle 
 ### Full Project Scope (Post-MVP)
 - 50-100 synthetic users
 - 5 personas (including custom persona)
-- AI/LLM integration for recommendations (Gemini API only - no OpenAI)
+- AI/LLM integration for recommendations (OpenAI API)
 - Both 30-day and 180-day windows
 - All signal types (credit, subscriptions, savings, income)
 - Partner offer integration

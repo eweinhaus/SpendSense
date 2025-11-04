@@ -43,7 +43,7 @@ httpx>=0.25.0
 
 ### Optional (Post-MVP)
 ```
-google-generativeai>=0.3.0  # Gemini API (no OpenAI)
+openai>=1.0.0  # OpenAI API for content generation
 pandas>=2.0.0              # Data analysis (if needed)
 ```
 
@@ -205,7 +205,7 @@ src/spendsense/
 - **Rationale generation:** String formatting with data citations
 
 ### Post-MVP
-- **Gemini API only:** Per project requirements (no OpenAI)
+- **OpenAI API:** For content generation and personalized recommendations
 - **Content generation:** LLM for personalized recommendations
 - **Rationale enhancement:** AI-generated explanations
 

@@ -79,7 +79,7 @@
 ### Medium-term (Post-MVP)
 1. Expand to 50-100 users
 2. Add more personas
-3. Integrate AI/LLM for recommendations (Gemini API)
+3. Integrate AI/LLM for recommendations (OpenAI API)
 4. Add partner offers
 5. Build end-user interface
 
@@ -90,7 +90,7 @@
 - **Backend:** FastAPI (modern, async, auto-docs)
 - **Frontend:** Server-rendered with Jinja2 (simpler than React for MVP)
 - **Styling:** Bootstrap 5 (faster than custom CSS)
-- **AI:** No LLM for MVP (hardcoded templates), Gemini API for post-MVP (no OpenAI)
+- **AI:** No LLM for MVP (hardcoded templates), OpenAI API for post-MVP
 - **Data:** 5 users for MVP (not 50-100)
 - **Personas:** 2 for MVP (High Utilization, Subscription-Heavy)
 
