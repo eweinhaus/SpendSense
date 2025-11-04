@@ -258,6 +258,86 @@ def test_generate_recommendations_autopay_condition(test_db):
     conn.close()
 
 
+def test_generate_recommendations_no_consent(test_db):
+    """Test that recommendations are not generated without consent."""
+    test_db_path, user_id = test_db
+    
+    conn = get_db_connection(test_db_path)
+    
+    # Ensure consent is False (default)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET consent_given = ? WHERE id = ?", (0, user_id))
+    conn.commit()
+    
+    # Create signals and assign persona
+    store_signal(user_id, 'credit_utilization_max', 75.0, {}, '30d', conn)
+    assign_persona(user_id, conn)
+    
+    # Generate recommendations - should return empty list
+    rec_ids = generate_recommendations(user_id, conn)
+    
+    assert len(rec_ids) == 0
+    
+    # Verify no recommendations stored
+    cursor.execute("SELECT COUNT(*) FROM recommendations WHERE user_id = ?", (user_id,))
+    count = cursor.fetchone()[0]
+    assert count == 0
+    
+    conn.close()
+
+
+def test_generate_recommendations_with_consent(test_db):
+    """Test that recommendations are generated when consent is given."""
+    test_db_path, user_id = test_db
+    
+    conn = get_db_connection(test_db_path)
+    
+    # Set consent to True
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET consent_given = ? WHERE id = ?", (1, user_id))
+    conn.commit()
+    
+    # Create signals and assign persona
+    store_signal(user_id, 'credit_utilization_max', 75.0, {}, '30d', conn)
+    assign_persona(user_id, conn)
+    
+    # Generate recommendations
+    rec_ids = generate_recommendations(user_id, conn)
+    
+    # Should generate 2-3 recommendations
+    assert 2 <= len(rec_ids) <= 3
+    
+    conn.close()
+
+
+def test_generate_recommendations_consent_revocation(test_db):
+    """Test that recommendations are blocked after consent is revoked."""
+    test_db_path, user_id = test_db
+    
+    conn = get_db_connection(test_db_path)
+    
+    # Set consent to True and generate recommendations
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET consent_given = ? WHERE id = ?", (1, user_id))
+    conn.commit()
+    
+    store_signal(user_id, 'credit_utilization_max', 75.0, {}, '30d', conn)
+    assign_persona(user_id, conn)
+    
+    rec_ids = generate_recommendations(user_id, conn)
+    assert len(rec_ids) > 0
+    
+    # Revoke consent
+    cursor.execute("UPDATE users SET consent_given = ? WHERE id = ?", (0, user_id))
+    conn.commit()
+    
+    # Try to generate again - should return empty list
+    rec_ids_after = generate_recommendations(user_id, conn)
+    assert len(rec_ids_after) == 0
+    
+    conn.close()
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
 

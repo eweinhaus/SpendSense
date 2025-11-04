@@ -8,6 +8,41 @@ from typing import Tuple, Optional
 from .database import get_db_connection
 
 
+def has_consent(user_id: int, conn: Optional[sqlite3.Connection] = None,
+                db_path: Optional[str] = None) -> bool:
+    """
+    Check if user has given consent for data processing and recommendations.
+    
+    Args:
+        user_id: User ID
+        conn: Database connection (creates new if None)
+        db_path: Database path (only used if conn is None)
+        
+    Returns:
+        True if consent given, False otherwise
+    """
+    if conn is None:
+        if db_path:
+            conn = get_db_connection(db_path)
+        else:
+            conn = get_db_connection()
+        close_conn = True
+    else:
+        close_conn = False
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT consent_given FROM users WHERE id = ?
+        """, (user_id,))
+        
+        result = cursor.fetchone()
+        return bool(result and result[0])
+    finally:
+        if close_conn:
+            conn.close()
+
+
 def get_user_accounts(user_id: int, conn: Optional[sqlite3.Connection] = None, 
                       db_path: Optional[str] = None) -> list:
     """

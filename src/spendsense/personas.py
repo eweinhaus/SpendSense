@@ -56,7 +56,7 @@ def matches_high_utilization(signals: List[Dict]) -> bool:
     
     Criteria (OR logic - match any):
     - credit_utilization_max >= 50%
-    - credit_interest_charges > 0
+    - credit_interest_charges >= 50 (meaningful monthly interest)
     - credit_overdue = 1.0
     
     Args:
@@ -77,10 +77,10 @@ def matches_high_utilization(signals: List[Dict]) -> bool:
         if util is not None and util >= 50.0:
             return True
     
-    # Check credit_interest_charges > 0
+    # Check credit_interest_charges >= 50 (meaningful debt)
     if 'credit_interest_charges' in signals_dict:
         interest = signals_dict['credit_interest_charges'].get('value')
-        if interest is not None and interest > 0:
+        if interest is not None and interest >= 50.0:
             return True
     
     # Check credit_overdue = 1.0

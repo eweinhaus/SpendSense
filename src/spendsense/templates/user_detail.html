@@ -103,7 +103,12 @@
         <h3 class="mb-0">Recommendations</h3>
     </div>
     <div class="card-body">
-        {% if recommendations %}
+        {% if not user.consent_given %}
+        <div class="alert alert-warning" role="alert">
+            <h5 class="alert-heading">Consent Required</h5>
+            <p class="mb-0">User consent is required to receive personalized recommendations. Please enable consent using the checkbox above to view recommendations.</p>
+        </div>
+        {% elif recommendations %}
             {% for rec in recommendations %}
             <div class="card mb-3">
                 <div class="card-body">
@@ -147,6 +152,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/consent.js"></script>
+<script src="/static/js/consent.js?v=2"></script>
 {% endblock %}
 

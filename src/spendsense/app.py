@@ -14,7 +14,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from .database import get_db_connection
 from .personas import get_user_signals
-from .eligibility import filter_recommendations
+from .eligibility import filter_recommendations, has_consent
+from .recommendations import generate_recommendations
 
 
 # Get the directory where this file is located
@@ -226,7 +227,11 @@ def get_user_persona_display(user_id: int) -> Optional[Dict]:
 
 
 def get_recommendations_for_user(user_id: int) -> List[Dict]:
-    """Get all recommendations for a user with eligibility filtering."""
+    """Get all recommendations for a user with eligibility filtering and consent check."""
+    # Check consent first - return empty list if no consent
+    if not has_consent(user_id):
+        return []
+    
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
@@ -299,6 +304,31 @@ def update_consent(user_id: int, consent: bool) -> bool:
         
         conn.commit()
         return cursor.rowcount > 0
+    finally:
+        conn.close()
+
+
+def refresh_recommendations_for_user(user_id: int, consent_enabled: bool) -> None:
+    """Regenerate recommendations based on consent status."""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM recommendations WHERE user_id = ?", (user_id,))
+        rec_ids = [row[0] for row in cursor.fetchall()]
+        if rec_ids:
+            placeholders = ",".join(["?"] * len(rec_ids))
+            cursor.execute(
+                f"DELETE FROM decision_traces WHERE recommendation_id IN ({placeholders})",
+                rec_ids,
+            )
+            cursor.execute(
+                f"DELETE FROM recommendations WHERE id IN ({placeholders})",
+                rec_ids,
+            )
+            conn.commit()
+        if consent_enabled:
+            generate_recommendations(user_id, conn)
+            conn.commit()
     finally:
         conn.close()
 
@@ -379,6 +409,7 @@ def toggle_consent(user_id: int, consent_data: ConsentRequest):
         success = update_consent(user_id, consent_data.consent)
         
         if success:
+            refresh_recommendations_for_user(user_id, consent_data.consent)
             return {"success": True, "consent_given": consent_data.consent}
         else:
             return {"success": False, "error": "Failed to update consent"}

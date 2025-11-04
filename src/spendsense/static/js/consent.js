@@ -25,11 +25,13 @@ function toggleConsent(userId) {
     })
     .then(data => {
         if (data.success) {
-            // Show success message (optional)
-            console.log('Consent updated successfully');
-            
-            // Optional: Show a toast/banner message
+            // Show success message
             showMessage('Consent status updated successfully', 'success');
+            
+            // Reload page after short delay to show updated state
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
         } else {
             // Revert checkbox on failure
             checkbox.checked = originalState;

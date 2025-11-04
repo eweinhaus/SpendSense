@@ -160,6 +160,19 @@ def init_database(db_path: str = "spendsense.db") -> None:
         )
     """)
     
+    # Create liabilities table (for mortgages and student loans)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS liabilities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id INTEGER NOT NULL,
+            liability_type TEXT NOT NULL,
+            interest_rate REAL,
+            next_payment_due_date DATE,
+            last_payment_amount REAL,
+            FOREIGN KEY (account_id) REFERENCES accounts(id)
+        )
+    """)
+    
     # Create indexes
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_transactions_account 
@@ -194,6 +207,11 @@ def init_database(db_path: str = "spendsense.db") -> None:
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_decision_traces_recommendation 
         ON decision_traces(recommendation_id)
+    """)
+    
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_liabilities_account 
+        ON liabilities(account_id)
     """)
     
     conn.commit()
@@ -231,7 +249,9 @@ def validate_schema(db_path: str = "spendsense.db") -> bool:
         'recommendations': ['id', 'user_id', 'title', 'content', 'rationale',
                           'persona_matched', 'created_at'],
         'decision_traces': ['id', 'user_id', 'recommendation_id', 'step',
-                           'reasoning', 'data_cited', 'created_at']
+                           'reasoning', 'data_cited', 'created_at'],
+        'liabilities': ['id', 'account_id', 'liability_type', 'interest_rate',
+                       'next_payment_due_date', 'last_payment_amount']
     }
     
     # Check all tables exist
@@ -278,7 +298,8 @@ def validate_schema(db_path: str = "spendsense.db") -> bool:
         'idx_accounts_user',
         'idx_recommendations_user',
         'idx_decision_traces_user',
-        'idx_decision_traces_recommendation'
+        'idx_decision_traces_recommendation',
+        'idx_liabilities_account'
     ]
     
     cursor.execute("""

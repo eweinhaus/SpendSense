@@ -6,7 +6,7 @@ import pytest
 import os
 import tempfile
 from spendsense.database import init_database, get_db_connection
-from spendsense.eligibility import check_eligibility, filter_recommendations, get_user_accounts
+from spendsense.eligibility import check_eligibility, filter_recommendations, get_user_accounts, has_consent
 
 
 @pytest.fixture
@@ -161,4 +161,33 @@ def test_filter_recommendations(test_db):
     # Should filter out the savings account recommendation
     assert len(filtered) < len(recommendations)
     assert not any('High-Yield Savings' in rec['title'] for rec in filtered)
+
+
+def test_has_consent_false(test_db):
+    """Test has_consent returns False when consent not given."""
+    test_db_path, user_id = test_db
+    
+    # User created with consent_given = 0
+    assert has_consent(user_id, db_path=test_db_path) is False
+
+
+def test_has_consent_true(test_db):
+    """Test has_consent returns True when consent given."""
+    test_db_path, user_id = test_db
+    
+    # Update consent
+    conn = get_db_connection(test_db_path)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET consent_given = ? WHERE id = ?", (1, user_id))
+    conn.commit()
+    conn.close()
+    
+    assert has_consent(user_id, db_path=test_db_path) is True
+
+
+def test_has_consent_nonexistent_user(test_db):
+    """Test has_consent returns False for nonexistent user."""
+    test_db_path, _ = test_db
+    
+    assert has_consent(99999, db_path=test_db_path) is False
 

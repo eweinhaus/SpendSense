@@ -10,6 +10,7 @@ from .database import get_db_connection
 from .personas import get_user_signals
 from .rationales import generate_rationale
 from .traces import generate_decision_trace
+from .eligibility import has_consent
 
 
 # Content templates for each persona
@@ -252,7 +253,7 @@ def generate_recommendations(user_id: int, conn: Optional[sqlite3.Connection] = 
         conn: Database connection (creates new if None)
         
     Returns:
-        List of recommendation IDs
+        List of recommendation IDs (empty if consent not given)
     """
     if conn is None:
         conn = get_db_connection()
@@ -261,6 +262,10 @@ def generate_recommendations(user_id: int, conn: Optional[sqlite3.Connection] = 
         close_conn = False
     
     try:
+        # Check consent first - block recommendations without consent
+        if not has_consent(user_id, conn):
+            return []  # No recommendations without consent
+        
         # Get user persona
         persona = get_user_persona(user_id, conn)
         if not persona:
