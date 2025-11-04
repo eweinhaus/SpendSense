@@ -1119,6 +1119,7 @@ TEMPLATES = {
                 "• Review your financial goals regularly\n"
                 "• Educate yourself about personal finance topics"
             ),
+            "type": "article",
             "always_include": True
         },
         {
@@ -1132,6 +1133,7 @@ TEMPLATES = {
                 "• Compare prices before major purchases\n"
                 "• Set specific savings goals to stay motivated"
             ),
+            "type": "article",
             "always_include": True
         },
         {
@@ -1145,7 +1147,152 @@ TEMPLATES = {
                 "• Check your credit report regularly\n"
                 "• Use credit responsibly to build a strong credit history"
             ),
+            "type": "article",
             "always_include": True
+        },
+        {
+            "key": "basic_budget_template",
+            "title": "Basic Budget Template",
+            "content": (
+                "Create a simple monthly budget:\n\n"
+                "Income: $____\n\n"
+                "Expenses:\n"
+                "• Housing: $____\n"
+                "• Food: $____\n"
+                "• Transportation: $____\n"
+                "• Utilities: $____\n"
+                "• Insurance: $____\n"
+                "• Entertainment: $____\n"
+                "• Savings: $____\n"
+                "• Other: $____\n\n"
+                "Total Expenses: $____\n"
+                "Remaining: $____"
+            ),
+            "type": "template",
+            "always_include": False
+        },
+        {
+            "key": "financial_wellness_checklist",
+            "title": "Financial Wellness Checklist",
+            "content": (
+                "Check your financial wellness:\n\n"
+                "□ Have a budget\n"
+                "□ Track expenses\n"
+                "□ Have emergency fund\n"
+                "□ Save for retirement\n"
+                "□ Pay bills on time\n"
+                "□ Manage debt effectively\n"
+                "□ Have financial goals\n"
+                "□ Review finances regularly\n"
+                "□ Understand credit\n"
+                "□ Live within means"
+            ),
+            "type": "checklist",
+            "always_include": False
+        },
+        {
+            "key": "emergency_fund_calculator",
+            "title": "Emergency Fund Calculator",
+            "content": (
+                "Calculate your emergency fund needs:\n\n"
+                "Monthly Expenses: $____\n"
+                "Target Months: ____ (3-6 months recommended)\n"
+                "Emergency Fund Goal: $____\n"
+                "Current Savings: $____\n"
+                "Amount Needed: $____\n\n"
+                "Monthly Savings Goal:\n"
+                "• To reach goal in 12 months: $____/month\n"
+                "• To reach goal in 24 months: $____/month"
+            ),
+            "type": "calculator",
+            "always_include": False
+        },
+        {
+            "key": "debt_vs_savings",
+            "title": "Debt vs. Savings Priority",
+            "content": (
+                "Balance paying debt and saving:\n\n"
+                "Priority Order:\n"
+                "1. Minimum debt payments (always)\n"
+                "2. Small emergency fund ($1,000)\n"
+                "3. High-interest debt (credit cards)\n"
+                "4. Build full emergency fund (3-6 months)\n"
+                "5. Low-interest debt (mortgage, student loans)\n"
+                "6. Retirement savings\n\n"
+                "Adjust based on your situation and interest rates."
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "expense_reduction_tips",
+            "title": "Expense Reduction Tips",
+            "content": (
+                "Simple ways to reduce expenses:\n\n"
+                "• Review subscriptions monthly\n"
+                "• Cook at home more\n"
+                "• Use coupons and cashback apps\n"
+                "• Buy generic brands\n"
+                "• Negotiate bills (internet, insurance)\n"
+                "• Cancel unused services\n"
+                "• Shop around for insurance\n"
+                "• Use public transportation when possible"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "financial_goals_tracker",
+            "title": "Financial Goals Tracker",
+            "content": (
+                "Track progress toward financial goals:\n\n"
+                "Goal 1: ____\n"
+                "Target: $____ | Current: $____ | Progress: ____%\n\n"
+                "Goal 2: ____\n"
+                "Target: $____ | Current: $____ | Progress: ____%\n\n"
+                "Goal 3: ____\n"
+                "Target: $____ | Current: $____ | Progress: ____%\n\n"
+                "Review and update monthly."
+            ),
+            "type": "template",
+            "always_include": False
+        },
+        {
+            "key": "retirement_planning_basics",
+            "title": "Retirement Planning Basics",
+            "content": (
+                "Start planning for retirement:\n\n"
+                "• Contribute to employer 401(k) if available\n"
+                "• Take advantage of employer matching\n"
+                "• Aim to save 15-20% of income\n"
+                "• Start early to benefit from compound interest\n"
+                "• Consider Roth vs. Traditional options\n"
+                "• Diversify investments\n"
+                "• Increase contributions over time\n"
+                "• Review and adjust annually"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "monthly_review_template",
+            "title": "Monthly Financial Review Template",
+            "content": (
+                "Review your finances monthly:\n\n"
+                "Month: ____\n"
+                "Income: $____\n"
+                "Expenses: $____\n"
+                "Savings: $____\n"
+                "Debt Payments: $____\n\n"
+                "Progress:\n"
+                "• Emergency Fund: $____ (Goal: $____)\n"
+                "• Debt Reduction: $____\n"
+                "• Savings Goals: $____\n\n"
+                "Notes: ____\n"
+                "Action Items: ____"
+            ),
+            "type": "template",
+            "always_include": False
         }
     ]
 }

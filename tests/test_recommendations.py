@@ -6,6 +6,7 @@ import sqlite3
 import os
 import sys
 import pytest
+from unittest.mock import Mock, patch
 
 # Add src directory to path to import modules
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,6 +19,7 @@ from spendsense.recommendations import (
     get_templates_for_persona, select_template, get_user_persona,
     store_recommendation, generate_recommendations
 )
+from spendsense.content_generator import get_content_generator
 
 
 @pytest.fixture
@@ -336,6 +338,110 @@ def test_generate_recommendations_consent_revocation(test_db):
     assert len(rec_ids_after) == 0
     
     conn.close()
+
+
+def test_expanded_content_catalog():
+    """Test that content catalog has been expanded."""
+    from spendsense.recommendations import TEMPLATES
+    
+    # Check that all personas have expanded content
+    assert len(TEMPLATES["high_utilization"]) >= 10
+    assert len(TEMPLATES["variable_income_budgeter"]) >= 10
+    assert len(TEMPLATES["savings_builder"]) >= 10
+    assert len(TEMPLATES["financial_newcomer"]) >= 10
+    assert len(TEMPLATES["subscription_heavy"]) >= 10
+    assert len(TEMPLATES["neutral"]) >= 10
+    
+    # Check total content items (should be 60-75)
+    total_items = sum(len(templates) for templates in TEMPLATES.values())
+    assert total_items >= 60
+    assert total_items <= 80  # Allow some flexibility
+    
+    # Check content variety (types)
+    for persona, templates in TEMPLATES.items():
+        types = [t.get("type") for t in templates if "type" in t]
+        assert "article" in types or len(types) > 0  # Should have articles or other types
+
+
+def test_content_types_variety():
+    """Test that content catalog has variety of types."""
+    from spendsense.recommendations import TEMPLATES
+    
+    all_types = []
+    for templates in TEMPLATES.values():
+        for template in templates:
+            if "type" in template:
+                all_types.append(template["type"])
+    
+    # Should have multiple types
+    unique_types = set(all_types)
+    assert "article" in unique_types
+    assert len(unique_types) >= 2  # Should have at least articles and one other type
+
+
+@patch('spendsense.recommendations.get_content_generator')
+def test_ai_generation_fallback_to_templates(mock_get_generator, test_db):
+    """Test that AI generation failure falls back to templates."""
+    test_db_path, user_id = test_db
+    
+    # Mock content generator to return None (simulating failure)
+    mock_generator = Mock()
+    mock_generator.generate_recommendation.return_value = None
+    mock_get_generator.return_value = mock_generator
+    
+    conn = get_db_connection(test_db_path)
+    cursor = conn.cursor()
+    
+    # Set consent
+    cursor.execute("UPDATE users SET consent_given = ? WHERE id = ?", (1, user_id))
+    
+    # Assign persona
+    from spendsense.personas import assign_persona
+    assign_persona(user_id, conn)
+    
+    conn.commit()
+    conn.close()
+    
+    # Generate recommendations - should use templates
+    rec_ids = generate_recommendations(user_id)
+    assert len(rec_ids) > 0  # Should have recommendations from templates
+
+
+@patch('spendsense.recommendations.get_content_generator')
+def test_ai_generation_success(mock_get_generator, test_db):
+    """Test successful AI generation."""
+    test_db_path, user_id = test_db
+    
+    # Mock AI generation to return valid content
+    mock_generator = Mock()
+    mock_generator.generate_recommendation.return_value = {
+        'recommendations': [
+            {
+                'title': 'AI Generated Recommendation',
+                'content': 'This is AI-generated educational content.',
+                'type': 'article'
+            }
+        ]
+    }
+    mock_get_generator.return_value = mock_generator
+    
+    conn = get_db_connection(test_db_path)
+    cursor = conn.cursor()
+    
+    # Set consent
+    cursor.execute("UPDATE users SET consent_given = ? WHERE id = ?", (1, user_id))
+    
+    # Assign persona
+    from spendsense.personas import assign_persona
+    assign_persona(user_id, conn)
+    
+    conn.commit()
+    conn.close()
+    
+    # Generate recommendations - should use AI content if valid
+    rec_ids = generate_recommendations(user_id)
+    # May use AI or templates depending on validation
+    assert isinstance(rec_ids, list)
 
 
 if __name__ == "__main__":

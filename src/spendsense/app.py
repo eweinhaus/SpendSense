@@ -16,6 +16,7 @@ from .database import get_db_connection
 from .personas import get_user_signals
 from .eligibility import filter_recommendations, has_consent
 from .recommendations import generate_recommendations
+from .partner_offers import get_eligible_offers
 
 
 # Get the directory where this file is located
@@ -455,13 +456,19 @@ def user_detail(request: Request, user_id: int):
         # Get decision traces
         traces = get_decision_traces_for_user(user_id)
         
+        # Get partner offers (only if user has consent)
+        partner_offers = []
+        if has_consent(user_id):
+            partner_offers = get_eligible_offers(user_id)
+        
         return templates.TemplateResponse("user_detail.html", {
             "request": request,
             "user": user,
             "signals": signals,
             "persona": persona,
             "recommendations": recommendations,
-            "traces": traces
+            "traces": traces,
+            "partner_offers": partner_offers
         })
     except HTTPException:
         raise
