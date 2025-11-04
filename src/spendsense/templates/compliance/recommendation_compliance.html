@@ -3,32 +3,33 @@
 {% block title %}Recommendation Compliance Review - SpendSense Compliance{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Recommendation Compliance Review</h2>
-    <div>
-        <a href="/compliance/recommendations/export?format=csv" class="btn btn-sm btn-outline-primary me-2">Export CSV</a>
-        <a href="/compliance/recommendations/export?format=json" class="btn btn-sm btn-outline-primary">Export JSON</a>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6); flex-wrap: wrap; gap: var(--spacing-2);">
+    <h2 style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin: 0;">
+        Recommendation Compliance Review
+    </h2>
+    <div style="display: flex; gap: var(--spacing-2);">
+        <a href="/compliance/recommendations/export?format=csv" class="btn btn-secondary btn-sm">Export CSV</a>
+        <a href="/compliance/recommendations/export?format=json" class="btn btn-secondary btn-sm">Export JSON</a>
     </div>
 </div>
 
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">Filters</h5>
-    </div>
-    <div class="card-body">
+<!-- Filters -->
+<div class="card" style="margin-bottom: var(--spacing-6);">
+    <div class="card-header">Filters</div>
+    <div>
         <form method="get" action="/compliance/recommendations">
-            <div class="row">
-                <div class="col-md-3">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4); align-items: end;">
+                <div class="form-group">
                     <label for="status" class="form-label">Compliance Status</label>
-                    <select class="form-select" id="status" name="status">
+                    <select class="form-input" id="status" name="status">
                         <option value="">All Statuses</option>
                         <option value="compliant" {% if filters.status == 'compliant' %}selected{% endif %}>Compliant</option>
                         <option value="non-compliant" {% if filters.status == 'non-compliant' %}selected{% endif %}>Non-Compliant</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="form-group">
                     <label for="user_id" class="form-label">User</label>
-                    <select class="form-select" id="user_id" name="user_id">
+                    <select class="form-input" id="user_id" name="user_id">
                         <option value="">All Users</option>
                         {% for user in users %}
                         <option value="{{ user.id }}" {% if filters.user_id == user.id %}selected{% endif %}>
@@ -37,17 +38,16 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="form-group">
                     <label for="start_date" class="form-label">Start Date</label>
-                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ filters.start_date or '' }}">
+                    <input type="date" class="form-input" id="start_date" name="start_date" value="{{ filters.start_date or '' }}">
                 </div>
-                <div class="col-md-2">
+                <div class="form-group">
                     <label for="end_date" class="form-label">End Date</label>
-                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ filters.end_date or '' }}">
+                    <input type="date" class="form-input" id="end_date" name="end_date" value="{{ filters.end_date or '' }}">
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label">&nbsp;</label>
-                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Filter</button>
                 </div>
             </div>
         </form>
@@ -55,74 +55,77 @@
 </div>
 
 {% if recommendations %}
-<div class="table-responsive">
-    <table class="table table-striped table-hover">
+<div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
         <thead>
-            <tr>
-                <th>ID</th>
-                <th>User ID</th>
-                <th>User Name</th>
-                <th>Title</th>
-                <th>Compliance Status</th>
-                <th>Active Consent</th>
-                <th>Eligibility</th>
-                <th>Disclaimer</th>
-                <th>Complete Trace</th>
-                <th>Rationale Cites Data</th>
-                <th>Actions</th>
+            <tr style="border-bottom: 2px solid var(--color-neutral-200);">
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">ID</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">User</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Title</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: center; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Status</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: center; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Consent</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: center; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Eligibility</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: center; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Disclaimer</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: center; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Trace</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: center; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Rationale</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: center; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for rec in recommendations %}
-            <tr>
-                <td>{{ rec.id }}</td>
-                <td><a href="/user/{{ rec.user_id }}">{{ rec.user_id }}</a></td>
-                <td>{{ rec.user_name }}</td>
-                <td>{{ rec.title[:50] }}{% if rec.title|length > 50 %}...{% endif %}</td>
-                <td>
+            <tr style="border-bottom: 1px solid var(--color-neutral-200);">
+                <td style="padding: var(--spacing-2) var(--spacing-4); color: var(--color-neutral-700);">{{ rec.id }}</td>
+                <td style="padding: var(--spacing-2) var(--spacing-4);">
+                    <a href="/user/{{ rec.user_id }}" style="color: var(--color-primary); text-decoration: none;">{{ rec.user_id }}</a>
+                    <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">{{ rec.user_name }}</div>
+                </td>
+                <td style="padding: var(--spacing-2) var(--spacing-4); color: var(--color-neutral-700); max-width: 200px;">
+                    {{ rec.title[:50] }}{% if rec.title|length > 50 %}...{% endif %}
+                </td>
+                <td style="padding: var(--spacing-2) var(--spacing-4); text-align: center;">
                     {% if rec.compliant %}
-                        <span class="badge bg-success">Compliant</span>
+                        <span class="badge badge-success">Compliant</span>
                     {% else %}
-                        <span class="badge bg-danger">Non-Compliant</span>
+                        <span class="badge badge-error">Non-Compliant</span>
                     {% endif %}
                 </td>
-                <td>
+                <td style="padding: var(--spacing-2) var(--spacing-4); text-align: center;">
                     {% if rec.checks.active_consent %}
-                        <span class="text-success">✓</span>
+                        <span style="color: var(--color-success); font-size: var(--font-size-xl);">✓</span>
                     {% else %}
-                        <span class="text-danger">✗</span>
+                        <span style="color: var(--color-error); font-size: var(--font-size-xl);">✗</span>
                     {% endif %}
                 </td>
-                <td>
+                <td style="padding: var(--spacing-2) var(--spacing-4); text-align: center;">
                     {% if rec.checks.eligibility_check %}
-                        <span class="text-success">✓</span>
+                        <span style="color: var(--color-success); font-size: var(--font-size-xl);">✓</span>
                     {% else %}
-                        <span class="text-danger">✗</span>
+                        <span style="color: var(--color-error); font-size: var(--font-size-xl);">✗</span>
                     {% endif %}
                 </td>
-                <td>
+                <td style="padding: var(--spacing-2) var(--spacing-4); text-align: center;">
                     {% if rec.checks.required_disclaimer %}
-                        <span class="text-success">✓</span>
+                        <span style="color: var(--color-success); font-size: var(--font-size-xl);">✓</span>
                     {% else %}
-                        <span class="text-danger">✗</span>
+                        <span style="color: var(--color-error); font-size: var(--font-size-xl);">✗</span>
                     {% endif %}
                 </td>
-                <td>
+                <td style="padding: var(--spacing-2) var(--spacing-4); text-align: center;">
                     {% if rec.checks.complete_trace %}
-                        <span class="text-success">✓</span>
+                        <span style="color: var(--color-success); font-size: var(--font-size-xl);">✓</span>
                     {% else %}
-                        <span class="text-danger">✗</span>
+                        <span style="color: var(--color-error); font-size: var(--font-size-xl);">✗</span>
                     {% endif %}
                 </td>
-                <td>
+                <td style="padding: var(--spacing-2) var(--spacing-4); text-align: center;">
                     {% if rec.checks.rationale_cites_data %}
-                        <span class="text-success">✓</span>
+                        <span style="color: var(--color-success); font-size: var(--font-size-xl);">✓</span>
                     {% else %}
-                        <span class="text-danger">✗</span>
+                        <span style="color: var(--color-error); font-size: var(--font-size-xl);">✗</span>
                     {% endif %}
                 </td>
-                <td>
-                    <a href="/compliance/recommendations/{{ rec.id }}" class="btn btn-sm btn-outline-primary">View Details</a>
+                <td style="padding: var(--spacing-2) var(--spacing-4); text-align: center;">
+                    <a href="/compliance/recommendations/{{ rec.id }}" class="btn btn-primary btn-sm">View Details</a>
                 </td>
             </tr>
             {% endfor %}
@@ -135,8 +138,23 @@
 </div>
 {% endif %}
 
-<div class="mt-4">
+<div style="margin-top: var(--spacing-6);">
     <a href="/compliance/dashboard" class="btn btn-secondary">Back to Compliance Dashboard</a>
 </div>
-{% endblock %}
 
+<style>
+    @media (max-width: 767px) {
+        div[style*="grid-template-columns"] {
+            grid-template-columns: 1fr !important;
+        }
+        
+        table {
+            font-size: var(--font-size-sm);
+        }
+        
+        th, td {
+            padding: var(--spacing-1) var(--spacing-2) !important;
+        }
+    }
+</style>
+{% endblock %}

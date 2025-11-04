@@ -3,215 +3,253 @@
 {% block title %}Dashboard - SpendSense{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">Welcome, {{ user.name }}!</h1>
-    </div>
-</div>
+<h1 style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-6);">
+    Welcome, {{ user.name }}!
+</h1>
 
 <!-- Consent Banner -->
 {% if not user.consent_given %}
-<div class="alert alert-warning alert-dismissible fade show" role="alert">
+<div class="alert alert-warning" role="alert" style="display: flex; align-items: center; gap: var(--spacing-2);">
     <strong>Consent Required:</strong> To view personalized recommendations, please 
-    <a href="/portal/consent" class="alert-link">grant consent</a> for data processing.
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <a href="/portal/consent" style="color: inherit; text-decoration: underline;">grant consent</a> for data processing.
 </div>
 {% endif %}
 
 <!-- Persona Display -->
 {% if persona %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
-                    <h3 class="card-title mb-0 me-3">Your Financial Profile</h3>
-                    <span class="badge bg-{% if persona.type == 'high_utilization' %}danger{% elif persona.type == 'variable_income_budgeter' %}warning{% elif persona.type == 'savings_builder' %}success{% elif persona.type == 'financial_newcomer' %}info{% elif persona.type == 'subscription_heavy' %}warning{% else %}secondary{% endif %} fs-6">
-                        {{ persona.name }}
-                    </span>
-                </div>
-                <p class="card-text">{{ persona.description }}</p>
-                {% if persona.insights %}
-                <ul class="list-unstyled mb-0">
-                    {% for insight in persona.insights %}
-                    <li><small class="text-muted">• {{ insight }}</small></li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-            </div>
+<div style="margin-bottom: var(--spacing-6);">
+    <div class="card">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-4); flex-wrap: wrap; gap: var(--spacing-2);">
+            <h3 style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin: 0;">
+                Your Financial Profile
+            </h3>
+            {% if persona.type == 'high_utilization' %}
+                <span class="badge badge-persona badge-persona-high-utilization">{{ persona.name }}</span>
+            {% elif persona.type == 'variable_income_budgeter' %}
+                <span class="badge badge-persona badge-persona-variable-income">{{ persona.name }}</span>
+            {% elif persona.type == 'savings_builder' %}
+                <span class="badge badge-persona badge-persona-savings-builder">{{ persona.name }}</span>
+            {% elif persona.type == 'financial_newcomer' %}
+                <span class="badge badge-persona badge-persona-financial-newcomer">{{ persona.name }}</span>
+            {% elif persona.type == 'subscription_heavy' %}
+                <span class="badge badge-persona badge-persona-subscription-heavy">{{ persona.name }}</span>
+            {% else %}
+                <span class="badge badge-persona badge-persona-neutral">{{ persona.name }}</span>
+            {% endif %}
         </div>
+        <p style="color: var(--color-neutral-700); margin-bottom: var(--spacing-4);">{{ persona.description }}</p>
+        {% if persona.insights %}
+        <ul style="list-style: none; padding: 0; margin: 0;">
+            {% for insight in persona.insights %}
+            <li style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-bottom: var(--spacing-1);">
+                • {{ insight }}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
     </div>
 </div>
 {% endif %}
 
 <!-- Quick Stats Cards -->
-<div class="row mb-4">
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">Emergency Fund</h6>
-                <h4 class="card-title">
-                    {% if stats.emergency_fund_months %}
-                        {{ stats.emergency_fund_months }} months
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </h4>
-                <small class="text-muted">
-                    Target: 3-6 months
-                </small>
-            </div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-6);">
+    <div class="card">
+        <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-bottom: var(--spacing-2); font-weight: var(--font-weight-medium);">
+            Emergency Fund
+        </div>
+        <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-neutral-900); margin-bottom: var(--spacing-2);">
+            {% if stats.emergency_fund_months %}
+                {{ stats.emergency_fund_months }} months
+            {% else %}
+                N/A
+            {% endif %}
+        </div>
+        <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">
+            Target: 3-6 months
         </div>
     </div>
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">Cash Flow Buffer</h6>
-                <h4 class="card-title">
-                    ${{ "{:,.0f}".format(stats.cash_flow_buffer) }}
-                </h4>
-                <small class="text-muted">Available buffer</small>
-            </div>
+    
+    <div class="card">
+        <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-bottom: var(--spacing-2); font-weight: var(--font-weight-medium);">
+            Cash Flow Buffer
+        </div>
+        <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-neutral-900); margin-bottom: var(--spacing-2);">
+            ${{ "{:,.0f}".format(stats.cash_flow_buffer) }}
+        </div>
+        <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">
+            Available buffer
         </div>
     </div>
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">Subscription Spend</h6>
-                <h4 class="card-title">
-                    ${{ "{:,.0f}".format(stats.subscription_spend) }}
-                </h4>
-                <small class="text-muted">Monthly</small>
-            </div>
+    
+    <div class="card">
+        <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-bottom: var(--spacing-2); font-weight: var(--font-weight-medium);">
+            Subscription Spend
+        </div>
+        <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-neutral-900); margin-bottom: var(--spacing-2);">
+            ${{ "{:,.0f}".format(stats.subscription_spend) }}
+        </div>
+        <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">
+            Monthly
         </div>
     </div>
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">Credit Utilization</h6>
-                <h4 class="card-title">
-                    {{ stats.credit_utilization }}%
-                </h4>
-                <small class="text-muted">Max utilization</small>
-            </div>
+    
+    <div class="card">
+        <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-bottom: var(--spacing-2); font-weight: var(--font-weight-medium);">
+            Credit Utilization
+        </div>
+        <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-neutral-900); margin-bottom: var(--spacing-2);">
+            {{ stats.credit_utilization }}%
+        </div>
+        <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">
+            Max utilization
         </div>
     </div>
 </div>
 
 <!-- Signal Summary -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Key Financial Signals</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    {% if signals.credit_utilization_max %}
-                    <div class="col-md-3 mb-3">
-                        <strong>Credit Utilization:</strong><br>
-                        <span class="text-muted">Max: {{ signals.credit_utilization_max }}%</span>
-                        {% if signals.credit_utilization_avg %}
-                        <br><span class="text-muted">Avg: {{ signals.credit_utilization_avg }}%</span>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                    
-                    {% if signals.subscription_count %}
-                    <div class="col-md-3 mb-3">
-                        <strong>Subscriptions:</strong><br>
-                        <span class="text-muted">{{ signals.subscription_count }} active</span>
-                        {% if signals.subscription_monthly_spend %}
-                        <br><span class="text-muted">${{ "{:,.0f}".format(signals.subscription_monthly_spend) }}/month</span>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                    
-                    {% if signals.savings_net_inflow %}
-                    <div class="col-md-3 mb-3">
-                        <strong>Savings Growth:</strong><br>
-                        <span class="text-muted">${{ "{:,.0f}".format(signals.savings_net_inflow) }}/month</span>
-                        {% if signals.emergency_fund_coverage %}
-                        <br><span class="text-muted">{{ signals.emergency_fund_coverage }} months coverage</span>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                    
-                    {% if signals.income_frequency %}
-                    <div class="col-md-3 mb-3">
-                        <strong>Income Pattern:</strong><br>
-                        <span class="text-muted">{{ signals.income_frequency|title }}</span>
-                        {% if signals.cash_flow_buffer %}
-                        <br><span class="text-muted">Buffer: ${{ "{:,.0f}".format(signals.cash_flow_buffer) }}</span>
-                        {% endif %}
-                    </div>
+<div style="margin-bottom: var(--spacing-6);">
+    <div class="card">
+        <div class="card-header">Key Financial Signals</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+            {% if signals.credit_utilization_max %}
+            <div>
+                <div style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-1);">
+                    Credit Utilization:
+                </div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">
+                    Max: {{ signals.credit_utilization_max }}%
+                    {% if signals.credit_utilization_avg %}
+                    <br>Avg: {{ signals.credit_utilization_avg }}%
                     {% endif %}
                 </div>
             </div>
+            {% endif %}
+            
+            {% if signals.subscription_count %}
+            <div>
+                <div style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-1);">
+                    Subscriptions:
+                </div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">
+                    {{ signals.subscription_count }} active
+                    {% if signals.subscription_monthly_spend %}
+                    <br>${{ "{:,.0f}".format(signals.subscription_monthly_spend) }}/month
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if signals.savings_net_inflow %}
+            <div>
+                <div style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-1);">
+                    Savings Growth:
+                </div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">
+                    ${{ "{:,.0f}".format(signals.savings_net_inflow) }}/month
+                    {% if signals.emergency_fund_coverage %}
+                    <br>{{ signals.emergency_fund_coverage }} months coverage
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if signals.income_frequency %}
+            <div>
+                <div style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-1);">
+                    Income Pattern:
+                </div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">
+                    {{ signals.income_frequency|title }}
+                    {% if signals.cash_flow_buffer %}
+                    <br>Buffer: ${{ "{:,.0f}".format(signals.cash_flow_buffer) }}
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
 <!-- Recommendations Preview -->
 {% if user.consent_given %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Top Recommendations</h5>
-                <a href="/portal/recommendations" class="btn btn-sm btn-outline-primary">View All</a>
-            </div>
-            <div class="card-body">
-                {% if recommendations %}
-                <div class="list-group">
-                    {% for rec in recommendations %}
-                    <div class="list-group-item">
-                        <h6 class="mb-1">{{ rec.title }}</h6>
-                        <p class="mb-1 text-muted">{{ rec.content[:150] }}{% if rec.content|length > 150 %}...{% endif %}</p>
-                        <small class="text-muted">{{ rec.rationale[:100] }}{% if rec.rationale|length > 100 %}...{% endif %}</small>
+<div style="margin-bottom: var(--spacing-6);">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-4);">
+            <div class="card-header" style="margin: 0;">Top Recommendations</div>
+            <a href="/portal/recommendations" class="btn btn-secondary btn-sm">View All</a>
+        </div>
+        <div>
+            {% if recommendations %}
+            <div style="display: flex; flex-direction: column; gap: var(--spacing-3);">
+                {% for rec in recommendations %}
+                <div style="padding: var(--spacing-4); background-color: var(--color-neutral-50); border-radius: 0.375rem; border-left: 3px solid var(--color-primary);">
+                    <h6 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-2);">
+                        {{ rec.title }}
+                    </h6>
+                    <p style="font-size: var(--font-size-sm); color: var(--color-neutral-700); margin-bottom: var(--spacing-2);">
+                        {{ rec.content[:150] }}{% if rec.content|length > 150 %}...{% endif %}
+                    </p>
+                    <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">
+                        {{ rec.rationale[:100] }}{% if rec.rationale|length > 100 %}...{% endif %}
                     </div>
-                    {% endfor %}
                 </div>
-                {% else %}
-                <p class="text-muted mb-0">No recommendations available at this time.</p>
-                {% endif %}
+                {% endfor %}
             </div>
+            {% else %}
+            <p style="color: var(--color-neutral-600); margin: 0;">No recommendations available at this time.</p>
+            {% endif %}
         </div>
     </div>
 </div>
 {% endif %}
 
 <!-- Account Summary -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Account Summary</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <strong>Total Balance:</strong><br>
-                        <span class="fs-5">${{ "{:,.2f}".format(accounts.total_balance) }}</span>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <strong>Total Accounts:</strong><br>
-                        <span class="fs-5">{{ accounts.total_accounts }}</span>
-                    </div>
-                    {% if accounts.total_credit_limit > 0 %}
-                    <div class="col-md-4 mb-3">
-                        <strong>Credit Limit:</strong><br>
-                        <span class="fs-5">${{ "{:,.2f}".format(accounts.total_credit_limit) }}</span>
-                        <br><small class="text-muted">Utilization: {{ accounts.credit_utilization|round(1) }}%</small>
-                    </div>
-                    {% endif %}
+<div>
+    <div class="card">
+        <div class="card-header">Account Summary</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-4);">
+            <div>
+                <div style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-1);">
+                    Total Balance:
                 </div>
-                <div class="mt-3">
-                    <a href="/portal/profile" class="btn btn-outline-primary">View Full Profile</a>
+                <div style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--color-primary);">
+                    ${{ "{:,.2f}".format(accounts.total_balance) }}
                 </div>
             </div>
+            <div>
+                <div style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-1);">
+                    Total Accounts:
+                </div>
+                <div style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--color-primary);">
+                    {{ accounts.total_accounts }}
+                </div>
+            </div>
+            {% if accounts.total_credit_limit > 0 %}
+            <div>
+                <div style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-1);">
+                    Credit Limit:
+                </div>
+                <div style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--color-primary);">
+                    ${{ "{:,.2f}".format(accounts.total_credit_limit) }}
+                </div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-top: var(--spacing-1);">
+                    Utilization: {{ accounts.credit_utilization|round(1) }}%
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div>
+            <a href="/portal/profile" class="btn btn-secondary">View Full Profile</a>
         </div>
     </div>
 </div>
-{% endblock %}
 
+<style>
+    @media (max-width: 767px) {
+        /* Stack cards vertically on mobile */
+        div[style*="grid-template-columns"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+{% endblock %}

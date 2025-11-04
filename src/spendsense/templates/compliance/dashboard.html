@@ -3,93 +3,98 @@
 {% block title %}Compliance Dashboard - SpendSense{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Compliance Dashboard</h2>
-    <span class="badge bg-warning text-dark">Operator Only</span>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6); flex-wrap: wrap; gap: var(--spacing-2);">
+    <h2 style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin: 0;">
+        Compliance Dashboard
+    </h2>
+    <span class="badge badge-warning">Operator Only</span>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card {% if metrics.consent_coverage >= 80 %}border-success{% elif metrics.consent_coverage >= 50 %}border-warning{% else %}border-danger{% endif %}">
-            <div class="card-body">
-                <h5 class="card-title">Consent Coverage</h5>
-                <h2 class="mb-0">{{ metrics.consent_coverage }}%</h2>
-                <small class="text-muted">Users with active consent</small>
-            </div>
+<!-- Metrics Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-6);">
+    <div class="card" style="{% if metrics.consent_coverage >= 80 %}border-left: 4px solid var(--color-success);{% elif metrics.consent_coverage >= 50 %}border-left: 4px solid var(--color-warning);{% else %}border-left: 4px solid var(--color-error);{% endif %}">
+        <div class="card-header">Consent Coverage</div>
+        <div style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); color: var(--color-primary); margin-bottom: var(--spacing-2);">
+            {{ metrics.consent_coverage }}%
+        </div>
+        <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">
+            Users with active consent
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card {% if metrics.tone_violations == 0 %}border-success{% else %}border-danger{% endif %}">
-            <div class="card-body">
-                <h5 class="card-title">Tone Violations</h5>
-                <h2 class="mb-0">
-                    {% if metrics.tone_violations == 0 %}
-                        <span class="text-success">None</span>
-                    {% else %}
-                        <span class="text-danger">{{ metrics.tone_violations }}</span>
-                    {% endif %}
-                </h2>
-                <small class="text-muted">Recent violations</small>
-            </div>
+    
+    <div class="card" style="{% if metrics.tone_violations == 0 %}border-left: 4px solid var(--color-success);{% else %}border-left: 4px solid var(--color-error);{% endif %}">
+        <div class="card-header">Tone Violations</div>
+        <div style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); {% if metrics.tone_violations == 0 %}color: var(--color-success);{% else %}color: var(--color-error);{% endif %} margin-bottom: var(--spacing-2);">
+            {% if metrics.tone_violations == 0 %}
+                None
+            {% else %}
+                {{ metrics.tone_violations }}
+            {% endif %}
+        </div>
+        <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">
+            Recent violations
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card {% if metrics.eligibility_failures == 0 %}border-success{% else %}border-warning{% endif %}">
-            <div class="card-body">
-                <h5 class="card-title">Eligibility Failures</h5>
-                <h2 class="mb-0">
-                    {% if metrics.eligibility_failures == 0 %}
-                        <span class="text-success">None</span>
-                    {% else %}
-                        <span class="text-warning">{{ metrics.eligibility_failures }}</span>
-                    {% endif %}
-                </h2>
-                <small class="text-muted">Blocked recommendations</small>
-            </div>
+    
+    <div class="card" style="{% if metrics.eligibility_failures == 0 %}border-left: 4px solid var(--color-success);{% else %}border-left: 4px solid var(--color-warning);{% endif %}">
+        <div class="card-header">Eligibility Failures</div>
+        <div style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); {% if metrics.eligibility_failures == 0 %}color: var(--color-success);{% else %}color: var(--color-warning);{% endif %} margin-bottom: var(--spacing-2);">
+            {% if metrics.eligibility_failures == 0 %}
+                None
+            {% else %}
+                {{ metrics.eligibility_failures }}
+            {% endif %}
+        </div>
+        <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">
+            Blocked recommendations
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card {% if metrics.recommendation_compliance >= 80 %}border-success{% elif metrics.recommendation_compliance >= 50 %}border-warning{% else %}border-danger{% endif %}">
-            <div class="card-body">
-                <h5 class="card-title">Recommendation Compliance</h5>
-                <h2 class="mb-0">{{ metrics.recommendation_compliance }}%</h2>
-                <small class="text-muted">With required disclaimers</small>
-            </div>
+    
+    <div class="card" style="{% if metrics.recommendation_compliance >= 80 %}border-left: 4px solid var(--color-success);{% elif metrics.recommendation_compliance >= 50 %}border-left: 4px solid var(--color-warning);{% else %}border-left: 4px solid var(--color-error);{% endif %}">
+        <div class="card-header">Recommendation Compliance</div>
+        <div style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); color: var(--color-primary); margin-bottom: var(--spacing-2);">
+            {{ metrics.recommendation_compliance }}%
+        </div>
+        <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">
+            With required disclaimers
         </div>
     </div>
 </div>
 
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">Recent Compliance Issues</h5>
-    </div>
-    <div class="card-body">
+<!-- Recent Compliance Issues -->
+<div class="card" style="margin-bottom: var(--spacing-6);">
+    <div class="card-header">Recent Compliance Issues</div>
+    <div>
         {% if recent_issues %}
-        <div class="table-responsive">
-            <table class="table table-sm">
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
                 <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>User ID</th>
-                        <th>Recommendation ID</th>
-                        <th>Timestamp</th>
-                        <th>Description</th>
+                    <tr style="border-bottom: 2px solid var(--color-neutral-200);">
+                        <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Type</th>
+                        <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">User ID</th>
+                        <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Recommendation ID</th>
+                        <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Timestamp</th>
+                        <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for issue in recent_issues %}
-                    <tr>
-                        <td><span class="badge bg-warning">{{ issue.type }}</span></td>
-                        <td><a href="/user/{{ issue.user_id }}">{{ issue.user_id }}</a></td>
-                        <td>
+                    <tr style="border-bottom: 1px solid var(--color-neutral-200);">
+                        <td style="padding: var(--spacing-2) var(--spacing-4);">
+                            <span class="badge badge-warning">{{ issue.type }}</span>
+                        </td>
+                        <td style="padding: var(--spacing-2) var(--spacing-4);">
+                            <a href="/user/{{ issue.user_id }}" style="color: var(--color-primary); text-decoration: none;">{{ issue.user_id }}</a>
+                        </td>
+                        <td style="padding: var(--spacing-2) var(--spacing-4);">
                             {% if issue.recommendation_id %}
-                                <a href="/compliance/recommendations/{{ issue.recommendation_id }}">{{ issue.recommendation_id }}</a>
+                                <a href="/compliance/recommendations/{{ issue.recommendation_id }}" style="color: var(--color-primary); text-decoration: none;">{{ issue.recommendation_id }}</a>
                             {% else %}
-                                N/A
+                                <span style="color: var(--color-neutral-500);">N/A</span>
                             {% endif %}
                         </td>
-                        <td>{{ issue.timestamp }}</td>
-                        <td>{{ issue.description }}</td>
+                        <td style="padding: var(--spacing-2) var(--spacing-4); color: var(--color-neutral-700);">{{ issue.timestamp }}</td>
+                        <td style="padding: var(--spacing-2) var(--spacing-4); color: var(--color-neutral-700);">{{ issue.description }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -103,23 +108,29 @@
     </div>
 </div>
 
+<!-- Quick Links -->
 <div class="card">
-    <div class="card-header">
-        <h5 class="mb-0">Quick Links</h5>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-4">
-                <a href="/compliance/consent-audit" class="btn btn-primary w-100 mb-2">Consent Audit Log</a>
-            </div>
-            <div class="col-md-4">
-                <a href="/compliance/recommendations" class="btn btn-primary w-100 mb-2">Recommendation Compliance Review</a>
-            </div>
-            <div class="col-md-4">
-                <a href="/compliance/reports/summary?format=markdown" class="btn btn-secondary w-100 mb-2">Export Compliance Summary</a>
-            </div>
-        </div>
+    <div class="card-header">Quick Links</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+        <a href="/compliance/consent-audit" class="btn btn-primary" style="width: 100%;">Consent Audit Log</a>
+        <a href="/compliance/recommendations" class="btn btn-primary" style="width: 100%;">Recommendation Compliance Review</a>
+        <a href="/compliance/reports/summary?format=markdown" class="btn btn-secondary" style="width: 100%;">Export Compliance Summary</a>
     </div>
 </div>
-{% endblock %}
 
+<style>
+    @media (max-width: 767px) {
+        div[style*="grid-template-columns"] {
+            grid-template-columns: 1fr !important;
+        }
+        
+        table {
+            font-size: var(--font-size-sm);
+        }
+        
+        th, td {
+            padding: var(--spacing-1) var(--spacing-2) !important;
+        }
+    }
+</style>
+{% endblock %}

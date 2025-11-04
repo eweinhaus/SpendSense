@@ -9,6 +9,51 @@
   padding-right: var(--spacing-4);
 }
 
+/* Responsive breakpoints - Mobile First */
+@media (max-width: 639px) {
+  /* Small mobile (up to 640px) */
+  .navbar-collapse {
+    margin-top: var(--spacing-4);
+  }
+  
+  .nav-link {
+    padding: var(--spacing-2) 0;
+  }
+  
+  main {
+    padding: var(--spacing-4) var(--spacing-2) !important;
+  }
+  
+  h1, h2, h3 {
+    font-size: calc(var(--font-size-base) * 1.25) !important;
+  }
+  
+  .card {
+    padding: var(--spacing-4) !important;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 767px) {
+  /* Medium mobile (640px - 768px) */
+  main {
+    padding: var(--spacing-4) var(--spacing-3) !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Tablet (768px - 1024px) */
+  main {
+    padding: var(--spacing-5) var(--spacing-4) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Desktop (1024px+) */
+  main {
+    padding: var(--spacing-6) var(--spacing-4) !important;
+  }
+}
+
 /* Flexbox utilities */
 .flex {
   display: flex;

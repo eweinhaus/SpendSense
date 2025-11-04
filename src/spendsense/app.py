@@ -127,21 +127,71 @@ def get_user(user_id: int) -> Optional[Dict]:
         conn.close()
 
 
-def get_all_users_with_personas() -> List[Dict]:
-    """Get all users with their persona assignments and quick stats."""
+def get_all_users_with_personas(
+    search: Optional[str] = None, 
+    persona_filter: Optional[str] = None,
+    utilization_min: Optional[int] = None,
+    utilization_max: Optional[int] = None,
+    subscription_min: Optional[int] = None,
+    subscription_max: Optional[int] = None
+) -> List[Dict]:
+    """Get all users with their persona assignments and quick stats.
+    
+    Args:
+        search: Optional search term to filter by name (case-insensitive)
+        persona_filter: Optional persona type to filter by
+        utilization_min: Optional minimum utilization percentage (0-100)
+        utilization_max: Optional maximum utilization percentage (0-100)
+        subscription_min: Optional minimum subscription count
+        subscription_max: Optional maximum subscription count
+    """
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT u.id, u.name, u.email, p.persona_type
+        
+        # Build query with optional filters
+        query = """
+            SELECT DISTINCT u.id, u.name, u.email, u.consent_given, p.persona_type
             FROM users u
             LEFT JOIN personas p ON u.id = p.user_id
-            ORDER BY u.id
-        """)
+            LEFT JOIN signals util_sig ON u.id = util_sig.user_id AND util_sig.signal_type = 'credit_utilization_max'
+            LEFT JOIN signals sub_sig ON u.id = sub_sig.user_id AND sub_sig.signal_type = 'subscription_count'
+            WHERE 1=1
+        """
+        params = []
+        
+        if search:
+            query += " AND (u.name LIKE ? OR u.email LIKE ?)"
+            search_term = f"%{search}%"
+            params.extend([search_term, search_term])
+        
+        if persona_filter:
+            query += " AND (p.persona_type = ? OR (p.persona_type IS NULL AND ? = 'neutral'))"
+            params.extend([persona_filter, persona_filter])
+        
+        if utilization_min is not None:
+            query += " AND (util_sig.value >= ? OR util_sig.value IS NULL)"
+            params.append(float(utilization_min))
+        
+        if utilization_max is not None:
+            query += " AND (util_sig.value <= ? OR util_sig.value IS NULL)"
+            params.append(float(utilization_max))
+        
+        if subscription_min is not None:
+            query += " AND (CAST(sub_sig.value AS INTEGER) >= ? OR sub_sig.value IS NULL)"
+            params.append(subscription_min)
+        
+        if subscription_max is not None:
+            query += " AND (CAST(sub_sig.value AS INTEGER) <= ? OR sub_sig.value IS NULL)"
+            params.append(subscription_max)
+        
+        query += " ORDER BY u.id"
+        
+        cursor.execute(query, params)
         
         users = []
         for row in cursor.fetchall():
-            user_id, name, email, persona_type = row
+            user_id, name, email, consent_given, persona_type = row
             
             # Get quick stats
             stats = get_user_quick_stats(user_id)
@@ -150,6 +200,7 @@ def get_all_users_with_personas() -> List[Dict]:
                 'id': user_id,
                 'name': name,
                 'email': email,
+                'consent_given': bool(consent_given),
                 'persona_type': persona_type or 'neutral',
                 'utilization': stats.get('utilization', 'N/A'),
                 'subscription_count': stats.get('subscription_count', 0)
@@ -533,13 +584,89 @@ def refresh_recommendations_for_user(user_id: int, consent_enabled: bool) -> Non
 
 # API Endpoints
 @app.get("/", response_class=HTMLResponse)
-def dashboard(request: Request):
-    """Dashboard page showing all users."""
+def dashboard(
+    request: Request, 
+    search: Optional[str] = None, 
+    persona_filter: Optional[str] = None,
+    utilization_min: Optional[str] = None,
+    utilization_max: Optional[str] = None,
+    subscription_min: Optional[str] = None,
+    subscription_max: Optional[str] = None
+):
+    """Dashboard page showing all users with enhanced stats.
+    
+    Query parameters:
+        search: Optional search term to filter users by name
+        persona_filter: Optional persona type to filter by
+        utilization_min: Optional minimum utilization percentage (as string, will be converted to int)
+        utilization_max: Optional maximum utilization percentage (as string, will be converted to int)
+        subscription_min: Optional minimum subscription count (as string, will be converted to int)
+        subscription_max: Optional maximum subscription count (as string, will be converted to int)
+    """
     try:
-        users = get_all_users_with_personas()
+        # Convert string parameters to int or None
+        util_min = int(utilization_min) if utilization_min and utilization_min.strip() else None
+        util_max = int(utilization_max) if utilization_max and utilization_max.strip() else None
+        sub_min = int(subscription_min) if subscription_min and subscription_min.strip() else None
+        sub_max = int(subscription_max) if subscription_max and subscription_max.strip() else None
+        
+        users = get_all_users_with_personas(
+            search=search, 
+            persona_filter=persona_filter,
+            utilization_min=util_min,
+            utilization_max=util_max,
+            subscription_min=sub_min,
+            subscription_max=sub_max
+        )
+        
+        # Calculate quick stats for dashboard (always use all users, not filtered)
+        conn = get_db_connection()
+        try:
+            cursor = conn.cursor()
+            
+            # Total users
+            cursor.execute("SELECT COUNT(*) FROM users")
+            total_users = cursor.fetchone()[0]
+            
+            # Personas breakdown
+            cursor.execute("""
+                SELECT persona_type, COUNT(*) as count
+                FROM personas
+                GROUP BY persona_type
+            """)
+            persona_counts = {row[0]: row[1] for row in cursor.fetchall()}
+            
+            # Consent stats
+            cursor.execute("SELECT COUNT(*) FROM users WHERE consent_given = 1")
+            users_with_consent = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM users WHERE consent_given = 0")
+            users_without_consent = cursor.fetchone()[0]
+            
+            # Recent activity (get last 5 users by ID, without filters)
+            all_users = get_all_users_with_personas()
+            recent_users = all_users[-5:] if len(all_users) > 5 else all_users
+            
+            stats = {
+                'total_users': total_users,
+                'persona_counts': persona_counts,
+                'users_with_consent': users_with_consent,
+                'users_without_consent': users_without_consent,
+                'recent_users': recent_users
+            }
+        finally:
+            conn.close()
+        
         return templates.TemplateResponse("dashboard.html", {
             "request": request,
-            "users": users
+            "users": users,
+            "stats": stats,
+            "current_search": search or "",
+            "current_persona_filter": persona_filter or "",
+            "current_utilization_min": util_min,
+            "current_utilization_max": util_max,
+            "current_subscription_min": sub_min,
+            "current_subscription_max": sub_max
         })
     except Exception as e:
         return templates.TemplateResponse("error.html", {
