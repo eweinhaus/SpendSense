@@ -34,8 +34,12 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # Add custom Jinja2 filter for JSON formatting
 def tojsonpretty(value):
     """Format JSON data as pretty-printed string."""
+    if value is None:
+        return "{}"
     return json.dumps(value, indent=2, default=str)
 
+# Register filter on the Jinja2 environment
+# Register it immediately and also in startup event for safety
 templates.env.filters['tojsonpretty'] = tojsonpretty
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -53,6 +57,9 @@ async def startup_event():
         import traceback
         traceback.print_exc()
         print("   Application will continue, but database operations may fail")
+    
+    # Ensure filter is registered (safety check)
+    templates.env.filters['tojsonpretty'] = tojsonpretty
 
 
 # Pydantic models for request/response
@@ -529,6 +536,10 @@ def user_detail(request: Request, user_id: int):
         partner_offers = []
         if has_consent(user_id):
             partner_offers = get_eligible_offers(user_id)
+        
+        # Ensure filter is registered (safety check before rendering)
+        if 'tojsonpretty' not in templates.env.filters:
+            templates.env.filters['tojsonpretty'] = tojsonpretty
         
         return templates.TemplateResponse("user_detail.html", {
             "request": request,
