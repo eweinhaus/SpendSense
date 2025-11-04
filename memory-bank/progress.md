@@ -346,6 +346,46 @@
 7. ✅ **Phase 6B Complete** - Recommendations & Guardrails (OpenAI integration, partner offers, expanded content catalog, comprehensive testing)
 8. ✅ **Phase 7 Complete** - Production Readiness (operator view enhancements, test suite expansion, documentation completion, deployment verification)
 
+## Post-MVP Roadmap (Updated 2025-11-04)
+
+### Roadmap Updates
+- ✅ **Removed:** Demo video/presentation requirement (skipped per user request)
+- ✅ **Added:** UX/UI polish & visual enhancement (8-12 hours, Should Have priority)
+- ✅ **Added:** Additional personas beyond 5 (4-6 hours per persona, Should Have priority)
+
+### Future Work (Post-MVP)
+1. **UX/UI Polish & Visual Enhancement** (8-12 hours)
+   - Design system and color palette
+   - Enhanced dashboard design (card-based layout, data visualization)
+   - Enhanced user detail page with modern layout
+   - Component library, interactive elements
+   - Responsive design improvements
+   - Accessibility enhancements (WCAG compliance)
+   - Visual polish (custom SVG icons, shadows, consistent iconography)
+
+2. **Additional Personas** (8-18 hours for 2-3 personas)
+   - Target: 6-10 total personas for more granular categorization
+   - Potential new personas: Debt Consolidator, Goal-Oriented Saver, Credit Builder, Balance Optimizer, Income Maximizer, Emergency Fund Builder, Retirement Planner
+   - Each persona requires: criteria definition, detection logic, content templates (10-15 items), UI updates
+
+3. **End-User Interface** (8-12 hours)
+   - User authentication
+   - Personalized dashboard
+   - Recommendation feed
+   - Interactive calculators
+   - Consent management interface
+
+4. **Compliance Auditor Interface** (6-8 hours)
+   - Consent audit log
+   - Data access logging
+   - Compliance violations dashboard
+   - Regulatory reporting
+
+5. **PostgreSQL Migration** (5-7 hours remaining)
+   - Complete migration from SQLite to PostgreSQL
+   - AWS RDS setup
+   - Production data migration
+
 ## Blockers
 
 **None currently**

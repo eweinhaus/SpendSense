@@ -154,7 +154,6 @@
 5. ✅ Render.com deployment - **Service created successfully (srv-d44njmq4d50c73el4brg)**
 6. ✅ Production verification - **All endpoints tested, performance verified**
 7. ✅ Test failures fixed - **5 pre-existing failures resolved**
-8. Prepare demo script/walkthrough
 
 ### Operational Status
 - **Server:** ✅ Running and tested (http://localhost:8000)
@@ -194,7 +193,9 @@
 6. ✅ Documentation - **Complete (Phase 7)**
 7. ✅ Production deployment - **Service created on Render.com, automated deployment script created, production verified**
 8. ✅ Operator view enhancements - **Complete (Phase 7: decision traces, persona rationale)**
-9. Build end-user interface - Future phase
+9. UX/UI polish & visual enhancement - Added to roadmap (8-12 hours)
+10. Additional personas (beyond 5) - Added to roadmap (8-18 hours for 2-3 personas)
+11. Build end-user interface - Future phase
 
 ## Active Decisions
 
@@ -208,7 +209,7 @@
 - **Partner Offers:** Eligibility-based filtering using existing eligibility system, data-driven rationales
 - **Content Catalog:** Expanded to 72 items with variety (articles, calculators, checklists, templates)
 - **Data:** 75 users default (50-100 range, configurable via NUM_USERS env var)
-- **Personas:** 5 persona types (High Utilization, Variable Income, Subscription-Heavy, Savings Builder, Financial Newcomer, Neutral)
+- **Personas:** 5 persona types (High Utilization, Variable Income, Subscription-Heavy, Savings Builder, Financial Newcomer, Neutral), roadmap includes expansion to 6-10 personas
 - **Consent Enforcement:** Hard requirement - recommendations blocked without consent, regenerated on consent grant
 - **Account Types:** All Plaid types supported (checking, savings, credit, money market, HSA, mortgages, student loans)
 
@@ -225,7 +226,8 @@
 - **Rationale generation brittleness:** Missing data can break rationales, need fallbacks
 - **Error handling:** Edge cases (no transactions, no credit cards, zero limits, no savings accounts, no payroll)
 - **Payroll detection:** May miss edge cases with irregular income or varying merchant names
-- **Demo preparation:** Need realistic demo data that showcases all 5 personas
+- **UX/UI polish:** Basic Bootstrap styling functional but could be enhanced for professional appearance
+- **Persona expansion:** Roadmap includes adding 2-3 additional personas for better coverage
 - **180-day window performance:** Processing 6x more transactions may slow down detection
 
 ### Potential Issues
@@ -233,7 +235,7 @@
 - Rationale generation may break with missing data
 - Payroll detection may miss irregular income patterns or varying merchant names
 - 180-day window may cause performance slowdown with large datasets
-- Demo may need polished UI despite MVP scope
+- UX/UI polish needed for professional appearance (added to roadmap)
 - Need to balance speed with quality
 
 ## Current Blockers
@@ -281,19 +283,24 @@ python3 -c "from spendsense.recommendations import generate_recommendations_for_
 - [x] Start with single-file approach or modular structure? → **Modular structure (Phase 1 used separate modules)**
 - [x] Use Faker library for synthetic data or custom generator? → **Faker library used successfully**
 - [x] Pre-generate demo data or generate on-demand? → **Pre-generate demo data (Phase 1 complete)**
-- [ ] How detailed should the demo script be?
+- [x] How detailed should the demo script be? → **Demo video/presentation requirement removed from roadmap**
 
-## Demo Strategy
+## Post-MVP Roadmap Updates (2025-11-04)
 
-**Format:** Video walkthrough + potential live presentation  
-**Duration:** 5-7 minutes  
-**Focus:** Show technical depth, data insights, explainability  
-**Key Points:**
-- Signal detection accuracy
-- Persona assignment logic
-- Data-driven rationales
-- Decision traceability
-- Clean architecture
+**Roadmap Changes:**
+- ✅ Removed demo video/presentation requirement (skipped per user request)
+- ✅ Added UX/UI polish & visual enhancement section (8-12 hours, Should Have priority)
+  - Design system and color palette
+  - Enhanced dashboard design (card-based layout, data visualization)
+  - Enhanced user detail page with modern layout
+  - Component library, interactive elements, responsive design
+  - Accessibility enhancements (WCAG compliance)
+  - Visual polish (custom SVG icons, shadows, consistent iconography)
+- ✅ Added additional personas section (beyond 5 personas)
+  - Target: 6-10 total personas for more granular categorization
+  - Potential personas: Debt Consolidator, Goal-Oriented Saver, Credit Builder, Balance Optimizer, Income Maximizer, Emergency Fund Builder, Retirement Planner
+  - Estimated effort: 4-6 hours per persona (8-18 hours for 2-3 personas)
+  - Should Have priority
 
 ## Files to Reference
 

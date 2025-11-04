@@ -31,6 +31,8 @@ Banks generate massive transaction data through Plaid integrations but struggle 
 - ✅ Documentation - Phase 6 Complete
 - ✅ Deployment readiness - Phase 6 Complete
 - ✅ Production deployment (Render.com) - Service created (srv-d44njmq4d50c73el4brg), automated script created
+- ⏳ UX/UI polish & visual enhancement - Added to roadmap (Should Have priority)
+- ⏳ Additional personas (beyond 5) - Added to roadmap (Should Have priority)
 - ⏳ End-user interface - Future phase
 
 ## Key Deliverables
@@ -61,7 +63,7 @@ Banks generate massive transaction data through Plaid integrations but struggle 
 **Approach:** Build MVP first as proof of concept, then expand to full requirements
 **Completed:** Phases 1-7 (Data Pipeline, Intelligence Layer, Interface, Data Expansion, Intelligence Completion, Production Readiness, AI Integration & Recommendations, Final Production Readiness)
 **Status:** All Phase 7 features complete - Operator view enhancements, test suite expansion (90+ tests), documentation completion, deployment verification
-**Next:** Production deployment and demo preparation
+**Next:** Post-MVP roadmap items (UX/UI polish, additional personas, end-user interface, compliance auditor interface)
 
 ## Core Principles
 
