@@ -5,6 +5,7 @@ Generates personalized recommendations based on user personas.
 
 import sqlite3
 import json
+import logging
 from typing import List, Dict, Optional
 from .database import get_db_connection
 from .personas import get_user_signals
@@ -12,6 +13,10 @@ from .rationales import generate_rationale
 from .traces import generate_decision_trace
 from .eligibility import has_consent
 from .tone_validator import validate_and_log
+from .content_generator import get_content_generator
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 # Content templates for each persona
@@ -29,6 +34,7 @@ TEMPLATES = {
                 "• Avoid new charges on high-utilization cards\n"
                 "• Aim to keep utilization below 30% for optimal credit health"
             ),
+            "type": "article",
             "always_include": True
         },
         {
@@ -43,7 +49,98 @@ TEMPLATES = {
                 "• Your score updates as your utilization changes\n"
                 "• Even small reductions can help improve your score over time"
             ),
+            "type": "article",
             "always_include": True
+        },
+        {
+            "key": "debt_payoff_calculator",
+            "title": "Debt Payoff Calculator",
+            "content": (
+                "Calculate how long it will take to pay off your credit card debt:\n\n"
+                "1. Enter your current balance\n"
+                "2. Enter your monthly payment amount\n"
+                "3. Enter your annual interest rate (APR)\n"
+                "4. The calculator shows:\n"
+                "   • Total interest you'll pay\n"
+                "   • Months to pay off\n"
+                "   • How increasing payments affects timeline\n\n"
+                "Try paying an extra $50-100/month to see the impact on your payoff date."
+            ),
+            "type": "calculator",
+            "always_include": False
+        },
+        {
+            "key": "payment_plan_template",
+            "title": "Debt Payment Plan Template",
+            "content": (
+                "Create a structured payment plan to reduce your credit card debt:\n\n"
+                "Monthly Payment Plan:\n"
+                "• Minimum payment: $____\n"
+                "• Extra payment: $____\n"
+                "• Total monthly payment: $____\n\n"
+                "Payment Schedule:\n"
+                "• Month 1: $____\n"
+                "• Month 2: $____\n"
+                "• Month 3: $____\n"
+                "• Continue until balance is $0\n\n"
+                "Track your progress monthly and adjust as needed."
+            ),
+            "type": "template",
+            "always_include": False
+        },
+        {
+            "key": "credit_review_checklist",
+            "title": "Credit Health Review Checklist",
+            "content": (
+                "Use this checklist to review and improve your credit health:\n\n"
+                "□ Check your credit utilization ratio (aim for <30%)\n"
+                "□ Review all credit card balances\n"
+                "□ Set up payment reminders or autopay\n"
+                "□ Check your credit report for errors\n"
+                "□ Identify highest interest rate cards\n"
+                "□ Create a debt payoff strategy\n"
+                "□ Avoid opening new credit accounts\n"
+                "□ Monitor your credit score monthly\n"
+                "□ Set a target utilization percentage\n"
+                "□ Track your progress quarterly"
+            ),
+            "type": "checklist",
+            "always_include": False
+        },
+        {
+            "key": "balance_transfer_guide",
+            "title": "Understanding Balance Transfer Cards",
+            "content": (
+                "Balance transfer cards can help you pay off debt faster by reducing interest charges.\n\n"
+                "• Look for cards with 0% APR introductory periods (12-18 months)\n"
+                "• Consider balance transfer fees (typically 3-5% of transferred amount)\n"
+                "• Calculate if savings outweigh fees\n"
+                "• Make sure you can pay off balance before promotional rate ends\n"
+                "• Read terms carefully - missed payments may void promotional rate\n"
+                "• Continue making payments during promotional period\n"
+                "• Avoid using the new card for new purchases"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "interest_savings_calculator",
+            "title": "Interest Savings Calculator",
+            "content": (
+                "Calculate how much you could save by reducing your credit card interest:\n\n"
+                "Current Situation:\n"
+                "• Balance: $____\n"
+                "• APR: ____%\n"
+                "• Monthly payment: $____\n"
+                "• Interest paid this year: $____\n\n"
+                "With Lower APR (e.g., 0% balance transfer):\n"
+                "• New APR: ____%\n"
+                "• Interest saved: $____\n"
+                "• Months saved: ____\n\n"
+                "Use this to decide if a balance transfer makes sense."
+            ),
+            "type": "calculator",
+            "always_include": False
         },
         {
             "key": "autopay",
@@ -56,8 +153,97 @@ TEMPLATES = {
                 "• Monitor your account to ensure payments process correctly\n"
                 "• Consider setting up alerts for payment confirmations"
             ),
+            "type": "article",
             "always_include": False,
             "condition": "overdue_or_interest"
+        },
+        {
+            "key": "snowball_method",
+            "title": "Debt Snowball vs. Debt Avalanche Methods",
+            "content": (
+                "Two popular debt payoff strategies:\n\n"
+                "Debt Snowball Method:\n"
+                "• Pay off smallest balance first\n"
+                "• Builds momentum with quick wins\n"
+                "• Good for motivation\n\n"
+                "Debt Avalanche Method:\n"
+                "• Pay off highest interest rate first\n"
+                "• Saves more money in interest\n"
+                "• Better for overall savings\n\n"
+                "Choose the method that works best for your personality and financial situation."
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "expense_tracking_template",
+            "title": "Monthly Expense Tracking Template",
+            "content": (
+                "Track expenses to free up money for debt payments:\n\n"
+                "Monthly Expenses:\n"
+                "• Housing: $____\n"
+                "• Food: $____\n"
+                "• Transportation: $____\n"
+                "• Utilities: $____\n"
+                "• Subscriptions: $____\n"
+                "• Entertainment: $____\n"
+                "• Other: $____\n"
+                "• Total: $____\n\n"
+                "Identify areas to reduce spending and redirect to debt payments."
+            ),
+            "type": "template",
+            "always_include": False
+        },
+        {
+            "key": "credit_card_optimization",
+            "title": "Optimize Your Credit Card Strategy",
+            "content": (
+                "Make strategic decisions about your credit cards:\n\n"
+                "• Prioritize paying off highest APR cards first\n"
+                "• Consider consolidating multiple cards if beneficial\n"
+                "• Avoid closing old accounts (hurts credit history)\n"
+                "• Request lower APR from current card issuers\n"
+                "• Use cards with rewards for necessary expenses only\n"
+                "• Don't open new cards while paying off debt\n"
+                "• Monitor all card balances regularly"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "debt_free_timeline",
+            "title": "Calculate Your Debt-Free Timeline",
+            "content": (
+                "See when you'll be debt-free with different payment strategies:\n\n"
+                "Scenario 1 - Minimum Payments:\n"
+                "• Payoff date: ____\n"
+                "• Total interest: $____\n\n"
+                "Scenario 2 - Extra $50/month:\n"
+                "• Payoff date: ____\n"
+                "• Total interest: $____\n"
+                "• Time saved: ____ months\n\n"
+                "Scenario 3 - Extra $100/month:\n"
+                "• Payoff date: ____\n"
+                "• Total interest: $____\n"
+                "• Time saved: ____ months\n\n"
+                "Use this to set realistic goals and track progress."
+            ),
+            "type": "calculator",
+            "always_include": False
+        },
+        {
+            "key": "credit_utilization_tracker",
+            "title": "Credit Utilization Tracker",
+            "content": (
+                "Track your credit utilization over time:\n\n"
+                "Month 1: ____% (Balance: $____, Limit: $____)\n"
+                "Month 2: ____% (Balance: $____, Limit: $____)\n"
+                "Month 3: ____% (Balance: $____, Limit: $____)\n"
+                "Target: <30%\n\n"
+                "Goal: Reduce utilization by ____% each month until below 30%."
+            ),
+            "type": "template",
+            "always_include": False
         }
     ],
     "variable_income_budgeter": [
@@ -72,6 +258,7 @@ TEMPLATES = {
                 "• Adjust percentages based on your lowest expected income month\n"
                 "• Use the highest income months to build your emergency fund"
             ),
+            "type": "article",
             "always_include": True
         },
         {
@@ -85,7 +272,25 @@ TEMPLATES = {
                 "• Keep emergency fund in a high-yield savings account\n"
                 "• Only use it for true emergencies, not income gaps"
             ),
+            "type": "article",
             "always_include": True
+        },
+        {
+            "key": "emergency_fund_calculator",
+            "title": "Emergency Fund Calculator",
+            "content": (
+                "Calculate how much you need in your emergency fund:\n\n"
+                "1. Calculate monthly expenses: $____\n"
+                "2. Multiply by months of coverage needed (3-6 months):\n"
+                "   • 3 months: $____\n"
+                "   • 6 months: $____\n"
+                "3. Current emergency fund: $____\n"
+                "4. Amount needed: $____\n"
+                "5. Monthly savings goal: $____\n\n"
+                "For variable income, aim for 6 months to cover income gaps."
+            ),
+            "type": "calculator",
+            "always_include": False
         },
         {
             "key": "income_smoothing",
@@ -98,6 +303,177 @@ TEMPLATES = {
                 "• Track your income patterns to predict future gaps\n"
                 "• Consider setting up automatic transfers to savings"
             ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "variable_income_budget_template",
+            "title": "Variable Income Budget Template",
+            "content": (
+                "Create a budget that adapts to variable income:\n\n"
+                "Base Budget (Lowest Expected Income Month):\n"
+                "• Needs (50%): $____\n"
+                "• Wants (30%): $____\n"
+                "• Savings/Debt (20%): $____\n"
+                "• Total: $____\n\n"
+                "Surplus Allocation (High Income Months):\n"
+                "• Emergency fund: $____\n"
+                "• Extra debt payment: $____\n"
+                "• Short-term goals: $____\n"
+                "• Long-term savings: $____\n\n"
+                "Track income and adjust allocations monthly."
+            ),
+            "type": "template",
+            "always_include": False
+        },
+        {
+            "key": "income_tracking_checklist",
+            "title": "Income Tracking Checklist",
+            "content": (
+                "Track your variable income effectively:\n\n"
+                "□ Record all income sources monthly\n"
+                "□ Calculate average monthly income\n"
+                "□ Identify highest and lowest income months\n"
+                "□ Note seasonal patterns in your income\n"
+                "□ Track income gaps (months with no income)\n"
+                "□ Set baseline budget from lowest income month\n"
+                "□ Plan for income gaps in advance\n"
+                "□ Build buffer during high-income months\n"
+                "□ Review income patterns quarterly\n"
+                "□ Adjust budget based on income trends"
+            ),
+            "type": "checklist",
+            "always_include": False
+        },
+        {
+            "key": "cash_buffer_calculator",
+            "title": "Cash Buffer Calculator",
+            "content": (
+                "Calculate your cash flow buffer for income gaps:\n\n"
+                "Monthly Expenses: $____\n"
+                "Average Monthly Income: $____\n"
+                "Income Gap Months (per year): ____\n\n"
+                "Buffer Needed:\n"
+                "• For 1-month gap: $____\n"
+                "• For 2-month gap: $____\n"
+                "• For 3-month gap: $____\n\n"
+                "Current Buffer: $____\n"
+                "Additional Buffer Needed: $____\n\n"
+                "Save this amount during high-income months."
+            ),
+            "type": "calculator",
+            "always_include": False
+        },
+        {
+            "key": "irregular_income_planning",
+            "title": "Planning for Irregular Income",
+            "content": (
+                "Strategies to manage irregular income effectively:\n\n"
+                "• Calculate your average monthly income over 6-12 months\n"
+                "• Base your budget on your lowest income month\n"
+                "• Save all surplus from high-income months\n"
+                "• Create separate accounts for different purposes\n"
+                "• Build a buffer equal to 2-3 months of expenses\n"
+                "• Track income and expenses meticulously\n"
+                "• Plan for known income gaps (seasonal work, etc.)\n"
+                "• Consider multiple income streams for stability"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "expense_cutting_guide",
+            "title": "Cutting Expenses During Low-Income Months",
+            "content": (
+                "When income is low, focus on essential expenses:\n\n"
+                "Essential Expenses (Keep):\n"
+                "• Housing and utilities\n"
+                "• Food (basics only)\n"
+                "• Transportation (minimum)\n"
+                "• Insurance\n\n"
+                "Non-Essential Expenses (Cut):\n"
+                "• Entertainment\n"
+                "• Dining out\n"
+                "• Subscriptions\n"
+                "• Shopping\n"
+                "• Non-essential services\n\n"
+                "Track your spending and prioritize needs over wants."
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "income_allocation_template",
+            "title": "Income Allocation Template",
+            "content": (
+                "Allocate income from each pay period:\n\n"
+                "Pay Period: ____\n"
+                "Income Received: $____\n\n"
+                "Allocation:\n"
+                "• Needs (50%): $____\n"
+                "• Wants (30%): $____\n"
+                "• Savings (20%): $____\n\n"
+                "Surplus Allocation:\n"
+                "• Emergency fund: $____\n"
+                "• Income buffer: $____\n"
+                "• Debt payment: $____\n\n"
+                "Track each pay period separately."
+            ),
+            "type": "template",
+            "always_include": False
+        },
+        {
+            "key": "seasonal_income_planning",
+            "title": "Seasonal Income Planning",
+            "content": (
+                "Plan for seasonal income variations:\n\n"
+                "• Identify your high-income and low-income seasons\n"
+                "• Save aggressively during peak seasons\n"
+                "• Budget conservatively during slow seasons\n"
+                "• Build a buffer that covers entire slow season\n"
+                "• Consider seasonal work to supplement income\n"
+                "• Plan major expenses during high-income periods\n"
+                "• Track seasonal patterns over multiple years\n"
+                "• Adjust expectations based on historical data"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "multiple_income_streams",
+            "title": "Building Multiple Income Streams",
+            "content": (
+                "Diversify your income to reduce variability:\n\n"
+                "• Maintain primary income source\n"
+                "• Add secondary income (part-time, freelance)\n"
+                "• Consider passive income opportunities\n"
+                "• Build skills that increase earning potential\n"
+                "• Network to find additional opportunities\n"
+                "• Don't rely on single income source\n"
+                "• Balance multiple streams without burnout\n"
+                "• Track all income sources separately"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "variable_expense_tracker",
+            "title": "Variable Expense Tracker",
+            "content": (
+                "Track expenses that vary with income:\n\n"
+                "Month: ____\n"
+                "Income: $____\n"
+                "Expenses:\n"
+                "• Fixed: $____\n"
+                "• Variable: $____\n"
+                "• Total: $____\n\n"
+                "Track ratio of expenses to income:\n"
+                "• High-income month: ____%\n"
+                "• Low-income month: ____%\n"
+                "• Average: ____%\n\n"
+                "Adjust variable expenses based on income."
+            ),
+            "type": "template",
             "always_include": False
         }
     ],
@@ -113,6 +489,7 @@ TEMPLATES = {
                 "• Track your progress toward each goal monthly\n"
                 "• Celebrate milestones to stay motivated"
             ),
+            "type": "article",
             "always_include": True
         },
         {
@@ -126,7 +503,26 @@ TEMPLATES = {
                 "• Increase automatic transfers as your income grows\n"
                 "• Review and adjust automation quarterly"
             ),
+            "type": "article",
             "always_include": True
+        },
+        {
+            "key": "savings_goal_calculator",
+            "title": "Savings Goal Calculator",
+            "content": (
+                "Calculate how long it will take to reach your savings goal:\n\n"
+                "Goal: $____\n"
+                "Current Savings: $____\n"
+                "Monthly Contribution: $____\n"
+                "Interest Rate (APY): ____%\n\n"
+                "Results:\n"
+                "• Months to reach goal: ____\n"
+                "• Total interest earned: $____\n"
+                "• Total contributions: $____\n\n"
+                "Try increasing monthly contribution to reach goal faster."
+            ),
+            "type": "calculator",
+            "always_include": False
         },
         {
             "key": "hysa_education",
@@ -139,8 +535,184 @@ TEMPLATES = {
                 "• Look for accounts with no minimum balance requirements\n"
                 "• Keep emergency fund accessible but earning interest"
             ),
+            "type": "article",
             "always_include": False,
             "condition": "high_savings"
+        },
+        {
+            "key": "savings_tracker_template",
+            "title": "Savings Progress Tracker",
+            "content": (
+                "Track your savings progress toward multiple goals:\n\n"
+                "Goal 1: ____\n"
+                "Target: $____ | Current: $____ | Progress: ____%\n\n"
+                "Goal 2: ____\n"
+                "Target: $____ | Current: $____ | Progress: ____%\n\n"
+                "Goal 3: ____\n"
+                "Target: $____ | Current: $____ | Progress: ____%\n\n"
+                "Update monthly to track progress."
+            ),
+            "type": "template",
+            "always_include": False
+        },
+        {
+            "key": "savings_strategies_checklist",
+            "title": "Savings Strategies Checklist",
+            "content": (
+                "Maximize your savings with these strategies:\n\n"
+                "□ Set up automatic transfers to savings\n"
+                "□ Use round-up apps for spare change\n"
+                "□ Save windfalls (tax refunds, bonuses)\n"
+                "□ Increase savings rate with each raise\n"
+                "□ Open high-yield savings account\n"
+                "□ Create separate accounts for different goals\n"
+                "□ Review and cancel unused subscriptions\n"
+                "□ Cook at home more to save money\n"
+                "□ Use cashback apps and credit rewards\n"
+                "□ Track savings progress monthly"
+            ),
+            "type": "checklist",
+            "always_include": False
+        },
+        {
+            "key": "compound_interest_calculator",
+            "title": "Compound Interest Calculator",
+            "content": (
+                "See how compound interest grows your savings:\n\n"
+                "Initial Deposit: $____\n"
+                "Monthly Contribution: $____\n"
+                "Annual Interest Rate: ____%\n"
+                "Years: ____\n\n"
+                "Results:\n"
+                "• Final Balance: $____\n"
+                "• Total Contributions: $____\n"
+                "• Interest Earned: $____\n\n"
+                "The power of compound interest: small regular contributions add up over time."
+            ),
+            "type": "calculator",
+            "always_include": False
+        },
+        {
+            "key": "emergency_fund_guide",
+            "title": "Building Your Emergency Fund",
+            "content": (
+                "An emergency fund is your financial safety net.\n\n"
+                "• Aim for 3-6 months of expenses\n"
+                "• Start with $1,000 mini emergency fund\n"
+                "• Keep in easily accessible high-yield savings account\n"
+                "• Only use for true emergencies (not wants)\n"
+                "• Replenish after using it\n"
+                "• Separate from other savings goals\n"
+                "• Review and adjust target amount annually\n"
+                "• Automate contributions to build it faster"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "multiple_goals_template",
+            "title": "Multiple Savings Goals Template",
+            "content": (
+                "Prioritize and track multiple savings goals:\n\n"
+                "Priority 1: ____\n"
+                "Target: $____ | Timeline: ____ months | Monthly: $____\n\n"
+                "Priority 2: ____\n"
+                "Target: $____ | Timeline: ____ months | Monthly: $____\n\n"
+                "Priority 3: ____\n"
+                "Target: $____ | Timeline: ____ months | Monthly: $____\n\n"
+                "Total Monthly Savings: $____\n"
+                "Adjust priorities and timelines as needed."
+            ),
+            "type": "template",
+            "always_include": False
+        },
+        {
+            "key": "cd_ladder_strategy",
+            "title": "CD Ladder Strategy for Savings",
+            "content": (
+                "Use certificates of deposit (CDs) to maximize returns:\n\n"
+                "• Open multiple CDs with staggered maturity dates\n"
+                "• Example: 1-year, 2-year, 3-year CDs\n"
+                "• Each CD matures at different times\n"
+                "• Reinvest maturing CDs or use for goals\n"
+                "• Provides both liquidity and higher rates\n"
+                "• Compare CD rates across institutions\n"
+                "• Consider penalty-free early withdrawal options\n"
+                "• Balance access needs with higher rates"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "savings_rate_calculator",
+            "title": "Savings Rate Calculator",
+            "content": (
+                "Calculate your savings rate:\n\n"
+                "Monthly Income: $____\n"
+                "Monthly Savings: $____\n"
+                "Savings Rate: ____%\n\n"
+                "Target Savings Rates:\n"
+                "• Beginner: 10-15%\n"
+                "• Good: 20-25%\n"
+                "• Excellent: 30%+\n\n"
+                "Your current rate: ____%\n"
+                "Gap to target: ____%\n"
+                "Additional monthly savings needed: $____"
+            ),
+            "type": "calculator",
+            "always_include": False
+        },
+        {
+            "key": "sinking_funds",
+            "title": "Using Sinking Funds for Planned Expenses",
+            "content": (
+                "Save for planned expenses with sinking funds:\n\n"
+                "• Create separate savings for each planned expense\n"
+                "• Examples: vacation, car maintenance, home repairs\n"
+                "• Calculate monthly amount needed\n"
+                "• Set up automatic transfers\n"
+                "• Track progress toward each fund\n"
+                "• Prevents using emergency fund for non-emergencies\n"
+                "• Reduces financial stress from large expenses\n"
+                "• Can combine with high-yield savings accounts"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "savings_challenge_template",
+            "title": "52-Week Savings Challenge Template",
+            "content": (
+                "Build savings gradually with the 52-week challenge:\n\n"
+                "Week 1: Save $1\n"
+                "Week 2: Save $2\n"
+                "Week 3: Save $3\n"
+                "...\n"
+                "Week 52: Save $52\n\n"
+                "Total Saved: $1,378\n\n"
+                "Track your progress:\n"
+                "Week: ____ | Amount: $____ | Total: $____\n\n"
+                "Adjust amounts to fit your budget."
+            ),
+            "type": "template",
+            "always_include": False
+        },
+        {
+            "key": "retirement_savings_basics",
+            "title": "Retirement Savings Basics",
+            "content": (
+                "Start saving for retirement early:\n\n"
+                "• Contribute to employer 401(k) if available\n"
+                "• Take advantage of employer matching\n"
+                "• Open IRA for additional retirement savings\n"
+                "• Aim to save 15-20% of income for retirement\n"
+                "• Start small and increase over time\n"
+                "• Take advantage of tax benefits\n"
+                "• Consider Roth vs. Traditional options\n"
+                "• Review and adjust contributions annually"
+            ),
+            "type": "article",
+            "always_include": False
         }
     ],
     "financial_newcomer": [
@@ -155,6 +727,7 @@ TEMPLATES = {
                 "• Make all payments on time to build a positive payment history\n"
                 "• Check your credit report regularly (free annually from each bureau)"
             ),
+            "type": "article",
             "always_include": True
         },
         {
@@ -168,7 +741,27 @@ TEMPLATES = {
                 "• Reconcile your accounts monthly to catch errors early\n"
                 "• Keep your account information secure and private"
             ),
+            "type": "article",
             "always_include": True
+        },
+        {
+            "key": "simple_budget_template",
+            "title": "Simple Budget Template for Beginners",
+            "content": (
+                "Create your first budget with this simple template:\n\n"
+                "Monthly Income: $____\n\n"
+                "Expenses:\n"
+                "• Housing: $____\n"
+                "• Food: $____\n"
+                "• Transportation: $____\n"
+                "• Utilities: $____\n"
+                "• Other: $____\n"
+                "• Total Expenses: $____\n\n"
+                "Income - Expenses: $____\n"
+                "Allocate remainder to savings or debt."
+            ),
+            "type": "template",
+            "always_include": False
         },
         {
             "key": "financial_foundations",
@@ -181,6 +774,148 @@ TEMPLATES = {
                 "• Educate yourself about personal finance basics\n"
                 "• Avoid taking on debt you can't afford to repay"
             ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "first_budget_checklist",
+            "title": "First Budget Checklist",
+            "content": (
+                "Steps to create your first budget:\n\n"
+                "□ List all sources of monthly income\n"
+                "□ Track all expenses for one month\n"
+                "□ Categorize expenses (needs vs. wants)\n"
+                "□ Compare income to expenses\n"
+                "□ Identify areas to reduce spending\n"
+                "□ Set savings goals\n"
+                "□ Create spending plan for next month\n"
+                "□ Review and adjust budget monthly\n"
+                "□ Use budgeting app or spreadsheet\n"
+                "□ Celebrate sticking to your budget"
+            ),
+            "type": "checklist",
+            "always_include": False
+        },
+        {
+            "key": "emergency_fund_calculator_basic",
+            "title": "Emergency Fund Calculator (Beginner)",
+            "content": (
+                "Calculate your first emergency fund goal:\n\n"
+                "Monthly Expenses: $____\n"
+                "Mini Emergency Fund (Target): $1,000\n"
+                "Current Savings: $____\n"
+                "Amount Needed: $____\n\n"
+                "Monthly Savings Goal:\n"
+                "• To reach $1,000 in 6 months: $____/month\n"
+                "• To reach $1,000 in 12 months: $____/month\n\n"
+                "Start small and build gradually."
+            ),
+            "type": "calculator",
+            "always_include": False
+        },
+        {
+            "key": "banking_basics",
+            "title": "Banking Basics for Beginners",
+            "content": (
+                "Essential banking knowledge:\n\n"
+                "• Checking account: for daily transactions\n"
+                "• Savings account: for short-term goals\n"
+                "• Online banking: convenient access 24/7\n"
+                "• Mobile banking: manage money on the go\n"
+                "• Direct deposit: automatic paycheck deposits\n"
+                "• Overdraft protection: avoid fees\n"
+                "• Account alerts: stay informed\n"
+                "• FDIC insurance: protects your deposits"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "expense_tracking_template_simple",
+            "title": "Simple Expense Tracker",
+            "content": (
+                "Track expenses for one week:\n\n"
+                "Day 1: $____ (Category: ____)\n"
+                "Day 2: $____ (Category: ____)\n"
+                "Day 3: $____ (Category: ____)\n"
+                "Day 4: $____ (Category: ____)\n"
+                "Day 5: $____ (Category: ____)\n"
+                "Day 6: $____ (Category: ____)\n"
+                "Day 7: $____ (Category: ____)\n\n"
+                "Weekly Total: $____\n"
+                "Track patterns and identify spending habits."
+            ),
+            "type": "template",
+            "always_include": False
+        },
+        {
+            "key": "debt_avoidance",
+            "title": "Avoiding Debt as a Financial Newcomer",
+            "content": (
+                "Build good habits to avoid debt:\n\n"
+                "• Live within your means\n"
+                "• Save before spending on wants\n"
+                "• Use credit cards responsibly (pay in full)\n"
+                "• Avoid payday loans and high-interest debt\n"
+                "• Build emergency fund before taking on debt\n"
+                "• Understand interest rates before borrowing\n"
+                "• Only borrow for appreciating assets (education, home)\n"
+                "• Create budget to prevent overspending"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "financial_goals_template",
+            "title": "Financial Goals Template",
+            "content": (
+                "Set your first financial goals:\n\n"
+                "Short-term Goals (0-1 year):\n"
+                "• Goal 1: ____ | Target: $____ | Deadline: ____\n"
+                "• Goal 2: ____ | Target: $____ | Deadline: ____\n\n"
+                "Medium-term Goals (1-5 years):\n"
+                "• Goal 1: ____ | Target: $____ | Deadline: ____\n\n"
+                "Long-term Goals (5+ years):\n"
+                "• Goal 1: ____ | Target: $____ | Deadline: ____\n\n"
+                "Review and update goals quarterly."
+            ),
+            "type": "template",
+            "always_include": False
+        },
+        {
+            "key": "credit_score_basics",
+            "title": "Understanding Your Credit Score",
+            "content": (
+                "Learn the basics of credit scores:\n\n"
+                "• Credit scores range from 300-850\n"
+                "• Factors: payment history, utilization, age, mix, inquiries\n"
+                "• Payment history is most important (35%)\n"
+                "• Utilization should be below 30% (30%)\n"
+                "• Check your score regularly (free options available)\n"
+                "• Build credit with responsible credit card use\n"
+                "• Avoid late payments at all costs\n"
+                "• Time is your friend - credit history improves with age"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "financial_health_checklist",
+            "title": "Financial Health Checklist",
+            "content": (
+                "Assess your financial health:\n\n"
+                "□ Have a budget\n"
+                "□ Track expenses regularly\n"
+                "□ Have emergency fund ($1,000+)\n"
+                "□ Have checking and savings accounts\n"
+                "□ Pay bills on time\n"
+                "□ Have financial goals\n"
+                "□ Understand credit score\n"
+                "□ Use credit responsibly\n"
+                "□ Save money each month\n"
+                "□ Review finances monthly"
+            ),
+            "type": "checklist",
             "always_include": False
         }
     ],
@@ -196,7 +931,43 @@ TEMPLATES = {
                 "• Prioritize which subscriptions provide the most value\n"
                 "• Consider canceling unused services to save money"
             ),
+            "type": "article",
             "always_include": True
+        },
+        {
+            "key": "subscription_audit_checklist",
+            "title": "Subscription Audit Checklist",
+            "content": (
+                "Complete subscription audit:\n\n"
+                "□ List all active subscriptions\n"
+                "□ Note monthly cost for each\n"
+                "□ Calculate total monthly spend\n"
+                "□ Identify last used date for each\n"
+                "□ Mark subscriptions you use regularly\n"
+                "□ Mark subscriptions you rarely use\n"
+                "□ Check for duplicate services\n"
+                "□ Look for bundle opportunities\n"
+                "□ Cancel unused subscriptions\n"
+                "□ Review quarterly"
+            ),
+            "type": "checklist",
+            "always_include": False
+        },
+        {
+            "key": "subscription_tracker_template",
+            "title": "Subscription Tracker Template",
+            "content": (
+                "Track all your subscriptions:\n\n"
+                "Service: ____ | Cost: $____/month | Used: Yes/No | Cancel: Yes/No\n"
+                "Service: ____ | Cost: $____/month | Used: Yes/No | Cancel: Yes/No\n"
+                "Service: ____ | Cost: $____/month | Used: Yes/No | Cancel: Yes/No\n"
+                "Service: ____ | Cost: $____/month | Used: Yes/No | Cancel: Yes/No\n\n"
+                "Total Monthly Cost: $____\n"
+                "Annual Cost: $____\n"
+                "Update monthly."
+            ),
+            "type": "template",
+            "always_include": False
         },
         {
             "key": "negotiation",
@@ -209,8 +980,28 @@ TEMPLATES = {
                 "• Consider sharing family plans with trusted friends/family\n"
                 "• Review your usage and downgrade to lower tiers if needed"
             ),
+            "type": "article",
             "always_include": False,
             "condition": "high_spend"
+        },
+        {
+            "key": "subscription_savings_calculator",
+            "title": "Subscription Savings Calculator",
+            "content": (
+                "Calculate potential savings from canceling subscriptions:\n\n"
+                "Current Monthly Subscriptions: $____\n"
+                "Subscriptions to Cancel: $____\n"
+                "New Monthly Total: $____\n\n"
+                "Savings:\n"
+                "• Monthly: $____\n"
+                "• Annual: $____\n\n"
+                "What you could do with savings:\n"
+                "• Emergency fund contribution: $____/year\n"
+                "• Debt payment: $____/year\n"
+                "• Investment: $____/year"
+            ),
+            "type": "calculator",
+            "always_include": False
         },
         {
             "key": "bill_alerts",
@@ -223,7 +1014,97 @@ TEMPLATES = {
                 "• Use budgeting apps to track subscription spending\n"
                 "• Regularly audit your subscriptions (quarterly or annually)"
             ),
+            "type": "article",
             "always_include": True
+        },
+        {
+            "key": "subscription_rotation",
+            "title": "Subscription Rotation Strategy",
+            "content": (
+                "Rotate subscriptions to save money:\n\n"
+                "• Subscribe to one streaming service at a time\n"
+                "• Watch what you want, then cancel and switch\n"
+                "• Rotate based on new content releases\n"
+                "• Share accounts with family (where allowed)\n"
+                "• Use free trials before committing\n"
+                "• Take advantage of promotional periods\n"
+                "• Cancel before renewal dates\n"
+                "• Track what you actually use"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "free_alternatives",
+            "title": "Free Alternatives to Paid Subscriptions",
+            "content": (
+                "Consider free alternatives before paying:\n\n"
+                "• Library apps for books and movies\n"
+                "• Free streaming services (with ads)\n"
+                "• Free versions of productivity apps\n"
+                "• Open-source software alternatives\n"
+                "• Free trials before committing\n"
+                "• Student discounts where available\n"
+                "• Family sharing plans\n"
+                "• Evaluate if free version meets needs"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "subscription_negotiation_template",
+            "title": "Subscription Negotiation Template",
+            "content": (
+                "Track subscription negotiations:\n\n"
+                "Service: ____\n"
+                "Current Price: $____/month\n"
+                "Negotiation Date: ____\n"
+                "Strategy Used: ____\n"
+                "Result: ____\n"
+                "New Price: $____/month\n"
+                "Savings: $____/year\n\n"
+                "Document what worked for future reference."
+            ),
+            "type": "template",
+            "always_include": False
+        },
+        {
+            "key": "subscription_value_analysis",
+            "title": "Subscription Value Analysis",
+            "content": (
+                "Evaluate value of each subscription:\n\n"
+                "For each subscription, calculate:\n"
+                "• Cost per use: $____/use\n"
+                "• Hours of entertainment: ____ hours/month\n"
+                "• Value rating (1-10): ____\n"
+                "• Can live without it: Yes/No\n\n"
+                "Cancel subscriptions with:\n"
+                "• High cost per use\n"
+                "• Low value rating\n"
+                "• Low usage\n"
+                "• Easy to replace"
+            ),
+            "type": "article",
+            "always_include": False
+        },
+        {
+            "key": "subscription_cleanup_checklist",
+            "title": "Subscription Cleanup Checklist",
+            "content": (
+                "Steps to clean up subscriptions:\n\n"
+                "□ Review all bank statements for subscriptions\n"
+                "□ List every recurring charge\n"
+                "□ Identify subscriptions you forgot about\n"
+                "□ Check for free trials that converted\n"
+                "□ Cancel unused subscriptions\n"
+                "□ Negotiate better rates\n"
+                "□ Switch to annual plans where cheaper\n"
+                "□ Set reminders before renewals\n"
+                "□ Track subscription spending monthly\n"
+                "□ Review quarterly"
+            ),
+            "type": "checklist",
+            "always_include": False
         }
     ],
     "neutral": [
@@ -405,51 +1286,119 @@ def generate_recommendations(user_id: int, conn: Optional[sqlite3.Connection] = 
         for signal in signals_list:
             signals_dict[signal['signal_type']] = signal
         
-        # Get templates for persona
-        templates = get_templates_for_persona(persona)
+        # Get user accounts for context
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT type, subtype, current_balance, "limit"
+            FROM accounts WHERE user_id = ?
+        """, (user_id,))
+        accounts = []
+        for row in cursor.fetchall():
+            accounts.append({
+                'type': row[0],
+                'subtype': row[1],
+                'current_balance': row[2] or 0,
+                'limit': row[3] or 0
+            })
         
-        # Select recommendations
-        recommendations = []
-        used_titles = set()
+        # Try OpenAI generation first (if available)
+        ai_recommendations = None
+        try:
+            content_generator = get_content_generator()
+            user_context = {
+                'persona': persona,
+                'signals': signals_dict,
+                'accounts': accounts
+            }
+            ai_result = content_generator.generate_recommendation(user_context)
+            if ai_result and ai_result.get('recommendations'):
+                ai_recommendations = ai_result['recommendations']
+                logger.info(f"Generated {len(ai_recommendations)} AI recommendations for user {user_id}")
+        except Exception as e:
+            logger.warning(f"OpenAI generation failed for user {user_id}: {e}, falling back to templates")
+            ai_recommendations = None
         
-        # Always include templates marked as always_include
-        for template in templates:
-            if template.get("always_include", False):
-                key = template.get("key")
-                if key not in used_titles:
-                    recommendations.append(template)
-                    used_titles.add(key)
-        
-        # Check conditional templates
-        for template in templates:
-            if template.get("key") in used_titles:
-                continue
+        # Use AI recommendations if available and valid, otherwise use templates
+        if ai_recommendations:
+            # Validate AI-generated content and use if valid
+            valid_ai_recs = []
+            for ai_rec in ai_recommendations[:5]:  # Limit to 5 AI recommendations
+                title = ai_rec.get('title', '')
+                content = ai_rec.get('content', '')
+                
+                # Validate tone
+                content_valid = validate_and_log(user_id, content, "ai_recommendation_content")
+                if content_valid:
+                    # Add disclaimer if not present
+                    if "This is educational content, not financial advice" not in content:
+                        content += "\n\nThis is educational content, not financial advice."
+                    
+                    valid_ai_recs.append({
+                        'title': title,
+                        'content': content,
+                        'type': ai_rec.get('type', 'article'),
+                        'key': f"ai_{len(valid_ai_recs)}",
+                        'source': 'openai'
+                    })
+                else:
+                    logger.warning(f"AI-generated content failed tone validation for user {user_id}, skipping")
             
-            condition = template.get("condition")
-            if condition == "overdue_or_interest":
-                overdue = signals_dict.get('credit_overdue', {}).get('value', 0) or 0
-                interest = signals_dict.get('credit_interest_charges', {}).get('value', 0) or 0
-                if overdue == 1.0 or interest > 0:
-                    recommendations.append(template)
-                    used_titles.add(template.get("key"))
-            elif condition == "high_spend":
-                monthly_spend = signals_dict.get('subscription_monthly_spend', {}).get('value', 0) or 0
-                if monthly_spend >= 75.0:
-                    recommendations.append(template)
-                    used_titles.add(template.get("key"))
+            if valid_ai_recs:
+                recommendations = valid_ai_recs[:3]  # Limit to 3 AI recommendations
+            else:
+                # All AI recommendations failed validation, fallback to templates
+                logger.info(f"All AI recommendations failed validation for user {user_id}, using templates")
+                recommendations = []
+        else:
+            # No AI recommendations, use templates
+            recommendations = []
         
-        # Ensure we have at least 2 recommendations
-        if len(recommendations) < 2:
-            # Add more templates if needed
+        # Fallback to templates if no AI recommendations
+        if not recommendations:
+            # Get templates for persona
+            templates = get_templates_for_persona(persona)
+            
+            # Select recommendations
+            used_titles = set()
+            
+            # Always include templates marked as always_include
             for template in templates:
-                if template.get("key") not in used_titles:
-                    recommendations.append(template)
-                    used_titles.add(template.get("key"))
-                    if len(recommendations) >= 3:
-                        break
-        
-        # Limit to 2-3 recommendations
-        recommendations = recommendations[:3]
+                if template.get("always_include", False):
+                    key = template.get("key")
+                    if key not in used_titles:
+                        recommendations.append(template)
+                        used_titles.add(key)
+            
+            # Check conditional templates
+            for template in templates:
+                if template.get("key") in used_titles:
+                    continue
+                
+                condition = template.get("condition")
+                if condition == "overdue_or_interest":
+                    overdue = signals_dict.get('credit_overdue', {}).get('value', 0) or 0
+                    interest = signals_dict.get('credit_interest_charges', {}).get('value', 0) or 0
+                    if overdue == 1.0 or interest > 0:
+                        recommendations.append(template)
+                        used_titles.add(template.get("key"))
+                elif condition == "high_spend":
+                    monthly_spend = signals_dict.get('subscription_monthly_spend', {}).get('value', 0) or 0
+                    if monthly_spend >= 75.0:
+                        recommendations.append(template)
+                        used_titles.add(template.get("key"))
+            
+            # Ensure we have at least 2 recommendations
+            if len(recommendations) < 2:
+                # Add more templates if needed
+                for template in templates:
+                    if template.get("key") not in used_titles:
+                        recommendations.append(template)
+                        used_titles.add(template.get("key"))
+                        if len(recommendations) >= 3:
+                            break
+            
+            # Limit to 2-3 recommendations
+            recommendations = recommendations[:3]
         
         # Generate and store recommendations
         recommendation_ids = []
