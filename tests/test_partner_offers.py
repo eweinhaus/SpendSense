@@ -4,6 +4,13 @@ Tests for partner offers module.
 
 import pytest
 import sqlite3
+import os
+import sys
+
+# Add src directory to path to import modules
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(project_root, "src"))
+
 from spendsense.partner_offers import (
     get_eligible_offers,
     check_offer_eligibility,

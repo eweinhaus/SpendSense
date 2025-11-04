@@ -17,7 +17,9 @@ Banks generate massive transaction data through Plaid integrations but struggle 
 ### MVP Scope (Current Status)
 - ✅ 50-100 synthetic users (75 default, configurable)
 - ✅ 5 personas (High Utilization, Variable Income Budgeter, Savings Builder, Financial Newcomer, Subscription-Heavy, Neutral)
-- ✅ Hardcoded recommendations (no AI) - templates for all 5 personas
+- ✅ AI-powered recommendations (OpenAI API) with template fallback - Phase 6B Complete
+- ✅ Expanded content catalog (72 items: articles, calculators, checklists, templates) - Phase 6B Complete
+- ✅ Partner offers (4 types with eligibility checks) - Phase 6B Complete
 - ✅ Both 30-day and 180-day windows implemented
 - ✅ All signal types (credit, subscriptions, savings, income)
 - ✅ Basic operator view with dual-window signal display
@@ -25,10 +27,10 @@ Banks generate massive transaction data through Plaid integrations but struggle 
 - ✅ Enhanced guardrails (eligibility, tone validation) - Phase 6 Complete
 - ✅ Evaluation harness - Phase 6 Complete
 - ✅ Operator view updates - Phase 6 Complete
-- ✅ Comprehensive testing - Phase 6 Complete
+- ✅ Comprehensive testing (80+ tests) - Phase 6B Complete
 - ✅ Documentation - Phase 6 Complete
 - ✅ Deployment readiness - Phase 6 Complete
-- ✅ Production deployment (Render.com) - Service created (srv-d44njmq4d50c73el4brg), automated script created, initial deployment in progress
+- ✅ Production deployment (Render.com) - Service created (srv-d44njmq4d50c73el4brg), automated script created
 - ⏳ End-user interface - Future phase
 
 ## Key Deliverables
@@ -49,16 +51,17 @@ Banks generate massive transaction data through Plaid integrations but struggle 
 | Explainability | Recommendations with rationales | 100% |
 | Latency | Time to generate recommendations per user | <5 seconds |
 | Auditability | Recommendations with decision traces | 100% |
-| Code Quality | Passing unit/integration tests | 70+ tests ✅ |
+| Code Quality | Passing unit/integration tests | 80+ tests ✅ |
 | Documentation | Schema and decision log clarity | Complete |
 
 ## Project Status
 
-**Current Phase:** Phase 6 Complete - Production Readiness
+**Current Phase:** Phase 6B Complete - Recommendations & Guardrails
 **Timeline:** No strict deadline (individual/small team project)
 **Approach:** Build MVP first as proof of concept, then expand to full requirements
-**Completed:** Phases 1-6 (Data Pipeline, Intelligence Layer, Interface, Data Expansion, Intelligence Completion, Production Readiness)
-**Next:** Production Deployment (Render.com) - Service created, automated script created, initial deployment in progress
+**Completed:** Phases 1-6, Phase 6B (Data Pipeline, Intelligence Layer, Interface, Data Expansion, Intelligence Completion, Production Readiness, AI Integration & Recommendations)
+**Status:** All Phase 6B features complete - OpenAI integration, partner offers, expanded content catalog (72 items), comprehensive testing (80+ tests)
+**Next:** Manual testing and production verification
 
 ## Core Principles
 

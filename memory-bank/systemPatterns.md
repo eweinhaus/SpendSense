@@ -89,6 +89,49 @@ Step 4: Rationale Generated → [data cited]
 - Compliance and oversight enabled
 - Debugging made easier
 
+### 3a. AI Integration Pattern (Phase 6B)
+
+**Purpose:** Personalized content generation with graceful fallback
+
+**Structure:**
+```
+1. Check cache (persona + signal combination)
+2. If cache miss:
+   - Build prompt with user context
+   - Call OpenAI API
+   - Validate tone on response
+   - Cache valid responses
+3. If API fails or tone violation:
+   - Fallback to templates
+4. Always ensure content quality
+```
+
+**Benefits:**
+- Personalized content when available
+- Graceful degradation (works without API key)
+- Cost control through aggressive caching
+- Quality assurance through tone validation
+- Backward compatible (templates always work)
+
+### 3b. Partner Offers Pattern (Phase 6B)
+
+**Purpose:** Eligible partner offers with data-driven rationales
+
+**Structure:**
+```
+1. Check offer eligibility (utilization, accounts, persona)
+2. Use existing eligibility system for comprehensive checks
+3. Generate rationale with specific user data
+4. Select 1-3 most relevant offers
+5. Display with disclaimers
+```
+
+**Benefits:**
+- Reuses existing eligibility infrastructure
+- Data-driven rationales increase relevance
+- Clear disclaimers ensure transparency
+- Flexible catalog (easy to add new offers)
+
 ### 4. Graceful Degradation Pattern
 
 **Purpose:** Handle missing data without breaking
@@ -153,13 +196,20 @@ User → Consent Check → Generate Recommendations → Display
 8. Store persona with criteria explanation
 ```
 
-### Recommendation Generation Flow
+### Recommendation Generation Flow (Phase 6B Updated)
 
 ```
 1. Check user consent (if no consent, return empty list)
 2. Get user persona
-3. Get content templates for persona
-4. Select 2-3 recommendations
+3. Try OpenAI generation (if API key available):
+   - Build prompt with user context
+   - Check cache first
+   - Call OpenAI API
+   - Validate tone on generated content
+   - Fallback to templates if API fails or tone violations
+4. If no AI content, use expanded content catalog (72 items):
+   - Select from articles, calculators, checklists, templates
+   - Prioritize by persona match and signal relevance
 5. Generate rationale citing user data
 6. Generate decision trace
 7. Apply eligibility filters
@@ -168,7 +218,7 @@ User → Consent Check → Generate Recommendations → Display
 
 ## Code Organization Patterns
 
-### Current Structure (Phase 6 Complete)
+### Current Structure (Phase 6B Complete)
 
 ```
 spendsense/
@@ -176,31 +226,35 @@ spendsense/
 ├── generate_data.py     # Synthetic data generator (Phase 4: scaled to 75 users)
 ├── detect_signals.py   # Signal detection engine (Phase 5: savings, income, dual-window) ✅
 ├── personas.py         # Persona assignment (Phase 2, Phase 5: 3 new personas) ✅
-├── recommendations.py  # Recommendation engine (Phase 2, Phase 4: consent, Phase 5: new templates) ✅
+├── recommendations.py  # Recommendation engine (Phase 2, Phase 4: consent, Phase 5: new templates, Phase 6B: AI integration, 72 items) ✅
+├── content_generator.py # OpenAI API integration (Phase 6B: new) ✅
+├── partner_offers.py   # Partner offers catalog (Phase 6B: new) ✅
 ├── rationales.py       # Rationale generation (Phase 2) ✅
 ├── traces.py           # Decision trace generation (Phase 2) ✅
 ├── eligibility.py      # Eligibility checks (Phase 3, Phase 4: consent, Phase 6: enhanced) ✅
 ├── tone_validator.py   # Tone validation (Phase 6: new) ✅
 ├── evaluation.py       # Evaluation harness (Phase 6: new) ✅
-├── app.py              # FastAPI app (Phase 3, Phase 4: consent, Phase 5: dual-window signals) ✅
+├── app.py              # FastAPI app (Phase 3, Phase 4: consent, Phase 5: dual-window signals, Phase 6B: partner offers) ✅
 ├── scripts/
 │   └── deploy_render.py  # Automated Render deployment script (Phase 6: new) ✅
-├── templates/          # Jinja2 templates (Phase 3, Phase 4: consent, Phase 5: dual-window tabs, Phase 6: persona badges) ✅
+├── templates/          # Jinja2 templates (Phase 3, Phase 4: consent, Phase 5: dual-window tabs, Phase 6: persona badges, Phase 6B: partner offers) ✅
 ├── static/             # CSS/JS (Phase 3, Phase 4: auto-reload) ✅
 ├── tests/              # Test suite
 │   ├── __init__.py
 │   ├── test_database.py
 │   ├── test_signals.py (Phase 5: updated for windows)
 │   ├── test_personas.py
-│   ├── test_recommendations.py
+│   ├── test_recommendations.py (Phase 6B: AI integration, content catalog tests)
 │   ├── test_integration.py (Phase 5: updated for windows)
 │   ├── test_app.py           # Phase 3 ✅
 │   ├── test_eligibility.py   # Phase 3, Phase 4, Phase 6: enhanced ✅
 │   ├── test_tone.py          # Phase 6: new ✅
 │   ├── test_evaluation.py    # Phase 6: new ✅
+│   ├── test_content_generator.py # Phase 6B: new ✅
+│   ├── test_partner_offers.py    # Phase 6B: new ✅
 │   ├── test_phase4.py         # Phase 4 ✅
 │   └── test_phase5.py         # Phase 5 ✅
-├── requirements.txt    # Python dependencies
+├── requirements.txt    # Python dependencies (Phase 6B: openai>=1.0.0)
 ├── pytest.ini         # Test configuration
 ├── spendsense.db       # SQLite database (79 users, 238 accounts, 10 liabilities)
 └── [planning/, memory-bank/]  # Documentation
@@ -352,6 +406,42 @@ spendsense/
 - Service ID: srv-d44njmq4d50c73el4brg
 - URL: https://spendsense-2e84.onrender.com
 - Dashboard: https://dashboard.render.com/web/srv-d44njmq4d50c73el4brg
+
+### 9. AI-Powered Recommendations (Phase 6B)
+**Decision:** OpenAI API integration with aggressive caching and template fallback  
+**Rationale:** Personalized content enhances user value, fallback ensures reliability  
+**Trade-off:** Adds API costs and latency, but provides better personalization  
+**Status:** ✅ Implemented in Phase 6B (content_generator.py)
+**Features:**
+- Caching by persona + signal combination (24-hour TTL)
+- Tone validation on all AI-generated content
+- Automatic fallback to templates on API failure
+- Works without API key (graceful degradation)
+
+### 10. Expanded Content Catalog (Phase 6B)
+**Decision:** Expand from 3 to 72 items with variety (articles, calculators, checklists, templates)  
+**Rationale:** Provides comprehensive educational resources, variety improves engagement  
+**Trade-off:** More content to maintain, but significantly better user experience  
+**Status:** ✅ Implemented in Phase 6B (recommendations.py)
+**Distribution:**
+- High Utilization: 13 items
+- Variable Income Budgeter: 13 items
+- Savings Builder: 13 items
+- Financial Newcomer: 12 items
+- Subscription-Heavy: 11 items
+- Neutral: 10 items
+- Total: 72 items
+
+### 11. Partner Offers System (Phase 6B)
+**Decision:** Eligibility-based partner offers with data-driven rationales  
+**Rationale:** Provides relevant financial products while maintaining compliance  
+**Trade-off:** Adds complexity, but enhances user value and potential revenue  
+**Status:** ✅ Implemented in Phase 6B (partner_offers.py)
+**Offer Types:**
+- Balance Transfer Credit Cards
+- High-Yield Savings Accounts (HYSA)
+- Budgeting Apps
+- Subscription Management Tools
 
 ## Extension Points
 

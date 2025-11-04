@@ -25,26 +25,29 @@
 
 ## Key Libraries & Dependencies
 
-### Required (MVP)
+### Required (MVP + Phase 6B)
 ```
 # Core dependencies
 faker>=19.0.0
 
 # Web framework (Phase 3)
 fastapi>=0.104.0
-uvicorn>=0.24.0
+uvicorn[standard]>=0.24.0
+gunicorn>=21.2.0
 jinja2>=3.1.2
 python-multipart>=0.0.6
+
+# AI Integration (Phase 6B)
+openai>=1.0.0  # OpenAI API for content generation
 
 # Testing
 pytest>=7.4.0
 httpx>=0.25.0
 ```
 
-### Optional (Post-MVP)
+### Optional
 ```
-openai>=1.0.0  # OpenAI API for content generation
-pandas>=2.0.0              # Data analysis (if needed)
+pandas>=2.0.0  # Data analysis (if needed)
 ```
 
 ## Database Schema
@@ -150,39 +153,37 @@ spendsense/
 └── [planning/, memory-bank/] # Documentation
 ```
 
-### File Structure (Phase 4 Complete ✅)
+### File Structure (Phase 6B Complete ✅)
 ```
 src/spendsense/
 ├── database.py               # SQLite setup ✅
 ├── generate_data.py          # Synthetic data generator ✅
 ├── detect_signals.py         # Signal detection ✅
-├── personas.py               # Persona assignment (Phase 2) ✅
-├── recommendations.py        # Recommendation engine (Phase 2) ✅
-├── rationales.py             # Rationale generation (Phase 2) ✅
-├── traces.py                 # Decision trace generation (Phase 2) ✅
-├── eligibility.py            # Eligibility checks (Phase 3) ✅
-├── app.py                    # FastAPI app (Phase 3) ✅
-├── templates/                # Jinja2 templates (Phase 3) ✅
+├── personas.py               # Persona assignment ✅
+├── recommendations.py        # Recommendation engine (72 items, AI integration) ✅
+├── content_generator.py      # OpenAI API integration (Phase 6B) ✅
+├── partner_offers.py         # Partner offers catalog (Phase 6B) ✅
+├── rationales.py             # Rationale generation ✅
+├── traces.py                 # Decision trace generation ✅
+├── eligibility.py            # Eligibility checks ✅
+├── tone_validator.py         # Tone validation (Phase 6) ✅
+├── evaluation.py             # Evaluation harness (Phase 6) ✅
+├── app.py                    # FastAPI app ✅
+├── templates/                # Jinja2 templates ✅
 │   ├── base.html
 │   ├── dashboard.html
-│   ├── user_detail.html
+│   ├── user_detail.html      # Updated with partner offers (Phase 6B)
 │   └── error.html
-├── static/                   # CSS/JS (Phase 3) ✅
+├── static/                   # CSS/JS ✅
 │   ├── css/style.css
 │   └── js/consent.js
-├── tests/                    # Test suite ✅
-│   ├── __init__.py
-│   ├── test_database.py      # 4 tests
-│   ├── test_signals.py       # 6 tests
-│   ├── test_personas.py      # 15 tests
-│   ├── test_recommendations.py # 12+ tests (Phase 2 + Phase 4)
-│   ├── test_integration.py   # 3 tests
-│   ├── test_app.py           # 6 tests (Phase 3)
-│   ├── test_eligibility.py  # 8+ tests (Phase 3 + Phase 4)
-│   └── test_phase4.py        # 7 tests (Phase 4)
-├── requirements.txt          # Dependencies ✅
+├── tests/                    # Test suite (80+ tests) ✅
+│   ├── test_content_generator.py # Phase 6B (10 tests)
+│   ├── test_partner_offers.py    # Phase 6B (10 tests)
+│   └── [other test files]
+├── requirements.txt          # Dependencies (includes openai>=1.0.0) ✅
 ├── pytest.ini               # Test configuration ✅
-├── spendsense.db             # SQLite database (generated)
+├── spendsense.db             # SQLite database
 └── [planning/, memory-bank/] # Documentation
 ```
 
@@ -208,14 +209,19 @@ src/spendsense/
 
 ## AI/LLM Integration
 
-### MVP
-- **No AI:** Hardcoded content templates
-- **Rationale generation:** String formatting with data citations
+### Phase 6B (Current)
+- **OpenAI API:** Integrated for personalized content generation
+- **Content generation:** LLM generates personalized recommendations (3-5 per user)
+- **Caching:** Aggressive caching by persona + signal combination (24-hour TTL)
+- **Fallback:** Graceful fallback to templates if API fails or tone violations
+- **Tone validation:** All AI-generated content validated using existing tone_validator
+- **Rationale generation:** String formatting with data citations (from templates or AI)
+- **Cost control:** Caching minimizes API calls, works without API key
 
-### Post-MVP
-- **OpenAI API:** For content generation and personalized recommendations
-- **Content generation:** LLM for personalized recommendations
-- **Rationale enhancement:** AI-generated explanations
+### Environment Variables
+- **OPENAI_API_KEY:** Required for AI content generation (optional - system works without it)
+- Set via: `export OPENAI_API_KEY="your-key-here"`
+- System gracefully degrades to templates if not set
 
 ## Security Considerations
 
@@ -318,8 +324,9 @@ src/spendsense/
 - **Phase 4:** ✅ 6+ additional tests (54+ total tests passing)
 - **Phase 5:** ✅ 8+ additional tests (62+ total tests passing)
 - **Phase 6:** ✅ 28+ additional tests (70+ total tests passing)
-- **Current:** ✅ 70+ tests (exceeds target of ≥15)
-- **Full project:** ≥20 unit/integration tests (target exceeded by 3.5x)
+- **Phase 6B:** ✅ 24+ additional tests (80+ total tests passing)
+- **Current:** ✅ 80+ tests (exceeds target of ≥15)
+- **Full project:** ≥20 unit/integration tests (target exceeded by 4x)
 
 ### Test Types
 - **Unit tests:** Signal detection, persona logic, rationale generation
