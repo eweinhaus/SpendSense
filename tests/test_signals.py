@@ -15,7 +15,8 @@ sys.path.insert(0, os.path.join(project_root, "src"))
 from spendsense.database import init_database, get_db_connection
 from spendsense.detect_signals import (
     is_similar_amount, is_monthly_cadence, 
-    detect_credit_signals, detect_subscription_signals
+    detect_credit_signals, detect_subscription_signals,
+    detect_savings_signals, detect_income_signals
 )
 
 
@@ -108,7 +109,7 @@ def test_credit_utilization_calculation(test_db):
     test_db_path, user_id = test_db
     
     conn = get_db_connection(test_db_path)
-    result = detect_credit_signals(user_id, conn)
+    result = detect_credit_signals(user_id, '30d', conn)
     
     assert result['signals_stored'] == 8
     assert result['cards_processed'] == 1
@@ -135,7 +136,7 @@ def test_credit_utilization_division_by_zero(test_db):
     conn.commit()
     
     # Should not crash
-    result = detect_credit_signals(user_id, conn)
+    result = detect_credit_signals(user_id, '30d', conn)
     assert result['signals_stored'] == 8  # Still stores signals for valid card
     
     conn.close()
@@ -177,7 +178,7 @@ def test_subscription_pattern_matching(test_db):
     conn.commit()
     
     # Detect subscriptions
-    result = detect_subscription_signals(user_id, conn)
+    result = detect_subscription_signals(user_id, '30d', conn)
     
     assert result['signals_stored'] == 4
     assert result['subscriptions_found'] >= 1
@@ -200,7 +201,7 @@ def test_user_with_no_credit_cards(test_db):
     conn.commit()
     
     # Should not crash
-    result = detect_credit_signals(user_id, conn)
+    result = detect_credit_signals(user_id, '30d', conn)
     assert result['signals_stored'] == 0
     assert result['cards_processed'] == 0
     

@@ -128,79 +128,156 @@ def get_user_quick_stats(user_id: int) -> Dict:
 
 
 def get_user_signals_display(user_id: int) -> Dict:
-    """Get formatted signals for display."""
-    signals_list = get_user_signals(user_id)
-    
-    # Convert to dict for easier lookup
-    signals_dict = {}
-    for signal in signals_list:
-        signals_dict[signal['signal_type']] = signal
-    
-    # Credit signals
-    credit_data = None
-    if 'credit_utilization_max' in signals_dict:
-        util_signal = signals_dict['credit_utilization_max']
-        utilization = util_signal.get('value', 0) or 0
+    """Get formatted signals for display, grouped by window (30d and 180d)."""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
         
-        # Get credit card details
-        conn = get_db_connection()
-        try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT a.account_id, a.current_balance, a."limit", cc.is_overdue, cc.apr
-                FROM accounts a
-                LEFT JOIN credit_cards cc ON a.id = cc.account_id
-                WHERE a.user_id = ? AND a.type = 'credit'
-                ORDER BY (a.current_balance / NULLIF(a."limit", 0)) DESC
-                LIMIT 1
-            """, (user_id,))
+        # Get all signals grouped by window
+        cursor.execute("""
+            SELECT signal_type, value, metadata, window
+            FROM signals
+            WHERE user_id = ?
+            ORDER BY signal_type, window
+        """, (user_id,))
+        
+        # Group signals by window
+        signals_by_window = {'30d': {}, '180d': {}}
+        
+        for row in cursor.fetchall():
+            signal_type, value, metadata_json, window = row
+            metadata = json.loads(metadata_json) if metadata_json else {}
             
-            card_row = cursor.fetchone()
-            if card_row:
-                account_id, balance, limit, is_overdue, apr = card_row
-                last_4 = account_id[-4:] if len(account_id) >= 4 else "XXXX"
-                
-                interest = signals_dict.get('credit_interest_charges', {}).get('value', 0) or 0
-                
-                credit_data = {
-                    'card_name': f"Card ending in {last_4}",
-                    'utilization': utilization,
-                    'balance': balance or 0,
-                    'limit': limit or 0,
-                    'interest_charges': interest,
-                    'is_overdue': bool(is_overdue) if is_overdue is not None else False,
-                    'apr': apr
+            # Extract base signal type (remove window suffix)
+            base_type = signal_type
+            if signal_type.endswith('_30d'):
+                base_type = signal_type[:-4]
+            elif signal_type.endswith('_180d'):
+                base_type = signal_type[:-5]
+            
+            # Store in appropriate window based on window column or signal_type suffix
+            target_window = None
+            if window:
+                target_window = window
+            elif signal_type.endswith('_30d'):
+                target_window = '30d'
+            elif signal_type.endswith('_180d'):
+                target_window = '180d'
+            
+            if target_window:
+                signals_by_window[target_window][base_type] = {
+                    'signal_type': signal_type,
+                    'value': value,
+                    'metadata': metadata
                 }
-        finally:
-            conn.close()
-    
-    # Subscription signals
-    subscription_data = None
-    if 'subscription_count' in signals_dict:
-        count_signal = signals_dict['subscription_count']
-        count = count_signal.get('value', 0) or 0
+            else:
+                # Legacy signal without window - add to both
+                signals_by_window['30d'][base_type] = {
+                    'signal_type': signal_type,
+                    'value': value,
+                    'metadata': metadata
+                }
+                signals_by_window['180d'][base_type] = {
+                    'signal_type': signal_type,
+                    'value': value,
+                    'metadata': metadata
+                }
         
-        if count > 0:
-            monthly_spend = signals_dict.get('subscription_monthly_spend', {}).get('value', 0) or 0
-            share = signals_dict.get('subscription_share', {}).get('value', 0) or 0
+        result = {'30d': {}, '180d': {}}
+        
+        # Process each window
+        for window in ['30d', '180d']:
+            signals_dict = signals_by_window[window]
+            window_result = {}
             
-            # Get merchant names
-            merchants = []
-            if 'subscription_merchants' in signals_dict:
-                metadata = signals_dict['subscription_merchants'].get('metadata', {})
-                merchants = metadata.get('merchants', [])
+            # Credit signals
+            util_key = 'credit_utilization_max'
+            if util_key in signals_dict:
+                util_signal = signals_dict[util_key]
+                utilization = util_signal.get('value', 0) or 0
+                
+                # Get credit card details
+                cursor.execute("""
+                    SELECT a.account_id, a.current_balance, a."limit", cc.is_overdue, cc.apr
+                    FROM accounts a
+                    LEFT JOIN credit_cards cc ON a.id = cc.account_id
+                    WHERE a.user_id = ? AND a.type = 'credit'
+                    ORDER BY (a.current_balance / NULLIF(a."limit", 0)) DESC
+                    LIMIT 1
+                """, (user_id,))
+                
+                card_row = cursor.fetchone()
+                if card_row:
+                    account_id, balance, limit, is_overdue, apr = card_row
+                    last_4 = account_id[-4:] if len(account_id) >= 4 else "XXXX"
+                    
+                    interest = signals_dict.get('credit_interest_charges', {}).get('value', 0) or 0
+                    
+                    window_result['credit'] = {
+                        'card_name': f"Card ending in {last_4}",
+                        'utilization': utilization,
+                        'balance': balance or 0,
+                        'limit': limit or 0,
+                        'interest_charges': interest,
+                        'is_overdue': bool(is_overdue) if is_overdue is not None else False,
+                        'apr': apr
+                    }
             
-            subscription_data = {
-                'count': int(count),
-                'merchants': merchants,
-                'monthly_spend': monthly_spend,
-                'share': share
-            }
-    
-    return {
-        'credit': credit_data,
-        'subscription': subscription_data
-    }
+            # Subscription signals
+            if 'subscription_count' in signals_dict:
+                count_signal = signals_dict['subscription_count']
+                count = count_signal.get('value', 0) or 0
+                
+                if count > 0:
+                    monthly_spend = signals_dict.get('subscription_monthly_spend', {}).get('value', 0) or 0
+                    share = signals_dict.get('subscription_share', {}).get('value', 0) or 0
+                    
+                    # Get merchant names
+                    merchants = []
+                    if 'subscription_merchants' in signals_dict:
+                        metadata = signals_dict['subscription_merchants'].get('metadata', {})
+                        merchants = metadata.get('merchants', [])
+                    
+                    window_result['subscription'] = {
+                        'count': int(count),
+                        'merchants': merchants,
+                        'monthly_spend': monthly_spend,
+                        'share': share
+                    }
+            
+            # Savings signals
+            savings_data = {}
+            if 'savings_net_inflow' in signals_dict:
+                savings_data['net_inflow'] = signals_dict['savings_net_inflow'].get('value', 0) or 0
+            if 'savings_growth_rate' in signals_dict:
+                savings_data['growth_rate'] = signals_dict['savings_growth_rate'].get('value', 0) or 0
+            if 'emergency_fund_coverage' in signals_dict:
+                savings_data['emergency_fund_coverage'] = signals_dict['emergency_fund_coverage'].get('value', 0) or 0
+            
+            if savings_data:
+                window_result['savings'] = savings_data
+            
+            # Income signals
+            income_data = {}
+            if 'income_frequency' in signals_dict:
+                metadata = signals_dict['income_frequency'].get('metadata', {})
+                income_data['frequency'] = metadata.get('frequency', 'irregular')
+            if 'income_variability' in signals_dict:
+                income_data['variability'] = signals_dict['income_variability'].get('value', 0) or 0
+            if 'cash_flow_buffer' in signals_dict:
+                income_data['cash_flow_buffer'] = signals_dict['cash_flow_buffer'].get('value', 0) or 0
+            if 'median_pay_gap' in signals_dict:
+                income_data['median_pay_gap'] = signals_dict['median_pay_gap'].get('value', 0) or 0
+            
+            if income_data:
+                window_result['income'] = income_data
+            
+            result[window] = window_result
+        
+        return result
+        
+    finally:
+        conn.close()
 
 
 def get_user_persona_display(user_id: int) -> Optional[Dict]:

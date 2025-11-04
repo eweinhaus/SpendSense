@@ -11,6 +11,7 @@ from .personas import get_user_signals
 from .rationales import generate_rationale
 from .traces import generate_decision_trace
 from .eligibility import has_consent
+from .tone_validator import validate_and_log
 
 
 # Content templates for each persona
@@ -57,6 +58,130 @@ TEMPLATES = {
             ),
             "always_include": False,
             "condition": "overdue_or_interest"
+        }
+    ],
+    "variable_income_budgeter": [
+        {
+            "key": "percent_based_budget",
+            "title": "Percent-Based Budgeting for Variable Income",
+            "content": (
+                "When your income varies, use a percent-based budget to maintain financial stability.\n\n"
+                "• Allocate 50% to needs (housing, food, utilities)\n"
+                "• Allocate 30% to wants (entertainment, dining out)\n"
+                "• Allocate 20% to savings and debt payments\n"
+                "• Adjust percentages based on your lowest expected income month\n"
+                "• Use the highest income months to build your emergency fund"
+            ),
+            "always_include": True
+        },
+        {
+            "key": "emergency_fund",
+            "title": "Build Your Emergency Fund",
+            "content": (
+                "An emergency fund is critical for variable income earners.\n\n"
+                "• Aim for 3-6 months of expenses in your emergency fund\n"
+                "• Start with a $1,000 mini emergency fund\n"
+                "• Save during high-income months to build your fund\n"
+                "• Keep emergency fund in a high-yield savings account\n"
+                "• Only use it for true emergencies, not income gaps"
+            ),
+            "always_include": True
+        },
+        {
+            "key": "income_smoothing",
+            "title": "Income Smoothing Strategies",
+            "content": (
+                "Smooth out income variability to create more predictable cash flow.\n\n"
+                "• Save during high-income months to cover low-income months\n"
+                "• Create a monthly 'salary' from your average income\n"
+                "• Use a separate account for income smoothing\n"
+                "• Track your income patterns to predict future gaps\n"
+                "• Consider setting up automatic transfers to savings"
+            ),
+            "always_include": False
+        }
+    ],
+    "savings_builder": [
+        {
+            "key": "goal_setting",
+            "title": "Set Clear Savings Goals",
+            "content": (
+                "You're already building savings! Here's how to optimize your goals:\n\n"
+                "• Define specific savings goals (emergency fund, vacation, down payment)\n"
+                "• Set target amounts and timelines for each goal\n"
+                "• Prioritize your goals based on importance and urgency\n"
+                "• Track your progress toward each goal monthly\n"
+                "• Celebrate milestones to stay motivated"
+            ),
+            "always_include": True
+        },
+        {
+            "key": "automation",
+            "title": "Automate Your Savings",
+            "content": (
+                "Automation makes saving effortless and consistent.\n\n"
+                "• Set up automatic transfers from checking to savings\n"
+                "• Use round-up apps to save spare change\n"
+                "• Automate savings on your payday\n"
+                "• Increase automatic transfers as your income grows\n"
+                "• Review and adjust automation quarterly"
+            ),
+            "always_include": True
+        },
+        {
+            "key": "hysa_education",
+            "title": "Maximize Your Savings with High-Yield Accounts",
+            "content": (
+                "Your savings could earn more with a high-yield savings account.\n\n"
+                "• High-yield savings accounts offer 4-5% APY (vs. 0.01% traditional)\n"
+                "• Consider certificates of deposit (CDs) for longer-term goals\n"
+                "• Compare rates across different financial institutions\n"
+                "• Look for accounts with no minimum balance requirements\n"
+                "• Keep emergency fund accessible but earning interest"
+            ),
+            "always_include": False,
+            "condition": "high_savings"
+        }
+    ],
+    "financial_newcomer": [
+        {
+            "key": "credit_building",
+            "title": "Build Your Credit History",
+            "content": (
+                "Establishing good credit early sets you up for financial success.\n\n"
+                "• Consider getting a secured credit card to start building credit\n"
+                "• Use credit responsibly by paying balances in full each month\n"
+                "• Keep credit utilization below 30%\n"
+                "• Make all payments on time to build a positive payment history\n"
+                "• Check your credit report regularly (free annually from each bureau)"
+            ),
+            "always_include": True
+        },
+        {
+            "key": "account_basics",
+            "title": "Understanding Your Financial Accounts",
+            "content": (
+                "Learn the basics of managing your financial accounts effectively.\n\n"
+                "• Understand the difference between checking and savings accounts\n"
+                "• Set up online banking to monitor your accounts regularly\n"
+                "• Enable account alerts for transactions and balances\n"
+                "• Reconcile your accounts monthly to catch errors early\n"
+                "• Keep your account information secure and private"
+            ),
+            "always_include": True
+        },
+        {
+            "key": "financial_foundations",
+            "title": "Establish Good Financial Habits Early",
+            "content": (
+                "Good habits formed early will serve you throughout your financial life.\n\n"
+                "• Create a simple budget to track income and expenses\n"
+                "• Start building an emergency fund, even if it's small\n"
+                "• Set clear financial goals for the short and long term\n"
+                "• Educate yourself about personal finance basics\n"
+                "• Avoid taking on debt you can't afford to repay"
+            ),
+            "always_include": False
         }
     ],
     "subscription_heavy": [
@@ -330,13 +455,20 @@ def generate_recommendations(user_id: int, conn: Optional[sqlite3.Connection] = 
         recommendation_ids = []
         
         for template in recommendations:
+            # Validate content tone
+            content_valid = validate_and_log(user_id, template['content'], "recommendation_content")
+            
             # Generate rationale
             rationale = generate_rationale(user_id, {
                 'title': template['title'],
                 'persona_matched': persona
             }, signals_dict, conn)
             
-            # Store recommendation
+            # Validate rationale tone
+            rationale_valid = validate_and_log(user_id, rationale, "rationale")
+            
+            # Store recommendation (even if tone violations found - we log but don't block)
+            # In production, might want to flag for manual review
             rec_id = store_recommendation(
                 user_id,
                 template['title'],

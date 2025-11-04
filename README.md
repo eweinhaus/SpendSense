@@ -234,36 +234,103 @@ The test suite includes:
 
 **Test Coverage**: 51+ tests covering critical paths and edge cases.
 
+## Phase 6 Features (Production Readiness)
+
+### Enhanced Guardrails
+- **Comprehensive Eligibility Checks**: Income requirements, credit score checks (if available), account exclusions, product catalog
+- **Tone Validation**: Automated detection of prohibited shaming language in generated content
+- **Eligibility Logging**: All eligibility failures logged for operator review
+
+### Evaluation Harness
+- **Coverage Metrics**: % of users with assigned persona + ≥3 behaviors (target: 100%)
+- **Explainability Metrics**: % of recommendations with rationales (target: 100%)
+- **Relevance Metrics**: Persona-content fit scoring
+- **Latency Metrics**: Time to generate recommendations per user (target: <5 seconds)
+- **Fairness Metrics**: Persona and recommendation distribution analysis
+- **Automated Reports**: JSON, CSV, and Markdown summary reports
+
+### Operator View Enhancements
+- **Dual-Window Display**: Both 30-day and 180-day signal windows with tabs
+- **Organized Signal Display**: All signal types (credit, subscriptions, savings, income) organized by category
+- **Complete Persona Display**: All 5 personas displayed with color-coded badges
+
+### Testing & Documentation
+- **Comprehensive Test Suite**: 70+ tests covering all new features
+- **Complete Documentation**: README, schema docs, decision log, API docs
+- **Deployment Ready**: Environment configuration and deployment documentation
+
 ## Known Limitations (MVP)
 
-- Only 5 users (not scalable to production)
-- Only 2 personas (High Utilization, Subscription-Heavy)
-- Hardcoded recommendations (no AI/LLM integration)
-- 30-day analysis window only (no 180-day analysis)
-- No income stability detection
-- No savings growth analysis
-- Simple subscription detection (may miss edge cases)
-- No user authentication
-- SQLite database (not suitable for production scale)
+- SQLite database (not suitable for production scale, but sufficient for demo)
+- No real-time updates (data pre-generated)
+- No user authentication (operator view only)
+- Simple subscription detection (may miss edge cases with irregular patterns)
+- Credit score not tracked (eligibility checks allow by default)
+- Income estimation from payroll transactions (may not be 100% accurate)
+
+## Evaluation Harness
+
+Run the evaluation harness to generate metrics:
+
+```bash
+PYTHONPATH=src python3 -m spendsense.evaluation
+```
+
+This generates:
+- Coverage metrics (persona + ≥3 behaviors)
+- Explainability metrics (rationales)
+- Relevance metrics (persona-content fit)
+- Latency metrics (generation time)
+- Fairness metrics (distribution analysis)
+
+Reports are saved to `metrics/` directory in JSON, CSV, and Markdown formats.
+
+## Deployment
+
+### Production Deployment (Render.com)
+
+See `docs/DEPLOYMENT.md` for detailed deployment instructions.
+
+**Quick Steps:**
+1. Create Render.com account and connect GitHub repository
+2. Create Web Service with:
+   - Build command: `pip install -r requirements.txt`
+   - Start command: `gunicorn -w 2 -k uvicorn.workers.UvicornWorker spendsense.app:app --bind 0.0.0.0:$PORT`
+3. Set environment variables (see `.env.example`)
+4. Deploy and verify
+
+### Environment Variables
+
+Create a `.env` file (see `.env.example` for template):
+
+```
+OPENAI_API_KEY=your_api_key_here
+DATABASE_URL=sqlite:///spendsense.db
+DEBUG=False
+```
 
 ## Future Enhancements
 
 See `planning/post_mvp_roadmap.md` for planned features:
-- Scale to 50-100 users
-- Add more personas (Savings Builder, Income Stability, Custom)
-- AI/LLM integration for personalized content generation
-- 180-day analysis window
-- Partner offer integration
-- End-user interface
-- Evaluation harness
+- ✅ Scale to 50-100 users (Phase 4)
+- ✅ Add more personas (Phase 5)
+- ✅ AI/LLM integration (Phase 6)
+- ✅ 180-day analysis window (Phase 5)
+- ✅ Partner offer integration (Phase 6)
+- ✅ Evaluation harness (Phase 6)
+- ⏳ End-user interface (Future phase)
 
 ## Documentation
 
 - **PRD**: `planning/PRD_MVP.md` - Complete product requirements
 - **Phase PRDs**: `planning/PRDs/` - Detailed phase-specific requirements
 - **Architecture**: `planning/architecture.mmd` - System architecture diagram
+- **Schema Documentation**: `docs/schema.md` - Database schema with ER diagrams
+- **Decision Log**: `docs/decisions.md` - Key technical decisions and rationale
+- **Deployment Guide**: `docs/DEPLOYMENT.md` - Production deployment instructions
 - **Memory Bank**: `memory-bank/` - Project documentation and context
 - **Testing Guide**: `md_files/MANUAL_TESTING_GUIDE.md` - Manual testing procedures
+- **API Documentation**: Available at `/docs` endpoint when server is running (FastAPI auto-generated)
 
 ## License
 

@@ -40,38 +40,167 @@
         <h3 class="mb-0">Detected Signals</h3>
     </div>
     <div class="card-body">
-        {% if signals.credit %}
-        <h5 class="mb-3">Credit Utilization</h5>
-        <ul class="list-unstyled">
-            <li><strong>Card:</strong> {{ signals.credit.card_name }}</li>
-            <li><strong>Utilization:</strong> {{ "%.0f"|format(signals.credit.utilization) }}%</li>
-            <li><strong>Balance:</strong> ${{ "%.2f"|format(signals.credit.balance) }}</li>
-            <li><strong>Limit:</strong> ${{ "%.2f"|format(signals.credit.limit) }}</li>
-            {% if signals.credit.interest_charges > 0 %}
-            <li><strong>Interest Charges:</strong> ${{ "%.2f"|format(signals.credit.interest_charges) }}/month</li>
-            {% endif %}
-            {% if signals.credit.is_overdue %}
-            <li><span class="badge bg-danger">Overdue</span></li>
-            {% endif %}
+        <!-- Tabs for 30d and 180d windows -->
+        <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-30d" data-bs-toggle="tab" data-bs-target="#panel-30d" type="button" role="tab">
+                    30-Day Window
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-180d" data-bs-toggle="tab" data-bs-target="#panel-180d" type="button" role="tab">
+                    180-Day Window
+                </button>
+            </li>
         </ul>
-        {% endif %}
         
-        {% if signals.subscription %}
-        <hr>
-        <h5 class="mb-3">Subscriptions</h5>
-        <ul class="list-unstyled">
-            <li><strong>Recurring Merchants:</strong> {{ signals.subscription.count }}</li>
-            {% if signals.subscription.merchants %}
-            <li><strong>Merchants:</strong> {{ signals.subscription.merchants|join(", ") }}</li>
-            {% endif %}
-            <li><strong>Monthly Spend:</strong> ${{ "%.2f"|format(signals.subscription.monthly_spend) }}</li>
-            <li><strong>Subscription Share:</strong> {{ "%.1f"|format(signals.subscription.share) }}%</li>
-        </ul>
-        {% endif %}
-        
-        {% if not signals.credit and not signals.subscription %}
-        <p class="text-muted">No signals detected for this user.</p>
-        {% endif %}
+        <div class="tab-content">
+            <!-- 30-Day Window -->
+            <div class="tab-pane fade show active" id="panel-30d" role="tabpanel">
+                {% set window_signals = signals.get('30d', {}) %}
+                
+                {% if window_signals.get('credit') %}
+                <h5 class="mb-3">Credit Utilization</h5>
+                <ul class="list-unstyled">
+                    <li><strong>Card:</strong> {{ window_signals.credit.card_name }}</li>
+                    <li><strong>Utilization:</strong> {{ "%.0f"|format(window_signals.credit.utilization) }}%</li>
+                    <li><strong>Balance:</strong> ${{ "%.2f"|format(window_signals.credit.balance) }}</li>
+                    <li><strong>Limit:</strong> ${{ "%.2f"|format(window_signals.credit.limit) }}</li>
+                    {% if window_signals.credit.interest_charges > 0 %}
+                    <li><strong>Interest Charges:</strong> ${{ "%.2f"|format(window_signals.credit.interest_charges) }}/month</li>
+                    {% endif %}
+                    {% if window_signals.credit.is_overdue %}
+                    <li><span class="badge bg-danger">Overdue</span></li>
+                    {% endif %}
+                </ul>
+                {% endif %}
+                
+                {% if window_signals.get('subscription') %}
+                <hr>
+                <h5 class="mb-3">Subscriptions</h5>
+                <ul class="list-unstyled">
+                    <li><strong>Recurring Merchants:</strong> {{ window_signals.subscription.count }}</li>
+                    {% if window_signals.subscription.merchants %}
+                    <li><strong>Merchants:</strong> {{ window_signals.subscription.merchants|join(", ") }}</li>
+                    {% endif %}
+                    <li><strong>Monthly Spend:</strong> ${{ "%.2f"|format(window_signals.subscription.monthly_spend) }}</li>
+                    <li><strong>Subscription Share:</strong> {{ "%.1f"|format(window_signals.subscription.share) }}%</li>
+                </ul>
+                {% endif %}
+                
+                {% if window_signals.get('savings') %}
+                <hr>
+                <h5 class="mb-3">Savings Signals</h5>
+                <ul class="list-unstyled">
+                    {% if window_signals.savings.net_inflow is defined %}
+                    <li><strong>Net Inflow:</strong> ${{ "%.2f"|format(window_signals.savings.net_inflow) }}</li>
+                    {% endif %}
+                    {% if window_signals.savings.growth_rate is defined %}
+                    <li><strong>Growth Rate:</strong> {{ "%.2f"|format(window_signals.savings.growth_rate) }}%</li>
+                    {% endif %}
+                    {% if window_signals.savings.emergency_fund_coverage is defined %}
+                    <li><strong>Emergency Fund Coverage:</strong> {{ "%.2f"|format(window_signals.savings.emergency_fund_coverage) }} months</li>
+                    {% endif %}
+                </ul>
+                {% endif %}
+                
+                {% if window_signals.get('income') %}
+                <hr>
+                <h5 class="mb-3">Income Signals</h5>
+                <ul class="list-unstyled">
+                    {% if window_signals.income.frequency is defined %}
+                    <li><strong>Payment Frequency:</strong> {{ window_signals.income.frequency }}</li>
+                    {% endif %}
+                    {% if window_signals.income.variability is defined %}
+                    <li><strong>Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</li>
+                    {% endif %}
+                    {% if window_signals.income.cash_flow_buffer is defined %}
+                    <li><strong>Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</li>
+                    {% endif %}
+                    {% if window_signals.income.median_pay_gap is defined %}
+                    <li><strong>Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</li>
+                    {% endif %}
+                </ul>
+                {% endif %}
+                
+                {% if not window_signals.get('credit') and not window_signals.get('subscription') and not window_signals.get('savings') and not window_signals.get('income') %}
+                <p class="text-muted">No signals detected for 30-day window.</p>
+                {% endif %}
+            </div>
+            
+            <!-- 180-Day Window -->
+            <div class="tab-pane fade" id="panel-180d" role="tabpanel">
+                {% set window_signals = signals.get('180d', {}) %}
+                
+                {% if window_signals.get('credit') %}
+                <h5 class="mb-3">Credit Utilization</h5>
+                <ul class="list-unstyled">
+                    <li><strong>Card:</strong> {{ window_signals.credit.card_name }}</li>
+                    <li><strong>Utilization:</strong> {{ "%.0f"|format(window_signals.credit.utilization) }}%</li>
+                    <li><strong>Balance:</strong> ${{ "%.2f"|format(window_signals.credit.balance) }}</li>
+                    <li><strong>Limit:</strong> ${{ "%.2f"|format(window_signals.credit.limit) }}</li>
+                    {% if window_signals.credit.interest_charges > 0 %}
+                    <li><strong>Interest Charges:</strong> ${{ "%.2f"|format(window_signals.credit.interest_charges) }}/month</li>
+                    {% endif %}
+                    {% if window_signals.credit.is_overdue %}
+                    <li><span class="badge bg-danger">Overdue</span></li>
+                    {% endif %}
+                </ul>
+                {% endif %}
+                
+                {% if window_signals.get('subscription') %}
+                <hr>
+                <h5 class="mb-3">Subscriptions</h5>
+                <ul class="list-unstyled">
+                    <li><strong>Recurring Merchants:</strong> {{ window_signals.subscription.count }}</li>
+                    {% if window_signals.subscription.merchants %}
+                    <li><strong>Merchants:</strong> {{ window_signals.subscription.merchants|join(", ") }}</li>
+                    {% endif %}
+                    <li><strong>Monthly Spend:</strong> ${{ "%.2f"|format(window_signals.subscription.monthly_spend) }}</li>
+                    <li><strong>Subscription Share:</strong> {{ "%.1f"|format(window_signals.subscription.share) }}%</li>
+                </ul>
+                {% endif %}
+                
+                {% if window_signals.get('savings') %}
+                <hr>
+                <h5 class="mb-3">Savings Signals</h5>
+                <ul class="list-unstyled">
+                    {% if window_signals.savings.net_inflow is defined %}
+                    <li><strong>Net Inflow:</strong> ${{ "%.2f"|format(window_signals.savings.net_inflow) }}</li>
+                    {% endif %}
+                    {% if window_signals.savings.growth_rate is defined %}
+                    <li><strong>Growth Rate:</strong> {{ "%.2f"|format(window_signals.savings.growth_rate) }}%</li>
+                    {% endif %}
+                    {% if window_signals.savings.emergency_fund_coverage is defined %}
+                    <li><strong>Emergency Fund Coverage:</strong> {{ "%.2f"|format(window_signals.savings.emergency_fund_coverage) }} months</li>
+                    {% endif %}
+                </ul>
+                {% endif %}
+                
+                {% if window_signals.get('income') %}
+                <hr>
+                <h5 class="mb-3">Income Signals</h5>
+                <ul class="list-unstyled">
+                    {% if window_signals.income.frequency is defined %}
+                    <li><strong>Payment Frequency:</strong> {{ window_signals.income.frequency }}</li>
+                    {% endif %}
+                    {% if window_signals.income.variability is defined %}
+                    <li><strong>Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</li>
+                    {% endif %}
+                    {% if window_signals.income.cash_flow_buffer is defined %}
+                    <li><strong>Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</li>
+                    {% endif %}
+                    {% if window_signals.income.median_pay_gap is defined %}
+                    <li><strong>Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</li>
+                    {% endif %}
+                </ul>
+                {% endif %}
+                
+                {% if not window_signals.get('credit') and not window_signals.get('subscription') and not window_signals.get('savings') and not window_signals.get('income') %}
+                <p class="text-muted">No signals detected for 180-day window.</p>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 
@@ -85,6 +214,12 @@
         <p>
             {% if persona.persona_type == 'high_utilization' %}
                 <span class="badge bg-danger">High Utilization</span>
+            {% elif persona.persona_type == 'variable_income_budgeter' %}
+                <span class="badge bg-warning">Variable Income Budgeter</span>
+            {% elif persona.persona_type == 'savings_builder' %}
+                <span class="badge bg-success">Savings Builder</span>
+            {% elif persona.persona_type == 'financial_newcomer' %}
+                <span class="badge bg-info">Financial Newcomer</span>
             {% elif persona.persona_type == 'subscription_heavy' %}
                 <span class="badge bg-primary">Subscription-Heavy</span>
             {% else %}

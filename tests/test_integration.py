@@ -13,7 +13,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(project_root, "src"))
 
 from spendsense.database import init_database, get_db_connection
-from spendsense.detect_signals import detect_credit_signals, detect_subscription_signals
+from spendsense.detect_signals import detect_credit_signals, detect_subscription_signals, detect_all_signals
 from spendsense.personas import assign_persona
 from spendsense.recommendations import generate_recommendations
 
@@ -69,7 +69,7 @@ def test_full_pipeline_high_utilization(test_db):
     conn = get_db_connection(test_db_path)
     
     # Step 1: Detect signals
-    credit_result = detect_credit_signals(user_id, conn)
+    credit_result = detect_credit_signals(user_id, '30d', conn)
     assert credit_result['signals_stored'] > 0
     
     # Step 2: Assign persona
@@ -162,7 +162,7 @@ def test_full_pipeline_multiple_users():
     # Process each user
     for user_id in user_ids:
         # Detect signals
-        detect_credit_signals(user_id, conn)
+        detect_credit_signals(user_id, '30d', conn)
         
         # Assign persona
         persona = assign_persona(user_id, conn)
