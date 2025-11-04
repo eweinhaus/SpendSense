@@ -1,0 +1,67 @@
+{% extends "user/base.html" %}
+
+{% block title %}Debt Paydown Calculator - SpendSense{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Debt Paydown Calculator</h1>
+        <p>Calculate how long it will take to pay off your debt and the total interest you'll pay.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" action="/portal/calculators/debt-paydown">
+                    <div class="mb-3">
+                        <label for="balance" class="form-label">Current Balance</label>
+                        <input type="number" class="form-control" id="balance" name="balance" 
+                               value="{{ prefill_balance }}" step="0.01" min="0" required>
+                        <small class="form-text text-muted">Your current debt balance (pre-filled from your data if available)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="apr" class="form-label">Annual Interest Rate (APR %)</label>
+                        <input type="number" class="form-control" id="apr" name="apr" 
+                               value="{{ prefill_apr }}" step="0.01" min="0" max="100" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="payment" class="form-label">Monthly Payment</label>
+                        <input type="number" class="form-control" id="payment" name="payment" 
+                               value="{{ prefill_payment }}" step="0.01" min="0" required>
+                        <small class="form-text text-muted">Your monthly payment amount</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Calculate</button>
+                </form>
+                
+                {% if error %}
+                <div class="alert alert-danger mt-3">{{ error }}</div>
+                {% endif %}
+                
+                {% if result and not result.error %}
+                <div class="alert alert-success mt-3">
+                    <h5>Results</h5>
+                    <p><strong>Months to Pay Off:</strong> {{ result.months }} months ({{ (result.months / 12)|round(1) }} years)</p>
+                    <p><strong>Total Interest Paid:</strong> ${{ "{:,.2f}".format(result.total_interest) }}</p>
+                    <p><strong>Total Amount Paid:</strong> ${{ "{:,.2f}".format(result.total_paid) }}</p>
+                    <hr>
+                    <small class="text-muted">
+                        Balance: ${{ "{:,.2f}".format(result.balance) }} | 
+                        APR: {{ result.apr }}% | 
+                        Payment: ${{ "{:,.2f}".format(result.payment) }}/month
+                    </small>
+                </div>
+                {% elif result and result.error %}
+                <div class="alert alert-danger mt-3">{{ result.error }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="/portal/calculators" class="btn btn-outline-secondary">Back to Calculators</a>
+</div>
+{% endblock %}
+

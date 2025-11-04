@@ -1,0 +1,102 @@
+{% extends "user/base.html" %}
+
+{% block title %}Recommendations - SpendSense{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Your Recommendations</h1>
+    </div>
+</div>
+
+{% if no_consent %}
+<div class="alert alert-warning" role="alert">
+    <h4 class="alert-heading">Consent Required</h4>
+    <p>To view personalized recommendations, please <a href="/portal/consent" class="alert-link">grant consent</a> for data processing.</p>
+    <hr>
+    <p class="mb-0">Consent enables us to provide you with personalized financial education and recommendations based on your financial patterns.</p>
+</div>
+{% else %}
+
+<!-- Education Recommendations -->
+{% if recommendations %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="h4 mb-3">Personalized Education</h2>
+        <div class="list-group">
+            {% for rec in recommendations %}
+            <div class="list-group-item mb-3">
+                <div class="d-flex w-100 justify-content-between mb-2">
+                    <h5 class="mb-1">{{ rec.title }}</h5>
+                    <span class="badge bg-secondary">Article</span>
+                </div>
+                <p class="mb-2">{{ rec.content }}</p>
+                <div class="bg-light p-3 rounded mb-2">
+                    <strong>Why this matters:</strong>
+                    <p class="mb-0 small">{{ rec.rationale }}</p>
+                </div>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary">Learn More</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary">Save for Later</button>
+                    <form method="post" action="/portal/recommendations/{{ rec.id }}/feedback" class="d-inline">
+                        <input type="hidden" name="feedback_type" value="not_relevant">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Not Relevant</button>
+                    </form>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <em>This is educational content only and does not constitute financial advice. 
+                        Please consult with a financial advisor for personalized guidance.</em>
+                    </small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info" role="alert">
+    <p class="mb-0">No recommendations available at this time. Check back later for personalized content.</p>
+</div>
+{% endif %}
+
+<!-- Partner Offers -->
+{% if partner_offers %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="h4 mb-3">Eligible Partner Offers</h2>
+        <div class="list-group">
+            {% for offer in partner_offers %}
+            <div class="list-group-item mb-3">
+                <div class="d-flex w-100 justify-content-between mb-2">
+                    <h5 class="mb-1">{{ offer.title }}</h5>
+                    <span class="badge bg-success">Partner Offer</span>
+                </div>
+                <p class="mb-2">{{ offer.description }}</p>
+                <div class="bg-light p-3 rounded mb-2">
+                    <strong>Why you're eligible:</strong>
+                    <p class="mb-0 small">{{ offer.rationale }}</p>
+                </div>
+                {% if offer.link %}
+                <a href="{{ offer.link }}" class="btn btn-sm btn-primary" target="_blank" rel="noopener noreferrer">Learn More</a>
+                {% endif %}
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <em>Partner offers are provided for informational purposes only. 
+                        Terms and conditions apply. Please review all details carefully before applying.</em>
+                    </small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+<div class="mt-4">
+    <a href="/portal/dashboard" class="btn btn-outline-secondary">Back to Dashboard</a>
+</div>
+{% endblock %}
+

@@ -1,0 +1,217 @@
+{% extends "user/base.html" %}
+
+{% block title %}Dashboard - SpendSense{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Welcome, {{ user.name }}!</h1>
+    </div>
+</div>
+
+<!-- Consent Banner -->
+{% if not user.consent_given %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <strong>Consent Required:</strong> To view personalized recommendations, please 
+    <a href="/portal/consent" class="alert-link">grant consent</a> for data processing.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<!-- Persona Display -->
+{% if persona %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <h3 class="card-title mb-0 me-3">Your Financial Profile</h3>
+                    <span class="badge bg-{% if persona.type == 'high_utilization' %}danger{% elif persona.type == 'variable_income_budgeter' %}warning{% elif persona.type == 'savings_builder' %}success{% elif persona.type == 'financial_newcomer' %}info{% elif persona.type == 'subscription_heavy' %}warning{% else %}secondary{% endif %} fs-6">
+                        {{ persona.name }}
+                    </span>
+                </div>
+                <p class="card-text">{{ persona.description }}</p>
+                {% if persona.insights %}
+                <ul class="list-unstyled mb-0">
+                    {% for insight in persona.insights %}
+                    <li><small class="text-muted">• {{ insight }}</small></li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Emergency Fund</h6>
+                <h4 class="card-title">
+                    {% if stats.emergency_fund_months %}
+                        {{ stats.emergency_fund_months }} months
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </h4>
+                <small class="text-muted">
+                    Target: 3-6 months
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Cash Flow Buffer</h6>
+                <h4 class="card-title">
+                    ${{ "{:,.0f}".format(stats.cash_flow_buffer) }}
+                </h4>
+                <small class="text-muted">Available buffer</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Subscription Spend</h6>
+                <h4 class="card-title">
+                    ${{ "{:,.0f}".format(stats.subscription_spend) }}
+                </h4>
+                <small class="text-muted">Monthly</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Credit Utilization</h6>
+                <h4 class="card-title">
+                    {{ stats.credit_utilization }}%
+                </h4>
+                <small class="text-muted">Max utilization</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Signal Summary -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Key Financial Signals</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% if signals.credit_utilization_max %}
+                    <div class="col-md-3 mb-3">
+                        <strong>Credit Utilization:</strong><br>
+                        <span class="text-muted">Max: {{ signals.credit_utilization_max }}%</span>
+                        {% if signals.credit_utilization_avg %}
+                        <br><span class="text-muted">Avg: {{ signals.credit_utilization_avg }}%</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if signals.subscription_count %}
+                    <div class="col-md-3 mb-3">
+                        <strong>Subscriptions:</strong><br>
+                        <span class="text-muted">{{ signals.subscription_count }} active</span>
+                        {% if signals.subscription_monthly_spend %}
+                        <br><span class="text-muted">${{ "{:,.0f}".format(signals.subscription_monthly_spend) }}/month</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if signals.savings_net_inflow %}
+                    <div class="col-md-3 mb-3">
+                        <strong>Savings Growth:</strong><br>
+                        <span class="text-muted">${{ "{:,.0f}".format(signals.savings_net_inflow) }}/month</span>
+                        {% if signals.emergency_fund_coverage %}
+                        <br><span class="text-muted">{{ signals.emergency_fund_coverage }} months coverage</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if signals.income_frequency %}
+                    <div class="col-md-3 mb-3">
+                        <strong>Income Pattern:</strong><br>
+                        <span class="text-muted">{{ signals.income_frequency|title }}</span>
+                        {% if signals.cash_flow_buffer %}
+                        <br><span class="text-muted">Buffer: ${{ "{:,.0f}".format(signals.cash_flow_buffer) }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recommendations Preview -->
+{% if user.consent_given %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Top Recommendations</h5>
+                <a href="/portal/recommendations" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recommendations %}
+                <div class="list-group">
+                    {% for rec in recommendations %}
+                    <div class="list-group-item">
+                        <h6 class="mb-1">{{ rec.title }}</h6>
+                        <p class="mb-1 text-muted">{{ rec.content[:150] }}{% if rec.content|length > 150 %}...{% endif %}</p>
+                        <small class="text-muted">{{ rec.rationale[:100] }}{% if rec.rationale|length > 100 %}...{% endif %}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No recommendations available at this time.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Account Summary -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Account Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <strong>Total Balance:</strong><br>
+                        <span class="fs-5">${{ "{:,.2f}".format(accounts.total_balance) }}</span>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Total Accounts:</strong><br>
+                        <span class="fs-5">{{ accounts.total_accounts }}</span>
+                    </div>
+                    {% if accounts.total_credit_limit > 0 %}
+                    <div class="col-md-4 mb-3">
+                        <strong>Credit Limit:</strong><br>
+                        <span class="fs-5">${{ "{:,.2f}".format(accounts.total_credit_limit) }}</span>
+                        <br><small class="text-muted">Utilization: {{ accounts.credit_utilization|round(1) }}%</small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mt-3">
+                    <a href="/portal/profile" class="btn btn-outline-primary">View Full Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

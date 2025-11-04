@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Compliance Detail - Recommendation {{ detail.recommendation.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Compliance Detail - Recommendation #{{ detail.recommendation.id }}</h2>
+    <a href="/compliance/recommendations" class="btn btn-secondary">Back to List</a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recommendation Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Title:</strong> {{ detail.recommendation.title }}</p>
+                <p><strong>User:</strong> <a href="/user/{{ detail.user.id }}">{{ detail.user.name }} (ID: {{ detail.user.id }})</a></p>
+                <p><strong>Persona:</strong> {{ detail.recommendation.persona_matched }}</p>
+                <p><strong>Created:</strong> {{ detail.recommendation.created_at }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card {% if detail.compliance.compliant %}border-success{% else %}border-danger{% endif %}">
+            <div class="card-header">
+                <h5 class="mb-0">Compliance Status</h5>
+            </div>
+            <div class="card-body">
+                {% if detail.compliance.compliant %}
+                    <h3 class="text-success">✓ Compliant</h3>
+                {% else %}
+                    <h3 class="text-danger">✗ Non-Compliant</h3>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Compliance Checks</h5>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Check</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Active Consent at Generation</td>
+                    <td>
+                        {% if detail.compliance.checks.active_consent %}
+                            <span class="badge bg-success">Pass</span>
+                        {% else %}
+                            <span class="badge bg-danger">Fail</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Eligibility Check Performed</td>
+                    <td>
+                        {% if detail.compliance.checks.eligibility_check %}
+                            <span class="badge bg-success">Pass</span>
+                        {% else %}
+                            <span class="badge bg-danger">Fail</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Required Disclaimer Present</td>
+                    <td>
+                        {% if detail.compliance.checks.required_disclaimer %}
+                            <span class="badge bg-success">Pass</span>
+                        {% else %}
+                            <span class="badge bg-danger">Fail</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Complete Decision Trace (4 steps)</td>
+                    <td>
+                        {% if detail.compliance.checks.complete_trace %}
+                            <span class="badge bg-success">Pass</span>
+                        {% else %}
+                            <span class="badge bg-danger">Fail</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Rationale Cites Data</td>
+                    <td>
+                        {% if detail.compliance.checks.rationale_cites_data %}
+                            <span class="badge bg-success">Pass</span>
+                        {% else %}
+                            <span class="badge bg-danger">Fail</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Recommendation Content</h5>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <strong>Content:</strong>
+            <div class="mt-2 p-3 bg-light border rounded">{{ detail.recommendation.content }}</div>
+        </div>
+        <div>
+            <strong>Rationale:</strong>
+            <div class="mt-2 p-3 bg-light border rounded">{{ detail.recommendation.rationale }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Decision Trace</h5>
+    </div>
+    <div class="card-body">
+        {% if detail.decision_traces %}
+        <div class="accordion" id="traceAccordion">
+            {% for trace in detail.decision_traces %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading{{ trace.step }}">
+                    <button class="accordion-button {% if trace.step != 1 %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ trace.step }}">
+                        Step {{ trace.step }}: {{ trace.reasoning[:50] }}...
+                    </button>
+                </h2>
+                <div id="collapse{{ trace.step }}" class="accordion-collapse collapse {% if trace.step == 1 %}show{% endif %}" data-bs-parent="#traceAccordion">
+                    <div class="accordion-body">
+                        <p><strong>Reasoning:</strong> {{ trace.reasoning }}</p>
+                        {% if trace.data_cited %}
+                        <p><strong>Data Cited:</strong></p>
+                        <pre class="bg-light p-2">{{ trace.data_cited | tojsonpretty }}</pre>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-warning">
+            <strong>No decision traces found.</strong> This recommendation may not have complete audit trail.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="/compliance/recommendations" class="btn btn-secondary">Back to Compliance Review</a>
+    <a href="/user/{{ detail.user.id }}" class="btn btn-primary">View User Details</a>
+</div>
+{% endblock %}
+

@@ -1,24 +1,17 @@
-/* Custom styles for SpendSense MVP */
+/* SpendSense Design System - Phase 8C
+ * Main stylesheet that imports all design system modules
+ * Import order: variables → base → components → layout → utilities
+ */
 
-body {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
+/* Design System Imports */
+@import 'variables.css';
+@import 'base.css';
+@import 'components.css';
+@import 'layout.css';
+@import 'utilities.css';
 
-main {
-    flex: 1;
-}
-
-.card {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 1.5rem;
-}
-
-.badge {
-    font-size: 0.9rem;
-    padding: 0.5em 0.75em;
-}
+/* Legacy styles for backward compatibility with Bootstrap 5 */
+/* These styles work alongside Bootstrap and our design system */
 
 .table-responsive {
     border-radius: 0.375rem;

@@ -1,0 +1,234 @@
+{% extends "user/base.html" %}
+
+{% block title %}Financial Profile - SpendSense{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Your Financial Profile</h1>
+    </div>
+</div>
+
+<!-- Time Window Toggle -->
+<div class="row mb-4">
+    <div class="col-12">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link {% if window == '30d' %}active{% endif %}" 
+                   href="/portal/profile?window=30d">30 Days</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link {% if window == '180d' %}active{% endif %}" 
+                   href="/portal/profile?window=180d">180 Days</a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Credit Signals -->
+{% if signals.credit %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Credit Signals</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <strong>Card:</strong> {{ signals.credit.card_name }}<br>
+                        <strong>Utilization:</strong> {{ signals.credit.utilization }}%<br>
+                        <strong>Balance:</strong> ${{ "{:,.2f}".format(signals.credit.balance) }}<br>
+                        <strong>Limit:</strong> ${{ "{:,.2f}".format(signals.credit.limit) }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Interest Charges:</strong> ${{ "{:,.2f}".format(signals.credit.interest_charges) }}<br>
+                        <strong>APR:</strong> {{ signals.credit.apr }}%<br>
+                        <strong>Overdue:</strong> 
+                        {% if signals.credit.is_overdue %}
+                        <span class="badge bg-danger">Yes</span>
+                        {% else %}
+                        <span class="badge bg-success">No</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Subscription Signals -->
+{% if signals.subscription %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Subscription Signals</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <strong>Count:</strong> {{ signals.subscription.count }}<br>
+                        <strong>Monthly Spend:</strong> ${{ "{:,.2f}".format(signals.subscription.monthly_spend) }}<br>
+                        <strong>Share of Spending:</strong> {{ signals.subscription.share }}%
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        {% if signals.subscription.merchants %}
+                        <strong>Merchants:</strong><br>
+                        <ul>
+                            {% for merchant in signals.subscription.merchants %}
+                            <li>{{ merchant }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Savings Signals -->
+{% if signals.savings %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Savings Signals</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% if signals.savings.net_inflow %}
+                    <div class="col-md-4 mb-3">
+                        <strong>Net Inflow:</strong> ${{ "{:,.2f}".format(signals.savings.net_inflow) }}/month
+                    </div>
+                    {% endif %}
+                    {% if signals.savings.growth_rate %}
+                    <div class="col-md-4 mb-3">
+                        <strong>Growth Rate:</strong> {{ signals.savings.growth_rate }}%
+                    </div>
+                    {% endif %}
+                    {% if signals.savings.emergency_fund_coverage %}
+                    <div class="col-md-4 mb-3">
+                        <strong>Emergency Fund Coverage:</strong> {{ signals.savings.emergency_fund_coverage }} months
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Income Signals -->
+{% if signals.income %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Income Signals</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% if signals.income.frequency %}
+                    <div class="col-md-3 mb-3">
+                        <strong>Frequency:</strong> {{ signals.income.frequency|title }}
+                    </div>
+                    {% endif %}
+                    {% if signals.income.variability %}
+                    <div class="col-md-3 mb-3">
+                        <strong>Variability:</strong> {{ signals.income.variability }}%
+                    </div>
+                    {% endif %}
+                    {% if signals.income.cash_flow_buffer %}
+                    <div class="col-md-3 mb-3">
+                        <strong>Cash Flow Buffer:</strong> ${{ "{:,.2f}".format(signals.income.cash_flow_buffer) }}
+                    </div>
+                    {% endif %}
+                    {% if signals.income.median_pay_gap %}
+                    <div class="col-md-3 mb-3">
+                        <strong>Median Pay Gap:</strong> {{ signals.income.median_pay_gap }} days
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Account Summary -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Account Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <strong>Total Balance:</strong><br>
+                        <span class="fs-4">${{ "{:,.2f}".format(accounts.total_balance) }}</span>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Total Accounts:</strong><br>
+                        <span class="fs-4">{{ accounts.total_accounts }}</span>
+                    </div>
+                    {% if accounts.total_credit_limit > 0 %}
+                    <div class="col-md-4 mb-3">
+                        <strong>Credit Limit:</strong><br>
+                        <span class="fs-4">${{ "{:,.2f}".format(accounts.total_credit_limit) }}</span><br>
+                        <small class="text-muted">Utilization: {{ accounts.credit_utilization|round(1) }}%</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction Insights -->
+{% if transaction_insights %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Transaction Insights ({{ window }})</h5>
+            </div>
+            <div class="card-body">
+                {% if transaction_insights.top_merchants %}
+                <h6>Top Merchants</h6>
+                <ul class="list-group mb-3">
+                    {% for merchant in transaction_insights.top_merchants[:5] %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ merchant.merchant }}
+                        <span>${{ "{:,.2f}".format(merchant.total) }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                
+                {% if transaction_insights.spending_by_category %}
+                <h6>Spending by Category</h6>
+                <ul class="list-group">
+                    {% for category in transaction_insights.spending_by_category[:5] %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ category.category }}
+                        <span>${{ "{:,.2f}".format(category.total) }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="/portal/dashboard" class="btn btn-outline-secondary">Back to Dashboard</a>
+</div>
+{% endblock %}
+

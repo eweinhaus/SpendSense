@@ -1,0 +1,47 @@
+{% extends "user/base.html" %}
+
+{% block title %}Financial Calculators - SpendSense{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Financial Calculators</h1>
+        <p class="lead">Use these tools to plan and manage your finances.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Emergency Fund Calculator</h5>
+                <p class="card-text">Calculate how much you need in your emergency fund based on your monthly expenses.</p>
+                <a href="/portal/calculators/emergency-fund" class="btn btn-primary">Use Calculator</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Debt Paydown Calculator</h5>
+                <p class="card-text">See how long it will take to pay off your debt and how much interest you'll pay.</p>
+                <a href="/portal/calculators/debt-paydown" class="btn btn-primary">Use Calculator</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Savings Goal Calculator</h5>
+                <p class="card-text">Determine how much you need to save monthly to reach your financial goals.</p>
+                <a href="/portal/calculators/savings-goal" class="btn btn-primary">Use Calculator</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="/portal/dashboard" class="btn btn-outline-secondary">Back to Dashboard</a>
+</div>
+{% endblock %}
+

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Compliance Dashboard - SpendSense{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Compliance Dashboard</h2>
+    <span class="badge bg-warning text-dark">Operator Only</span>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card {% if metrics.consent_coverage >= 80 %}border-success{% elif metrics.consent_coverage >= 50 %}border-warning{% else %}border-danger{% endif %}">
+            <div class="card-body">
+                <h5 class="card-title">Consent Coverage</h5>
+                <h2 class="mb-0">{{ metrics.consent_coverage }}%</h2>
+                <small class="text-muted">Users with active consent</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card {% if metrics.tone_violations == 0 %}border-success{% else %}border-danger{% endif %}">
+            <div class="card-body">
+                <h5 class="card-title">Tone Violations</h5>
+                <h2 class="mb-0">
+                    {% if metrics.tone_violations == 0 %}
+                        <span class="text-success">None</span>
+                    {% else %}
+                        <span class="text-danger">{{ metrics.tone_violations }}</span>
+                    {% endif %}
+                </h2>
+                <small class="text-muted">Recent violations</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card {% if metrics.eligibility_failures == 0 %}border-success{% else %}border-warning{% endif %}">
+            <div class="card-body">
+                <h5 class="card-title">Eligibility Failures</h5>
+                <h2 class="mb-0">
+                    {% if metrics.eligibility_failures == 0 %}
+                        <span class="text-success">None</span>
+                    {% else %}
+                        <span class="text-warning">{{ metrics.eligibility_failures }}</span>
+                    {% endif %}
+                </h2>
+                <small class="text-muted">Blocked recommendations</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card {% if metrics.recommendation_compliance >= 80 %}border-success{% elif metrics.recommendation_compliance >= 50 %}border-warning{% else %}border-danger{% endif %}">
+            <div class="card-body">
+                <h5 class="card-title">Recommendation Compliance</h5>
+                <h2 class="mb-0">{{ metrics.recommendation_compliance }}%</h2>
+                <small class="text-muted">With required disclaimers</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Recent Compliance Issues</h5>
+    </div>
+    <div class="card-body">
+        {% if recent_issues %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>User ID</th>
+                        <th>Recommendation ID</th>
+                        <th>Timestamp</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for issue in recent_issues %}
+                    <tr>
+                        <td><span class="badge bg-warning">{{ issue.type }}</span></td>
+                        <td><a href="/user/{{ issue.user_id }}">{{ issue.user_id }}</a></td>
+                        <td>
+                            {% if issue.recommendation_id %}
+                                <a href="/compliance/recommendations/{{ issue.recommendation_id }}">{{ issue.recommendation_id }}</a>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>{{ issue.timestamp }}</td>
+                        <td>{{ issue.description }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <strong>No Issues</strong> - No recent compliance issues detected.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Quick Links</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <a href="/compliance/consent-audit" class="btn btn-primary w-100 mb-2">Consent Audit Log</a>
+            </div>
+            <div class="col-md-4">
+                <a href="/compliance/recommendations" class="btn btn-primary w-100 mb-2">Recommendation Compliance Review</a>
+            </div>
+            <div class="col-md-4">
+                <a href="/compliance/reports/summary?format=markdown" class="btn btn-secondary w-100 mb-2">Export Compliance Summary</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
