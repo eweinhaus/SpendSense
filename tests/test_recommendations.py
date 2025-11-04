@@ -142,6 +142,11 @@ def test_generate_recommendations_high_utilization(test_db):
     
     conn = get_db_connection(test_db_path)
     
+    # Ensure user has consent
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET consent_given = ? WHERE id = ?", (1, user_id))
+    conn.commit()
+    
     # Create signals and assign persona
     store_signal(user_id, 'credit_utilization_max', 75.0, {}, '30d', conn)
     assign_persona(user_id, conn)
@@ -174,6 +179,11 @@ def test_generate_recommendations_subscription_heavy(test_db):
     
     conn = get_db_connection(test_db_path)
     
+    # Ensure user has consent
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET consent_given = ? WHERE id = ?", (1, user_id))
+    conn.commit()
+    
     # Create signals and assign persona
     store_signal(user_id, 'subscription_count', 5.0, {}, '30d', conn)
     store_signal(user_id, 'subscription_monthly_spend', 100.0, {}, '30d', conn)
@@ -193,6 +203,11 @@ def test_generate_recommendations_neutral(test_db):
     test_db_path, user_id = test_db
     
     conn = get_db_connection(test_db_path)
+    
+    # Ensure user has consent
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET consent_given = ? WHERE id = ?", (1, user_id))
+    conn.commit()
     
     # Create signals that result in neutral persona
     store_signal(user_id, 'credit_utilization_max', 30.0, {}, '30d', conn)
@@ -239,6 +254,11 @@ def test_generate_recommendations_autopay_condition(test_db):
     
     conn = get_db_connection(test_db_path)
     
+    # Ensure user has consent
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET consent_given = ? WHERE id = ?", (1, user_id))
+    conn.commit()
+    
     # Create signals with overdue/interest
     store_signal(user_id, 'credit_utilization_max', 75.0, {}, '30d', conn)
     store_signal(user_id, 'credit_overdue', 1.0, {}, '30d', conn)
@@ -249,7 +269,6 @@ def test_generate_recommendations_autopay_condition(test_db):
     rec_ids = generate_recommendations(user_id, conn)
     
     # Verify autopay recommendation is included
-    cursor = conn.cursor()
     cursor.execute("""
         SELECT title FROM recommendations 
         WHERE user_id = ? AND title LIKE '%Autopay%'

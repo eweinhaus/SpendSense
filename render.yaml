@@ -8,7 +8,9 @@ services:
       - key: PYTHONPATH
         value: /opt/render/project/src
       - key: DATABASE_URL
-        value: sqlite:///spendsense.db
+        value: sqlite:////opt/render/project/src/spendsense.db
+      - key: RENDER
+        value: true
       - key: DEBUG
         value: False
       - key: OPENAI_API_KEY

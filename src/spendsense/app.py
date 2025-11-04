@@ -5,6 +5,7 @@ Web interface for operator dashboard and user detail pages.
 
 import sqlite3
 import json
+import os
 from pathlib import Path
 from typing import Optional, Dict, List
 from fastapi import FastAPI, Request, HTTPException
@@ -12,7 +13,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from .database import get_db_connection
+from .database import get_db_connection, init_database
 from .personas import get_user_signals
 from .eligibility import filter_recommendations, has_consent
 from .recommendations import generate_recommendations
@@ -29,7 +30,29 @@ app = FastAPI(title="SpendSense MVP", description="Operator Dashboard")
 
 # Setup templates and static files
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+# Add custom Jinja2 filter for JSON formatting
+def tojsonpretty(value):
+    """Format JSON data as pretty-printed string."""
+    return json.dumps(value, indent=2, default=str)
+
+templates.env.filters['tojsonpretty'] = tojsonpretty
+
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database on application startup."""
+    try:
+        # Initialize database synchronously (FastAPI handles this)
+        init_database()
+        print("✅ Database initialized successfully")
+    except Exception as e:
+        print(f"⚠️  Warning: Database initialization failed: {e}")
+        import traceback
+        traceback.print_exc()
+        print("   Application will continue, but database operations may fail")
 
 
 # Pydantic models for request/response
@@ -282,7 +305,7 @@ def get_user_signals_display(user_id: int) -> Dict:
 
 
 def get_user_persona_display(user_id: int) -> Optional[Dict]:
-    """Get persona assignment with criteria."""
+    """Get persona assignment with criteria and window-based signal information."""
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
@@ -295,10 +318,56 @@ def get_user_persona_display(user_id: int) -> Optional[Dict]:
         if not row:
             return None
         
+        persona_type, criteria_matched, assigned_at = row
+        
+        # Get signals by window to show which signals/windows contributed to assignment
+        cursor.execute("""
+            SELECT signal_type, window
+            FROM signals
+            WHERE user_id = ?
+            ORDER BY window, signal_type
+        """, (user_id,))
+        
+        signal_windows = {'30d': [], '180d': []}
+        for signal_row in cursor.fetchall():
+            signal_type, window = signal_row
+            # Extract base signal type (remove window suffix if present)
+            base_type = signal_type
+            if signal_type.endswith('_30d'):
+                base_type = signal_type[:-4]
+                window = '30d'
+            elif signal_type.endswith('_180d'):
+                base_type = signal_type[:-5]
+                window = '180d'
+            
+            # Determine which window this signal belongs to
+            target_window = window or '30d'  # Default to 30d if no window specified
+            
+            # Only include relevant signals based on persona type
+            if persona_type == 'high_utilization':
+                if 'credit_utilization' in base_type or 'credit_interest' in base_type or 'credit_overdue' in base_type:
+                    signal_windows[target_window].append(base_type)
+            elif persona_type == 'variable_income_budgeter':
+                if 'income' in base_type or 'cash_flow' in base_type or 'median_pay' in base_type:
+                    signal_windows[target_window].append(base_type)
+            elif persona_type == 'savings_builder':
+                if 'savings' in base_type or 'credit_utilization' in base_type:
+                    signal_windows[target_window].append(base_type)
+            elif persona_type == 'financial_newcomer':
+                if 'credit_utilization' in base_type:
+                    signal_windows[target_window].append(base_type)
+            elif persona_type == 'subscription_heavy':
+                if 'subscription' in base_type:
+                    signal_windows[target_window].append(base_type)
+        
+        # Remove empty windows
+        signal_windows = {k: v for k, v in signal_windows.items() if v}
+        
         return {
-            'persona_type': row[0],
-            'criteria_matched': row[1],
-            'assigned_at': row[2]
+            'persona_type': persona_type,
+            'criteria_matched': criteria_matched,
+            'assigned_at': assigned_at,
+            'signal_windows': signal_windows if signal_windows else None
         }
     finally:
         conn.close()

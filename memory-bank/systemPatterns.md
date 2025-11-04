@@ -218,7 +218,7 @@ User → Consent Check → Generate Recommendations → Display
 
 ## Code Organization Patterns
 
-### Current Structure (Phase 6B Complete)
+### Current Structure (Phase 7 Complete)
 
 ```
 spendsense/
@@ -234,12 +234,13 @@ spendsense/
 ├── eligibility.py      # Eligibility checks (Phase 3, Phase 4: consent, Phase 6: enhanced) ✅
 ├── tone_validator.py   # Tone validation (Phase 6: new) ✅
 ├── evaluation.py       # Evaluation harness (Phase 6: new) ✅
-├── app.py              # FastAPI app (Phase 3, Phase 4: consent, Phase 5: dual-window signals, Phase 6B: partner offers) ✅
+├── app.py              # FastAPI app (Phase 3, Phase 4: consent, Phase 5: dual-window signals, Phase 6B: partner offers, Phase 7: enhanced persona display) ✅
 ├── scripts/
-│   └── deploy_render.py  # Automated Render deployment script (Phase 6: new) ✅
-├── templates/          # Jinja2 templates (Phase 3, Phase 4: consent, Phase 5: dual-window tabs, Phase 6: persona badges, Phase 6B: partner offers) ✅
+│   ├── deploy_render.py      # Automated Render deployment script (Phase 6: new) ✅
+│   └── test_operator_view.py # Manual testing automation script (Phase 7: new) ✅
+├── templates/          # Jinja2 templates (Phase 3, Phase 4: consent, Phase 5: dual-window tabs, Phase 6: persona badges, Phase 6B: partner offers, Phase 7: enhanced decision traces) ✅
 ├── static/             # CSS/JS (Phase 3, Phase 4: auto-reload) ✅
-├── tests/              # Test suite
+├── tests/              # Test suite (90+ tests)
 │   ├── __init__.py
 │   ├── test_database.py
 │   ├── test_signals.py (Phase 5: updated for windows)
@@ -253,7 +254,8 @@ spendsense/
 │   ├── test_content_generator.py # Phase 6B: new ✅
 │   ├── test_partner_offers.py    # Phase 6B: new ✅
 │   ├── test_phase4.py         # Phase 4 ✅
-│   └── test_phase5.py         # Phase 5 ✅
+│   ├── test_phase5.py         # Phase 5 ✅
+│   └── test_phase7.py         # Phase 7: new (13 tests) ✅
 ├── requirements.txt    # Python dependencies (Phase 6B: openai>=1.0.0)
 ├── pytest.ini         # Test configuration
 ├── spendsense.db       # SQLite database (79 users, 238 accounts, 10 liabilities)

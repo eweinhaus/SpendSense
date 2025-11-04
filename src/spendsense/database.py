@@ -13,34 +13,73 @@ See md_files/MIGRATION_GUIDE.md for detailed migration instructions.
 """
 
 import sqlite3
+import os
 from typing import Optional
 from datetime import datetime
 
 
-def get_db_connection(db_path: str = "spendsense.db") -> sqlite3.Connection:
+def get_db_path() -> str:
+    """Get database path from environment variable or use default."""
+    # Check DATABASE_URL first (for Render compatibility)
+    db_url = os.getenv("DATABASE_URL", "")
+    if db_url and db_url.startswith("sqlite:///"):
+        # Extract path from sqlite:///path/to/db.db
+        # sqlite:/// means absolute path, sqlite:///relative means relative
+        # Handle both cases
+        path = db_url.replace("sqlite:///", "", 1)  # Only replace first occurrence
+        # If path starts with /, it's absolute, otherwise relative
+        return path
+    
+    # Fall back to DB_PATH environment variable
+    db_path = os.getenv("DB_PATH", "spendsense.db")
+    
+    # On Render, use persistent disk if available
+    if os.getenv("RENDER"):
+        # Render persistent disk is mounted at /opt/render/project/persistent
+        persistent_dir = "/opt/render/project/persistent"
+        if os.path.exists(persistent_dir):
+            return os.path.join(persistent_dir, "spendsense.db")
+        # Fallback to /opt/render/project/src if persistent doesn't exist
+        return os.path.join("/opt/render/project/src", "spendsense.db")
+    
+    return db_path
+
+
+def get_db_connection(db_path: Optional[str] = None) -> sqlite3.Connection:
     """
     Get SQLite database connection with foreign keys enabled.
     
     Args:
-        db_path: Path to SQLite database file
+        db_path: Path to SQLite database file (defaults to environment variable or default)
         
     Returns:
         SQLite connection object
     """
+    if db_path is None:
+        db_path = get_db_path()
+    
+    # Ensure directory exists for database file
+    db_dir = os.path.dirname(db_path)
+    if db_dir and not os.path.exists(db_dir):
+        os.makedirs(db_dir, exist_ok=True)
+    
     conn = sqlite3.connect(db_path)
     # Enable foreign key constraints
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
-def init_database(db_path: str = "spendsense.db") -> None:
+def init_database(db_path: Optional[str] = None) -> None:
     """
     Initialize database with all tables and indexes.
     Creates database file if it doesn't exist.
     
     Args:
-        db_path: Path to SQLite database file
+        db_path: Path to SQLite database file (defaults to environment variable or default)
     """
+    if db_path is None:
+        db_path = get_db_path()
+    
     conn = get_db_connection(db_path)
     cursor = conn.cursor()
     
@@ -218,16 +257,19 @@ def init_database(db_path: str = "spendsense.db") -> None:
     conn.close()
 
 
-def validate_schema(db_path: str = "spendsense.db") -> bool:
+def validate_schema(db_path: Optional[str] = None) -> bool:
     """
     Validate that database schema matches PRD specification.
     
     Args:
-        db_path: Path to SQLite database file
+        db_path: Path to SQLite database file (defaults to environment variable or default)
         
     Returns:
         True if schema is valid, False otherwise
     """
+    if db_path is None:
+        db_path = get_db_path()
+    
     conn = get_db_connection(db_path)
     cursor = conn.cursor()
     

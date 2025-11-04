@@ -211,23 +211,36 @@
         <h3 class="mb-0">Persona Assignment</h3>
     </div>
     <div class="card-body">
-        <p>
+        <div class="mb-3">
             {% if persona.persona_type == 'high_utilization' %}
-                <span class="badge bg-danger">High Utilization</span>
+                <span class="badge bg-danger fs-6">High Utilization</span>
             {% elif persona.persona_type == 'variable_income_budgeter' %}
-                <span class="badge bg-warning">Variable Income Budgeter</span>
+                <span class="badge bg-warning fs-6">Variable Income Budgeter</span>
             {% elif persona.persona_type == 'savings_builder' %}
-                <span class="badge bg-success">Savings Builder</span>
+                <span class="badge bg-success fs-6">Savings Builder</span>
             {% elif persona.persona_type == 'financial_newcomer' %}
-                <span class="badge bg-info">Financial Newcomer</span>
+                <span class="badge bg-info fs-6">Financial Newcomer</span>
             {% elif persona.persona_type == 'subscription_heavy' %}
-                <span class="badge bg-primary">Subscription-Heavy</span>
+                <span class="badge bg-primary fs-6">Subscription-Heavy</span>
             {% else %}
-                <span class="badge bg-secondary">Neutral</span>
+                <span class="badge bg-secondary fs-6">Neutral</span>
             {% endif %}
-        </p>
-        <p><strong>Criteria Matched:</strong> {{ persona.criteria_matched }}</p>
-        <p><small class="text-muted">Assigned: {{ persona.assigned_at }}</small></p>
+        </div>
+        <div class="mb-2">
+            <strong>Assignment Rationale:</strong>
+            <p class="mb-0">{{ persona.criteria_matched }}</p>
+        </div>
+        {% if persona.signal_windows %}
+        <div class="mb-2">
+            <strong>Signals Used:</strong>
+            <ul class="mb-0 small">
+                {% for window, signal_list in persona.signal_windows.items() %}
+                <li><strong>{{ window }} window:</strong> {{ signal_list|join(", ") }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <p class="mb-0"><small class="text-muted">Assigned: {{ persona.assigned_at }}</small></p>
     </div>
 </div>
 {% endif %}
@@ -264,12 +277,27 @@
                         <div class="card card-body bg-light">
                             {% if traces.get(rec.id) %}
                                 {% for trace_step in traces[rec.id] %}
-                                <p><strong>Step {{ trace_step.step }}:</strong> {{ trace_step.reasoning }}</p>
-                                {% if trace_step.data_cited %}
-                                <small class="text-muted">
-                                    Data cited: {{ trace_step.data_cited }}
-                                </small>
-                                {% endif %}
+                                <div class="mb-3 pb-3 border-bottom">
+                                    <h6 class="mb-2">
+                                        <span class="badge bg-primary me-2">Step {{ trace_step.step }}</span>
+                                        {% if trace_step.step == 1 %}
+                                            Signal Detected
+                                        {% elif trace_step.step == 2 %}
+                                            Persona Assigned
+                                        {% elif trace_step.step == 3 %}
+                                            Recommendation Selected
+                                        {% elif trace_step.step == 4 %}
+                                            Rationale Generated
+                                        {% endif %}
+                                    </h6>
+                                    <p class="mb-2">{{ trace_step.reasoning }}</p>
+                                    {% if trace_step.data_cited %}
+                                    <details class="mt-2">
+                                        <summary class="text-primary small" style="cursor: pointer;">View Data Cited</summary>
+                                        <pre class="bg-white p-2 mt-2 mb-0 small border rounded" style="max-height: 200px; overflow-y: auto;">{{ trace_step.data_cited|tojsonpretty }}</pre>
+                                    </details>
+                                    {% endif %}
+                                </div>
                                 {% endfor %}
                             {% else %}
                                 <p class="text-muted">No trace data available.</p>
