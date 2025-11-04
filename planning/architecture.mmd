@@ -1,28 +1,34 @@
-%% SpendSense Full Architecture (Post-MVP)
-%% This diagram shows the complete system architecture for final submission
+%% SpendSense Extension Phase Architecture
+%% This diagram shows the complete system architecture for extension phase
 %% 
-%% MVP SCOPE NOTE:
-%% - MVP uses simplified version: SQLite only, 5 users, 2 personas, basic operator view
-%% - MVP defers: LLM integration, partner offers, evaluation harness, full persona set
-%% - See PRD_MVP.md for MVP-specific architecture details
+%% Extension Phase Scope:
+%% - 50-100 users with diverse financial profiles
+%% - All 5 personas implemented (High Utilization, Variable Income, Subscription-Heavy, Savings Builder, Custom)
+%% - All 4 signal types (Credit, Subscriptions, Savings, Income Stability)
+%% - 30-day and 180-day analysis windows
+%% - AI/LLM integration (OpenAI API) for content generation
+%% - Partner offers with eligibility checks
+%% - Evaluation harness with metrics
+%% - SQLite database (sufficient for 50-100 users)
+%% 
+%% Deferred to Post-Requirements:
+%% - User onboarding portal
+%% - End-user interface
+%% - PostgreSQL migration
+%% - Compliance auditor interface
 
 graph TB
     subgraph "User Layer"
-        EndUser[End User<br/>Bank Customer]
-        Operator[Operator<br/>Bank Staff]
+        Operator[Operator<br/>Bank Staff<br/>System Oversight]
     end
 
     subgraph "Frontend Layer"
-        WebApp[Web Application<br/>React/Next.js]
-        Dashboard[Operator Dashboard<br/>Admin Interface]
+        Dashboard[Operator Dashboard<br/>FastAPI + Jinja2]
         
-        WebApp --> |User Experience| UserDash[User Dashboard]
-        WebApp --> |Recommendations| RecView[Recommendation Feed]
-        WebApp --> |Education| EduContent[Education Content]
-        
-        Dashboard --> |Oversight| OpReview[Review Queue]
-        Dashboard --> |Analytics| OpAnalytics[Analytics View]
-        Dashboard --> |Audit| OpAudit[Decision Traces]
+        Dashboard --> |Oversight| OpReview[User Review<br/>Signals & Personas]
+        Dashboard --> |Recommendations| OpRecView[Recommendation View<br/>30d & 180d Windows]
+        Dashboard --> |Analytics| OpAnalytics[Signal Analysis<br/>All Signal Types]
+        Dashboard --> |Audit| OpAudit[Decision Traces<br/>4-Step Audit Trail]
     end
 
     subgraph "API Layer"
@@ -36,77 +42,85 @@ graph TB
 
     subgraph "Business Logic Layer"
         subgraph "Ingestion Module"
-            Ingest[Data Ingestion]
-            Validator[Data Validator]
-            PlaidAdapter[Plaid Adapter<br/>CSV/JSON Import]
+            Ingest[Data Ingestion<br/>50-100 Users]
+            Validator[Data Validator<br/>Plaid Schema Check]
+            PlaidAdapter[Plaid Adapter<br/>Synthetic Data Generator<br/>All Account Types]
+            
+            PlaidAdapter --> AccountTypes[Account Types<br/>- Checking<br/>- Savings<br/>- Credit Cards<br/>- Money Market<br/>- HSA<br/>- Mortgages<br/>- Student Loans]
         end
         
         subgraph "Feature Engineering"
-            SignalDetect[Signal Detection]
+            SignalDetect[Signal Detection Engine<br/>30d & 180d Windows]
             
-            SignalDetect --> CreditSig[Credit Signals<br/>- Utilization<br/>- Interest<br/>- Overdue<br/>- Min Payment]
-            SignalDetect --> SubSig[Subscription Signals<br/>- Recurring Merchants<br/>- Monthly Spend<br/>- Spend Share]
-            SignalDetect --> SavingSig[Savings Signals<br/>- Net Inflow<br/>- Growth Rate<br/>- Emergency Fund]
-            SignalDetect --> IncomeSig[Income Signals<br/>- Payroll Detection<br/>- Frequency<br/>- Variability<br/>- Cash Buffer]
+            SignalDetect --> CreditSig[Credit Signals<br/>- Utilization (max/avg)<br/>- Interest Charges<br/>- Overdue Status<br/>- Utilization Flags]
+            SignalDetect --> SubSig[Subscription Signals<br/>- Recurring Merchants<br/>- Monthly Spend<br/>- Spend Share<br/>- Merchant List]
+            SignalDetect --> SavingSig[Savings Signals<br/>- Net Inflow<br/>- Growth Rate<br/>- Emergency Fund Coverage]
+            SignalDetect --> IncomeSig[Income Stability Signals<br/>- Payroll ACH Detection<br/>- Payment Frequency<br/>- Payment Variability<br/>- Cash-Flow Buffer<br/>- Median Pay Gap]
         end
         
         subgraph "Persona System"
-            PersonaEngine[Persona Assignment Engine]
+            PersonaEngine[Persona Assignment Engine<br/>Priority-Based Matching]
             
-            PersonaEngine --> P1[Persona 1:<br/>High Utilization]
-            PersonaEngine --> P2[Persona 2:<br/>Variable Income]
-            PersonaEngine --> P3[Persona 3:<br/>Subscription-Heavy]
-            PersonaEngine --> P4[Persona 4:<br/>Savings Builder]
-            PersonaEngine --> P5[Persona 5:<br/>Custom]
+            PersonaEngine --> P1[Persona 1:<br/>High Utilization<br/>Priority: Highest]
+            PersonaEngine --> P2[Persona 2:<br/>Variable Income Budgeter<br/>Priority: Second]
+            PersonaEngine --> P3[Persona 3:<br/>Subscription-Heavy<br/>Priority: Fifth]
+            PersonaEngine --> P4[Persona 4:<br/>Savings Builder<br/>Priority: Third]
+            PersonaEngine --> P5[Persona 5:<br/>Custom Persona<br/>Priority: Fourth]
+            PersonaEngine --> PNeutral[Neutral<br/>Fallback]
         end
         
         subgraph "Recommendation Engine"
-            RecEngine[Recommendation Engine]
+            RecEngine[Recommendation Engine<br/>3-5 Education Items + 1-3 Offers]
             
-            RecEngine --> ContentGen[Content Generator<br/>AI/LLM Integration]
-            RecEngine --> RationaleGen[Rationale Generator<br/>Data Citation]
-            RecEngine --> OfferMatch[Offer Matching<br/>Partner Products]
-            RecEngine --> Ranking[Ranking Algorithm<br/>Relevance Scoring]
+            RecEngine --> ContentGen[Content Generator<br/>OpenAI API Integration<br/>Template Fallback]
+            RecEngine --> RationaleGen[Rationale Generator<br/>Data-Driven Citations<br/>Plain Language]
+            RecEngine --> OfferMatch[Partner Offer Matching<br/>- Balance Transfer Cards<br/>- High-Yield Savings<br/>- Budgeting Apps<br/>- Subscription Tools]
+            RecEngine --> Ranking[Content Selection<br/>Persona-Based Matching<br/>Relevance Scoring]
         end
         
         subgraph "Guardrails System"
-            Guardrails[Guardrails Engine]
+            Guardrails[Guardrails Engine<br/>Enforced Before Display]
             
-            Guardrails --> ConsentCheck[Consent Checker]
-            Guardrails --> EligCheck[Eligibility Filter<br/>- Income Requirements<br/>- Existing Products<br/>- Credit Requirements]
-            Guardrails --> ToneCheck[Tone Validator<br/>- No Shaming<br/>- Empowering Language]
-            Guardrails --> Compliance[Compliance Layer<br/>- Disclaimers<br/>- Regulatory Checks]
+            Guardrails --> ConsentCheck[Consent Enforcement<br/>Block Without Consent<br/>Required for Recommendations]
+            Guardrails --> EligCheck[Eligibility Filter<br/>- Income Requirements<br/>- Credit Requirements<br/>- Existing Account Checks<br/>- Harmful Product Blacklist]
+            Guardrails --> ToneCheck[Tone Validator<br/>- Keyword-Based Checking<br/>- Prohibited Phrases<br/>- Manual Review Flagging]
+            Guardrails --> Compliance[Compliance Layer<br/>- Required Disclaimers<br/>- Educational Content Only<br/>- Not Financial Advice]
         end
         
         subgraph "Evaluation System"
-            Eval[Evaluation Harness]
+            Eval[Evaluation Harness<br/>Automated Metrics]
             
-            Eval --> Coverage[Coverage Metrics<br/>% Users with Personas]
-            Eval --> Explain[Explainability Metrics<br/>% With Rationales]
-            Eval --> Relevance[Relevance Scoring<br/>Persona-Content Fit]
-            Eval --> Fairness[Fairness Analysis<br/>Demographic Parity]
-            Eval --> Latency[Latency Tracking<br/>Performance Metrics]
+            Eval --> Coverage[Coverage Metrics<br/>% Users with Personas<br/>% with ≥3 Behaviors<br/>Target: 100%]
+            Eval --> Explain[Explainability Metrics<br/>% With Rationales<br/>Rationale Quality<br/>Target: 100%]
+            Eval --> Relevance[Relevance Scoring<br/>Persona-Content Fit<br/>Manual Review]
+            Eval --> Fairness[Fairness Analysis<br/>Demographic Parity<br/>Persona Distribution]
+            Eval --> Latency[Latency Tracking<br/>Time per User<br/>Target: <5 seconds]
         end
     end
 
     subgraph "Data Layer"
-        Database[(SQLite/PostgreSQL<br/>Relational Data)]
-        Analytics[(Parquet<br/>Analytics Data)]
-        Config[JSON Configs<br/>Templates & Rules]
-        Logs[Logs & Traces<br/>Decision Audit Trail]
+        Database[(SQLite Database<br/>50-100 Users<br/>Relational Data<br/>Render Filesystem)]
+        Config[JSON Configs<br/>Content Templates<br/>Eligibility Rules]
+        Logs[Decision Traces<br/>4-Step Audit Trail<br/>Signal History]
+        Metrics[Metrics Storage<br/>Evaluation Results<br/>JSON/CSV Output]
+    end
+    
+    subgraph "Deployment Platform"
+        Render[Render.com<br/>Web Service<br/>Free Tier]
+        Render --> |HTTPS| PublicURL[Public URL<br/>Automatic HTTPS]
+        Render --> |Logs| Monitoring[Monitoring<br/>Built-in Logs]
     end
 
-    subgraph "External Services (Optional)"
-        LLM[LLM Service<br/>Gemini API<br/>Content Generation]
-        PartnerAPI[Partner APIs<br/>Product Offers]
+    subgraph "External Services"
+        LLM[OpenAI API<br/>Content Generation<br/>Personalized Recommendations<br/>Template Fallback]
+        PartnerAPI[Partner Offers Catalog<br/>Eligibility Rules<br/>Product Matching]
     end
 
     %% User interactions
-    EndUser --> WebApp
     Operator --> Dashboard
+    PublicURL --> Dashboard
 
     %% Frontend to API
-    WebApp --> API
     Dashboard --> API
 
     %% API to Business Logic
@@ -120,11 +134,19 @@ graph TB
     %% Ingestion flow
     Ingest --> Validator
     Validator --> PlaidAdapter
-    PlaidAdapter --> Database
+    PlaidAdapter --> AccountTypes
+    AccountTypes --> Database
 
-    %% Signal detection flow
+    %% Signal detection flow (30d and 180d windows)
     Database --> SignalDetect
-    SignalDetect --> Database
+    SignalDetect --> CreditSig
+    SignalDetect --> SubSig
+    SignalDetect --> SavingSig
+    SignalDetect --> IncomeSig
+    CreditSig --> Database
+    SubSig --> Database
+    SavingSig --> Database
+    IncomeSig --> Database
 
     %% Persona flow
     SignalDetect --> PersonaEngine
@@ -137,17 +159,25 @@ graph TB
     Guardrails --> Database
 
     %% External integrations
-    RecEngine -.-> LLM
-    RecEngine -.-> PartnerAPI
+    RecEngine --> LLM
+    RecEngine --> PartnerAPI
+    LLM --> ContentGen
+    PartnerAPI --> OfferMatch
 
     %% Data storage
     Ingest --> Database
-    SignalDetect --> Analytics
     PersonaEngine --> Database
     RecEngine --> Database
     Guardrails --> Logs
-    Eval --> Analytics
+    Eval --> Metrics
     Eval --> Logs
+    RecEngine --> Logs
+    
+    %% Deployment
+    API --> Render
+    Database --> Render
+    Render --> PublicURL
+    Render --> Monitoring
 
     %% Styling
     classDef userClass fill:#e1f5ff,stroke:#01579b,stroke-width:2px
@@ -157,10 +187,11 @@ graph TB
     classDef dataClass fill:#fce4ec,stroke:#880e4f,stroke-width:2px
     classDef externalClass fill:#fff9c4,stroke:#f57f17,stroke-width:2px
 
-    class EndUser,Operator userClass
-    class WebApp,Dashboard,UserDash,RecView,EduContent,OpReview,OpAnalytics,OpAudit frontendClass
+    class Operator userClass
+    class Dashboard,OpReview,OpRecView,OpAnalytics,OpAudit frontendClass
     class API,UserAPI,ConsentAPI,RecAPI,OpAPI apiClass
-    class Ingest,Validator,PlaidAdapter,SignalDetect,CreditSig,SubSig,SavingSig,IncomeSig,PersonaEngine,P1,P2,P3,P4,P5,RecEngine,ContentGen,RationaleGen,OfferMatch,Ranking,Guardrails,ConsentCheck,EligCheck,ToneCheck,Compliance,Eval,Coverage,Explain,Relevance,Fairness,Latency logicClass
-    class Database,Analytics,Config,Logs dataClass
+    class Ingest,Validator,PlaidAdapter,AccountTypes,SignalDetect,CreditSig,SubSig,SavingSig,IncomeSig,PersonaEngine,P1,P2,P3,P4,P5,PNeutral,RecEngine,ContentGen,RationaleGen,OfferMatch,Ranking,Guardrails,ConsentCheck,EligCheck,ToneCheck,Compliance,Eval,Coverage,Explain,Relevance,Fairness,Latency logicClass
+    class Database,Config,Logs,Metrics dataClass
     class LLM,PartnerAPI externalClass
+    class Render,PublicURL,Monitoring logicClass
 

@@ -183,6 +183,45 @@ This document outlines everything needed to go from MVP to full submission based
 **Complexity:** Low-Medium
 **Estimated effort:** 1-2 hours
 
+### Add Additional Personas (Beyond 5)
+**Current (MVP):** 5 personas (High Utilization, Variable Income Budgeter, Savings Builder, Financial Newcomer, Subscription-Heavy, Neutral)
+**Target:** 6-10 total personas for more granular categorization
+
+**Tasks:**
+- [ ] Research and identify additional persona opportunities
+  - [ ] Analyze user data patterns to identify distinct behavioral groups
+  - [ ] Review financial wellness literature for common personas
+  - [ ] Consider edge cases and unique financial situations
+- [ ] Define new persona criteria (for each new persona)
+  - [ ] Clear, measurable criteria based on behavioral signals
+  - [ ] Document rationale for why this persona matters
+  - [ ] Define primary educational focus areas
+  - [ ] Map to relevant recommendation content
+- [ ] Implement persona detection logic
+  - [ ] Add detection functions to `personas.py`
+  - [ ] Update priority logic to include new personas
+  - [ ] Test persona assignment with diverse user data
+- [ ] Create content templates
+  - [ ] 10-15 educational content items per new persona
+  - [ ] Variety: articles, calculators, checklists, templates
+  - [ ] Persona-specific recommendations and guidance
+- [ ] Update UI to display new personas
+  - [ ] Add persona badges with appropriate colors
+  - [ ] Update persona display in dashboard and user detail pages
+  - [ ] Ensure all personas are visible and distinguishable
+
+**Potential New Personas to Consider:**
+- **Debt Consolidator**: High debt across multiple accounts, seeking consolidation strategies
+- **Goal-Oriented Saver**: Active savings with specific goals (house, vacation, education)
+- **Credit Builder**: Low credit utilization, building credit history (newcomer variant)
+- **Balance Optimizer**: Moderate utilization, focused on optimization strategies
+- **Income Maximizer**: High income, seeking investment and growth opportunities
+- **Emergency Fund Builder**: Actively building emergency fund, not yet at target
+- **Retirement Planner**: Focused on long-term retirement savings
+
+**Complexity:** Medium-High
+**Estimated effort:** 4-6 hours per persona (2-3 personas = 8-18 hours)
+
 ---
 
 ## 4. Recommendation Engine
@@ -192,7 +231,7 @@ This document outlines everything needed to go from MVP to full submission based
 **Target:** AI-generated personalized content
 
 **Tasks:**
-- [ ] Integrate Gemini API for content generation (per memory: no OpenAI)
+- [ ] Integrate OpenAI API for content generation
 - [ ] Create prompts for generating educational content
 - [ ] Implement rationale generation with LLM
 - [ ] Add fallback to templates if API fails
@@ -269,6 +308,58 @@ This document outlines everything needed to go from MVP to full submission based
 **Complexity:** Medium
 **Estimated effort:** 4-6 hours
 
+### UX/UI Polish & Visual Enhancement
+**Current (MVP):** Basic Bootstrap 5 styling, functional but minimal visual appeal
+**Target:** Modern, visually appealing, professional website with enhanced UX
+
+**Tasks:**
+- [ ] Design system and color palette
+  - [ ] Define consistent color scheme (primary, secondary, accent colors)
+  - [ ] Typography system (font families, sizes, weights)
+  - [ ] Spacing and layout system (consistent margins, padding)
+  - [ ] Component stylesheet (buttons, cards, badges, forms)
+- [ ] Enhanced dashboard design
+  - [ ] Card-based layout instead of table-only
+  - [ ] Data visualization (charts for persona distribution, signal trends)
+  - [ ] Quick stats cards (total users, personas breakdown, consent stats)
+  - [ ] Better visual hierarchy and information architecture
+- [ ] Enhanced user detail page
+  - [ ] Modern layout with improved spacing
+  - [ ] Better signal visualization (charts, progress bars, color-coded indicators)
+  - [ ] Improved recommendation cards with better typography
+  - [ ] Collapsible sections for better organization
+  - [ ] Visual indicators for consent status, persona matches
+- [ ] Component library
+  - [ ] Consistent button styles (primary, secondary, danger, outline)
+  - [ ] Form components (inputs, selects, checkboxes)
+  - [ ] Alert/notification components (success, warning, error, info)
+  - [ ] Loading states and spinners
+  - [ ] Empty states with helpful messaging
+- [ ] Interactive elements
+  - [ ] Smooth transitions and animations
+  - [ ] Hover effects on interactive elements
+  - [ ] Toast notifications for actions (consent toggle, recommendations generated)
+  - [ ] Tooltips for additional context
+- [ ] Responsive design improvements
+  - [ ] Mobile-first optimizations
+  - [ ] Tablet layout adjustments
+  - [ ] Breakpoint testing and refinement
+- [ ] Accessibility enhancements
+  - [ ] ARIA labels and roles
+  - [ ] Keyboard navigation support
+  - [ ] Focus indicators
+  - [ ] Screen reader compatibility
+  - [ ] Color contrast compliance (WCAG AA)
+- [ ] Visual polish
+  - [ ] Custom SVG icons (replace emoji/unicode where appropriate)
+  - [ ] Consistent iconography throughout
+  - [ ] Subtle shadows and depth
+  - [ ] Professional imagery/illustrations (optional)
+  - [ ] Consistent border radius and spacing
+
+**Complexity:** Medium-High
+**Estimated effort:** 8-12 hours
+
 ---
 
 ## 6. Guardrails & Compliance
@@ -302,16 +393,153 @@ This document outlines everything needed to go from MVP to full submission based
 **Complexity:** Medium
 **Estimated effort:** 3-4 hours
 
-### Enhanced Consent Management
+### Consent Enforcement (Required for MVP)
+**Current (MVP):** Consent is tracked but not enforced
+**Target:** Full enforcement per `directions.md` requirement: "No recommendations without consent"
+
+**Critical Requirements:**
+- [ ] Block recommendation generation if `consent_given = False`
+  - Update `generate_recommendations()` in `recommendations.py`
+  - Return empty list if no consent
+- [ ] Block recommendation display in API endpoints
+  - Update `get_recommendations_for_user()` in `app.py`
+  - Return empty recommendations with appropriate message
+- [ ] Update UI to show consent requirement
+  - Display consent banner/message when consent not given
+  - Hide recommendations section if no consent
+  - Update `user_detail.html` template
+- [ ] Add consent checks to recommendation retrieval
+  - Ensure all recommendation endpoints check consent
+  - Return user-friendly error messages
+- [ ] Add tests for consent enforcement
+  - Test that recommendations are blocked without consent
+  - Test that recommendations appear after consent granted
+  - Test consent revocation blocks future recommendations
+
+**Complexity:** Low-Medium
+**Estimated effort:** 2-3 hours
+**Priority:** High (Required for MVP compliance)
+
+### Enhanced Consent Management (Post-MVP)
+**Current (MVP):** Basic consent tracking (boolean flag)
+**Target:** Comprehensive consent management system
+
 **Tasks:**
 - [ ] Granular consent options (different data types)
+  - Consent for transaction analysis
+  - Consent for persona assignment
+  - Consent for recommendation generation
+  - Consent for partner offers
 - [ ] Consent history tracking
+  - Track consent changes over time
+  - Store timestamps for grant/revocation
+  - Track who changed consent (user vs operator)
 - [ ] Revocation workflow
+  - Immediate effect of revocation
+  - Clear UI for revocation
+  - Confirmation prompts
 - [ ] Data deletion on consent revocation
+  - Option to delete all user data when consent revoked
+  - Option to anonymize data instead
+  - Compliance with data retention policies
 - [ ] Consent audit trail
+  - Log all consent changes
+  - Track consent status at time of recommendation generation
+  - Store in `decision_traces` or separate audit table
+- [ ] Block signal detection without consent (if required)
+  - Update `detect_signals.py` to check consent
+  - Prevent behavioral analysis without consent
+- [ ] Block persona assignment without consent (if required)
+  - Update `personas.py` to check consent
+  - Prevent persona matching without consent
+- [ ] Consent status display in operator view
+  - Show consent status prominently
+  - Highlight users without consent
+  - Filter users by consent status
+
+**Complexity:** Medium-High
+**Estimated effort:** 4-6 hours
+**Priority:** Medium (Enhanced features)
+
+### Compliance Auditor Interface (Critical Compliance Only)
+**Current (MVP):** No dedicated compliance interface
+**Target:** Basic compliance auditor interface for regulatory oversight
+
+**Regulatory Context:**
+- GLBA (Gramm-Leach-Bliley Act) - Financial privacy, opt-out rights
+- FCRA (Fair Credit Reporting Act) - Credit data, adverse action notices
+- TDPSA (Texas Data Privacy and Security Act) - Data rights, consent management
+- RFPA (Right to Financial Privacy Act) - Confidentiality of financial records
+
+**Database Tables Needed:**
+- [ ] `consent_audit_log` - Track consent history (grant/revoke with timestamps)
+- [ ] `data_access_log` - Log all data access events (who, what, when, why)
+- [ ] `compliance_violations` - Track compliance issues (consent violations, tone violations, eligibility failures)
+
+**Critical Features:**
+1. **Consent Audit Trail**
+   - [ ] View consent history per user (grants, revocations, timestamps)
+   - [ ] Identify users processed without valid consent
+   - [ ] Consent status at time of recommendation generation
+   - [ ] Export consent records for regulatory audits
+
+2. **Data Access Logging**
+   - [ ] Log all data access events (user, accessed_by, access_type, timestamp)
+   - [ ] Filter by date range, user, access type
+   - [ ] Export audit logs (CSV/JSON) for compliance reports
+   - [ ] Identify unauthorized or suspicious access patterns
+
+3. **Compliance Violations Dashboard**
+   - [ ] View all compliance violations (consent, tone, eligibility)
+   - [ ] Track violation severity and resolution status
+   - [ ] Violation categories:
+     - Consent violations (processing without consent)
+     - Tone violations (shaming/judgmental language detected)
+     - Eligibility failures (recommendations to ineligible users)
+   - [ ] Resolution workflow (assign, track, document)
+
+4. **Recommendation Compliance Review**
+   - [ ] Verify each recommendation has:
+     - ✅ Active consent at time of generation
+     - ✅ Eligibility check performed
+     - ✅ Required disclaimer present
+     - ✅ Complete decision trace (4 steps)
+     - ✅ Rationale cites specific data
+   - [ ] Filter recommendations by compliance status
+   - [ ] Export compliance reports
+
+5. **Decision Trace Auditor**
+   - [ ] View all decision traces (already stored in `decision_traces` table)
+   - [ ] Verify trace completeness (all 4 steps present)
+   - [ ] Validate traces cite actual data points
+   - [ ] Export traces for regulatory audits
+
+6. **Basic Regulatory Reporting**
+   - [ ] Compliance summary report (consent coverage, violation rates)
+   - [ ] Data access report (access logs)
+   - [ ] Violation resolution report
+   - [ ] Export formats: CSV, JSON for regulatory submissions
+
+**Interface Requirements:**
+- [ ] Compliance dashboard with overview metrics
+- [ ] Consent audit log viewer
+- [ ] Data access log viewer
+- [ ] Violations dashboard
+- [ ] Recommendation compliance review interface
+- [ ] Export functionality for all audit data
+
+**Non-Critical Features (Deferred):**
+- Granular consent options (different data types)
+- Advanced tone checking automation
+- User data rights management (access/correction/deletion requests)
+- GLBA opt-out management interface
+- Data retention management
+- Fairness/bias monitoring
+- Advanced analytics and trends
 
 **Complexity:** Medium
-**Estimated effort:** 2-3 hours
+**Estimated effort:** 6-8 hours
+**Priority:** High (Required for regulatory compliance)
 
 ---
 
@@ -380,7 +608,12 @@ This document outlines everything needed to go from MVP to full submission based
 - [ ] Eligibility filter tests
 - [ ] API endpoint tests
 - [ ] Rationale generation tests
-- [ ] Consent tracking tests
+- [ ] Consent enforcement tests
+  - [ ] Recommendations blocked without consent
+  - [ ] Recommendations generated after consent granted
+  - [ ] Consent revocation blocks future recommendations
+  - [ ] API endpoints respect consent status
+  - [ ] UI displays consent requirements correctly
 
 **Complexity:** Medium-High
 **Estimated effort:** 6-8 hours
@@ -461,22 +694,6 @@ This document outlines everything needed to go from MVP to full submission based
 
 **Complexity:** Low
 **Estimated effort:** 1 hour
-
-### Demo Video or Presentation
-**Tasks:**
-- [ ] Record demo video (5-10 minutes) showing:
-  - [ ] Data ingestion
-  - [ ] Signal detection
-  - [ ] Persona assignment
-  - [ ] Recommendations with rationales
-  - [ ] Operator view
-  - [ ] Guardrails in action
-- [ ] Prepare live presentation slides
-- [ ] Create demo script
-- [ ] Prepare for Q&A
-
-**Complexity:** Medium
-**Estimated effort:** 3-4 hours
 
 ### Performance Metrics & Benchmarks
 **Tasks:**
@@ -587,23 +804,26 @@ This document outlines everything needed to go from MVP to full submission based
 
 ### Must Have (Critical for Submission)
 1. 50-100 users with diverse data
-2. All 5 personas implemented
+2. All 5 personas implemented (expandable to 6-10)
 3. All signal types detected (credit, subscriptions, savings, income)
 4. 30-day and 180-day windows
 5. AI/LLM integration for recommendations
 6. Partner offers with eligibility
-7. Evaluation harness with metrics
-8. ≥10 tests passing
-9. Complete documentation
-10. Demo video/presentation
+7. **Consent enforcement** (block recommendations without consent)
+8. Evaluation harness with metrics
+9. ≥10 tests passing
+10. Complete documentation
 
 ### Should Have (Important but not critical)
 1. Enhanced operator view
-2. End-user interface
-3. Comprehensive eligibility checks
-4. Tone validation system
-5. Decision traces
-6. Performance optimization
+2. **UX/UI polish & visual enhancement** (modern, professional appearance)
+3. End-user interface
+4. Comprehensive eligibility checks
+5. Tone validation system
+6. Decision traces
+7. **Compliance auditor interface** (critical compliance features)
+8. Performance optimization
+9. Additional personas (beyond 5)
 
 ### Nice to Have (Bonus points)
 1. Creative content formats
@@ -617,29 +837,36 @@ This document outlines everything needed to go from MVP to full submission based
 ## Estimated Total Effort (Post-MVP)
 
 **Core Requirements:** 60-80 hours
+**Compliance Interface:** 6-8 hours (added to core)
+**UX/UI Polish:** 8-12 hours (added to core)
+**Additional Personas:** 8-18 hours (2-3 personas)
 **Nice-to-Haves:** 20-40 hours
-**Total:** 80-120 hours
+**Total:** 102-158 hours
 
 ---
 
 ## Recommended Build Order (Post-MVP)
 
-1. **Expand data** (50-100 users, all account types) - 4-6 hours
-2. **Database migration prep** (test PostgreSQL locally, update connection handling) - 2-3 hours
-3. **Add savings & income signals** - 7-9 hours
-4. **Add 180-day window** - 3-4 hours
-5. **Implement remaining 3 personas** - 7-11 hours
-6. **Integrate AI/LLM** (Gemini) - 5-8 hours
-7. **Add partner offers** - 4-6 hours
-8. **Build evaluation harness** - 6-8 hours
-9. **Expand test suite** - 6-8 hours
-10. **Refactor to modular structure** - 4-6 hours
-11. **Enhanced operator view** - 4-6 hours
-12. **Build end-user interface** - 8-12 hours
-13. **Complete documentation** - 6-9 hours
-14. **AWS RDS setup & production migration** - 2-4 hours (when ready for production)
-15. **Create demo video** - 3-4 hours
-16. **Final polish & testing** - 4-6 hours
+1. **Implement consent enforcement** (Required for MVP compliance) - 2-3 hours
+2. **Expand data** (50-100 users, all account types) - 4-6 hours
+3. **Database migration prep** (test PostgreSQL locally, update connection handling) - 2-3 hours
+4. **Add savings & income signals** - 7-9 hours
+5. **Add 180-day window** - 3-4 hours
+6. **Implement remaining 3 personas** - 7-11 hours
+7. **Integrate AI/LLM** (OpenAI) - 5-8 hours
+8. **Add partner offers** - 4-6 hours
+9. **Build evaluation harness** - 6-8 hours
+10. **Expand test suite** (including consent enforcement tests) - 6-8 hours
+11. **Refactor to modular structure** - 4-6 hours
+12. **Enhanced operator view** - 4-6 hours
+13. **UX/UI polish & visual enhancement** - 8-12 hours
+14. **Build end-user interface** - 8-12 hours
+15. **Build compliance auditor interface** (critical compliance features) - 6-8 hours
+16. **Complete documentation** - 6-9 hours
+17. **Enhanced consent management** (granular options, history, audit trail) - 4-6 hours
+18. **Add additional personas** (2-3 new personas) - 8-18 hours
+19. **AWS RDS setup & production migration** - 2-4 hours (when ready for production)
+20. **Final polish & testing** - 4-6 hours
 
 **Note:** Database migration can happen anytime after MVP is complete. The abstraction layer is already in place, so migration can be done incrementally without blocking other features.
 
@@ -683,6 +910,14 @@ From `directions.md` requirements:
 - [ ] Shows all signals
 - [ ] Can override recommendations
 - [ ] Displays decision traces
+
+### Compliance (Critical Features)
+- [ ] Consent audit log tracks all consent changes
+- [ ] Data access logging captures all access events
+- [ ] Compliance violations dashboard shows all issues
+- [ ] Recommendation compliance review verifies all requirements
+- [ ] Decision trace auditor validates trace completeness
+- [ ] Regulatory reporting exports available (CSV/JSON)
 
 ### Evaluation
 - [ ] Report includes fairness analysis

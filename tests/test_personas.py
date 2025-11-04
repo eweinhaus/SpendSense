@@ -150,13 +150,32 @@ def test_assign_persona_subscription_heavy(test_db):
     conn = get_db_connection(test_db_path)
     
     # Create signals for subscription heavy
+    # Need to ensure user has enough accounts to not match Financial Newcomer
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM accounts WHERE user_id = ?", (user_id,))
+    account_count = cursor.fetchone()[0]
+    
+    # If user has < 3 accounts, Financial Newcomer will match first
+    # So we need to ensure user has enough accounts or use higher utilization
+    if account_count < 3:
+        # Add a credit card to ensure we have enough accounts
+        cursor.execute("""
+            INSERT INTO accounts (
+                user_id, account_id, type, subtype, current_balance, "limit"
+            ) VALUES (?, ?, ?, ?, ?, ?)
+        """, (user_id, "acc_test_cc", "credit", "credit card", 500.0, 2000.0))
+        conn.commit()
+    
     store_signal(user_id, 'subscription_count', 5.0, {}, '30d', conn)
     store_signal(user_id, 'subscription_monthly_spend', 100.0, {}, '30d', conn)
+    # Ensure low utilization to not match High Utilization
+    store_signal(user_id, 'credit_utilization_max', 20.0, {}, '30d', conn)
     
     # Assign persona
     persona = assign_persona(user_id, conn)
     
-    assert persona == "subscription_heavy"
+    # Should be subscription_heavy if no higher priority matches
+    assert persona == "subscription_heavy", f"Expected subscription_heavy, got {persona}"
     
     conn.close()
 

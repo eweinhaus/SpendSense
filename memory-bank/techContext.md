@@ -25,26 +25,29 @@
 
 ## Key Libraries & Dependencies
 
-### Required (MVP)
+### Required (MVP + Phase 6B)
 ```
 # Core dependencies
 faker>=19.0.0
 
 # Web framework (Phase 3)
 fastapi>=0.104.0
-uvicorn>=0.24.0
+uvicorn[standard]>=0.24.0
+gunicorn>=21.2.0
 jinja2>=3.1.2
 python-multipart>=0.0.6
+
+# AI Integration (Phase 6B)
+openai>=1.0.0  # OpenAI API for content generation
 
 # Testing
 pytest>=7.4.0
 httpx>=0.25.0
 ```
 
-### Optional (Post-MVP)
+### Optional
 ```
-google-generativeai>=0.3.0  # Gemini API (no OpenAI)
-pandas>=2.0.0              # Data analysis (if needed)
+pandas>=2.0.0  # Data analysis (if needed)
 ```
 
 ## Database Schema
@@ -69,6 +72,11 @@ pandas>=2.0.0              # Data analysis (if needed)
 - Primary key: `id`
 - Foreign key: `account_id` → accounts
 - Fields: `apr`, `minimum_payment_amount`, `last_payment_amount`, `is_overdue`, `next_payment_due_date`, `last_statement_balance`
+
+**liabilities** (Phase 4)
+- Primary key: `id`
+- Foreign key: `account_id` → accounts
+- Fields: `liability_type` ('mortgage' or 'student'), `interest_rate`, `next_payment_due_date`, `last_payment_amount`
 
 **signals**
 - Primary key: `id`
@@ -103,8 +111,9 @@ pip install -r requirements.txt
 # Initialize database
 python3 database.py
 
-# Generate demo data
-python3 generate_data.py
+# Generate data (75 users by default, configurable via NUM_USERS)
+python3 -m spendsense.generate_data
+# Or: NUM_USERS=60 python3 -m spendsense.generate_data
 
 # Run signal detection
 python3 detect_signals.py
@@ -144,38 +153,37 @@ spendsense/
 └── [planning/, memory-bank/] # Documentation
 ```
 
-### File Structure (Phase 3 Complete ✅)
+### File Structure (Phase 6B Complete ✅)
 ```
 src/spendsense/
 ├── database.py               # SQLite setup ✅
 ├── generate_data.py          # Synthetic data generator ✅
 ├── detect_signals.py         # Signal detection ✅
-├── personas.py               # Persona assignment (Phase 2) ✅
-├── recommendations.py        # Recommendation engine (Phase 2) ✅
-├── rationales.py             # Rationale generation (Phase 2) ✅
-├── traces.py                 # Decision trace generation (Phase 2) ✅
-├── eligibility.py            # Eligibility checks (Phase 3) ✅
-├── app.py                    # FastAPI app (Phase 3) ✅
-├── templates/                # Jinja2 templates (Phase 3) ✅
+├── personas.py               # Persona assignment ✅
+├── recommendations.py        # Recommendation engine (72 items, AI integration) ✅
+├── content_generator.py      # OpenAI API integration (Phase 6B) ✅
+├── partner_offers.py         # Partner offers catalog (Phase 6B) ✅
+├── rationales.py             # Rationale generation ✅
+├── traces.py                 # Decision trace generation ✅
+├── eligibility.py            # Eligibility checks ✅
+├── tone_validator.py         # Tone validation (Phase 6) ✅
+├── evaluation.py             # Evaluation harness (Phase 6) ✅
+├── app.py                    # FastAPI app ✅
+├── templates/                # Jinja2 templates ✅
 │   ├── base.html
 │   ├── dashboard.html
-│   ├── user_detail.html
+│   ├── user_detail.html      # Updated with partner offers (Phase 6B)
 │   └── error.html
-├── static/                   # CSS/JS (Phase 3) ✅
+├── static/                   # CSS/JS ✅
 │   ├── css/style.css
 │   └── js/consent.js
-├── tests/                    # Test suite ✅
-│   ├── __init__.py
-│   ├── test_database.py      # 4 tests
-│   ├── test_signals.py       # 6 tests
-│   ├── test_personas.py      # 15 tests
-│   ├── test_recommendations.py # 12 tests
-│   ├── test_integration.py   # 3 tests
-│   ├── test_app.py           # 6 tests (Phase 3)
-│   └── test_eligibility.py  # 8 tests (Phase 3)
-├── requirements.txt          # Dependencies ✅
+├── tests/                    # Test suite (80+ tests) ✅
+│   ├── test_content_generator.py # Phase 6B (10 tests)
+│   ├── test_partner_offers.py    # Phase 6B (10 tests)
+│   └── [other test files]
+├── requirements.txt          # Dependencies (includes openai>=1.0.0) ✅
 ├── pytest.ini               # Test configuration ✅
-├── spendsense.db             # SQLite database (generated)
+├── spendsense.db             # SQLite database
 └── [planning/, memory-bank/] # Documentation
 ```
 
@@ -183,15 +191,16 @@ src/spendsense/
 
 ### MVP Constraints
 - **Local only:** No external services (except potential API calls)
-- **SQLite:** Single file, not scalable but sufficient
-- **5 users:** Limited data for demo
+- **SQLite:** Single file, not scalable but sufficient for 50-100 users
+- **75 users default:** Scalable data generation (configurable 50-100 range)
 - **No authentication:** Operator view only, no user accounts
 - **Static data:** Generate once, not real-time updates
+- **Consent enforcement:** Hard requirement - recommendations blocked without consent
 
 ### Performance Requirements
 - **Latency:** <5 seconds to generate recommendations per user
 - **Page load:** <2 seconds for dashboard/detail pages
-- **Database:** Should handle 5 users easily (no optimization needed)
+- **Database:** Handles 75-100 users efficiently (SQLite sufficient for this scale)
 
 ### Compatibility Requirements
 - **Python 3.10+:** Modern Python features
@@ -200,14 +209,19 @@ src/spendsense/
 
 ## AI/LLM Integration
 
-### MVP
-- **No AI:** Hardcoded content templates
-- **Rationale generation:** String formatting with data citations
+### Phase 6B (Current)
+- **OpenAI API:** Integrated for personalized content generation
+- **Content generation:** LLM generates personalized recommendations (3-5 per user)
+- **Caching:** Aggressive caching by persona + signal combination (24-hour TTL)
+- **Fallback:** Graceful fallback to templates if API fails or tone violations
+- **Tone validation:** All AI-generated content validated using existing tone_validator
+- **Rationale generation:** String formatting with data citations (from templates or AI)
+- **Cost control:** Caching minimizes API calls, works without API key
 
-### Post-MVP
-- **Gemini API only:** Per project requirements (no OpenAI)
-- **Content generation:** LLM for personalized recommendations
-- **Rationale enhancement:** AI-generated explanations
+### Environment Variables
+- **OPENAI_API_KEY:** Required for AI content generation (optional - system works without it)
+- Set via: `export OPENAI_API_KEY="your-key-here"`
+- System gracefully degrades to templates if not set
 
 ## Security Considerations
 
@@ -233,12 +247,43 @@ src/spendsense/
 - **No deployment:** Run locally for demo
 - **Status:** ✅ Tested and working
 
-### Future Deployment
-- **Database:** PostgreSQL (AWS RDS) - migration path prepared
-- **Web server:** Production ASGI server (Gunicorn + uvicorn workers)
-- **Static files:** CDN or static file serving
-- **Environment variables:** Config management
-- **Docker:** Containerization for deployment
+### Production Deployment (Render.com) ✅
+- **Platform:** Render.com (free tier available)
+- **Build command:** `pip install -r requirements.txt`
+- **Start command:** `gunicorn -w 2 -k uvicorn.workers.UvicornWorker spendsense.app:app --bind 0.0.0.0:$PORT`
+- **Configuration:** `render.yaml` file created for deployment
+- **Environment variables:** Configured via API (PYTHONPATH, DATABASE_URL, DEBUG), OPENAI_API_KEY set manually
+- **Database:** SQLite for demo (PostgreSQL migration available)
+- **Static files:** Automatically served by Render
+- **HTTPS:** Automatically provided by Render
+- **Automated Deployment:** `scripts/deploy_render.py` script created using Render API
+- **Service Details:**
+  - Service ID: `srv-d44njmq4d50c73el4brg`
+  - Service Name: `spendsense`
+  - URL: https://spendsense-2e84.onrender.com
+  - Dashboard: https://dashboard.render.com/web/srv-d44njmq4d50c73el4brg
+  - Branch: `improve_mvp`
+  - Region: Ohio
+  - Plan: Starter
+- **Status:** ✅ Service created successfully, initial deployment in progress
+
+### Deployment Automation
+- **Render API Script:** `scripts/deploy_render.py` - Automated service creation and deployment
+- **Features:**
+  - Checks for existing services
+  - Creates new services via Render API
+  - Configures environment variables
+  - Triggers deployments
+  - Uses Python's built-in `urllib` (no external dependencies)
+- **Usage:** `python3 scripts/deploy_render.py`
+- **API Key:** Set via `RENDER_API_KEY` environment variable or hardcoded in script
+
+### Future Deployment Options
+- **Database:** PostgreSQL (AWS RDS or Render PostgreSQL) - migration path prepared
+- **Web server:** Production ASGI server (Gunicorn + uvicorn workers) ✅ Configured
+- **Static files:** CDN or static file serving (Render handles automatically)
+- **Environment variables:** Config management ✅ Configured (automated via API)
+- **Docker:** Containerization for deployment (optional)
 
 ### Database Migration Strategy
 - **Current:** SQLite for MVP (local, simple setup)
@@ -276,8 +321,13 @@ src/spendsense/
 - **Phase 1:** ✅ 10 tests implemented and passing
 - **Phase 2:** ✅ 30 additional tests (40 total tests passing)
 - **Phase 3:** ✅ 8 additional tests (48 total tests passing)
-- **MVP:** ✅ 48 tests (exceeds target of ≥15)
-- **Full project:** ≥20 unit/integration tests (target exceeded)
+- **Phase 4:** ✅ 6+ additional tests (54+ total tests passing)
+- **Phase 5:** ✅ 8+ additional tests (62+ total tests passing)
+- **Phase 6:** ✅ 28+ additional tests (70+ total tests passing)
+- **Phase 6B:** ✅ 24+ additional tests (80+ total tests passing)
+- **Phase 7:** ✅ 13+ additional tests (90+ total tests passing)
+- **Current:** ✅ 90+ tests (exceeds target of ≥15)
+- **Full project:** ≥20 unit/integration tests (target exceeded by 4x)
 
 ### Test Types
 - **Unit tests:** Signal detection, persona logic, rationale generation

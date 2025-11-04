@@ -232,38 +232,131 @@ The test suite includes:
 - **Integration Tests**: Full pipeline from data generation to recommendations
 - **API Tests**: FastAPI endpoints (dashboard, user detail, consent toggle)
 
-**Test Coverage**: 51+ tests covering critical paths and edge cases.
+**Test Coverage**: 90+ tests covering critical paths and edge cases (Phase 1: 10, Phase 2: 30, Phase 3: 8, Phase 4: 6+, Phase 5: 8+, Phase 6: 28+, Phase 7: 13+).
+
+## Phase 6 Features (Production Readiness)
+
+### Enhanced Guardrails
+- **Comprehensive Eligibility Checks**: Income requirements, credit score checks (if available), account exclusions, product catalog
+- **Tone Validation**: Automated detection of prohibited shaming language in generated content
+- **Eligibility Logging**: All eligibility failures logged for operator review
+
+### Evaluation Harness
+- **Coverage Metrics**: % of users with assigned persona + ≥3 behaviors (target: 100%)
+- **Explainability Metrics**: % of recommendations with rationales (target: 100%)
+- **Relevance Metrics**: Persona-content fit scoring
+- **Latency Metrics**: Time to generate recommendations per user (target: <5 seconds)
+- **Fairness Metrics**: Persona and recommendation distribution analysis
+- **Automated Reports**: JSON, CSV, and Markdown summary reports
+
+### Operator View Enhancements (Phase 7)
+- **Dual-Window Display**: Both 30-day and 180-day signal windows with tabs
+- **Organized Signal Display**: All signal types (credit, subscriptions, savings, income) organized by category
+- **Complete Persona Display**: All 5 personas displayed with color-coded badges
+- **Enhanced Decision Traces**: Formatted decision traces with all 4 steps clearly displayed, expandable data citations
+- **Window-Based Persona Rationale**: Shows which signals and windows contributed to persona assignment
+
+### Testing & Documentation (Phase 7)
+- **Comprehensive Test Suite**: 90+ tests covering all new features, edge cases, and integration paths
+- **Complete Documentation**: README, schema docs, decision log, API docs, limitations
+- **Deployment Ready**: Environment configuration and deployment documentation
+- **Production Verified**: Render.com deployment with full verification
 
 ## Known Limitations (MVP)
 
-- Only 5 users (not scalable to production)
-- Only 2 personas (High Utilization, Subscription-Heavy)
-- Hardcoded recommendations (no AI/LLM integration)
-- 30-day analysis window only (no 180-day analysis)
-- No income stability detection
-- No savings growth analysis
-- Simple subscription detection (may miss edge cases)
-- No user authentication
-- SQLite database (not suitable for production scale)
+### Technical Limitations
+- **SQLite Database**: Not suitable for production scale (single-file, limited concurrent writes). Sufficient for demo with 50-100 users. PostgreSQL migration path available.
+- **No Real-Time Updates**: Data is pre-generated. No live transaction streaming or real-time signal detection.
+- **No User Authentication**: Operator view only. No end-user interface or authentication system.
+- **Simple Subscription Detection**: Pattern matching may miss edge cases with irregular patterns or varying merchant names.
+- **Credit Score Not Tracked**: Credit score checks are placeholder (allows by default if not available). Real implementation would require credit score integration.
+- **Income Estimation**: Income estimated from payroll transactions. May not be 100% accurate for all income types.
+
+### Functional Limitations
+- **Fixed Content Catalog**: Content templates are hardcoded. AI-generated content available but requires API key.
+- **Single Persona Assignment**: One persona per user (priority-based). Multiple personas could provide richer insights.
+- **Limited Signal Types**: Focus on credit, subscriptions, savings, and income signals. Additional signal types could be added.
+- **No Historical Analysis**: No time-series analysis or trend detection beyond 180-day window.
+- **No A/B Testing**: No built-in experimentation framework for recommendation effectiveness.
+
+### Scalability Considerations
+- **Single-Process Architecture**: Monolithic application. Not horizontally scalable without refactoring.
+- **No Caching Layer**: No Redis or similar caching for frequently accessed data.
+- **No Background Jobs**: Signal detection and recommendation generation run synchronously.
+- **File Storage**: SQLite database file on filesystem. Render.com free tier may have limitations.
+
+### Future Enhancements
+See `planning/post_mvp_roadmap.md` for planned features:
+- PostgreSQL migration for production scale
+- Real-time data streaming integration
+- End-user interface with authentication
+- Advanced analytics and reporting
+- Machine learning for signal detection
+- A/B testing framework
+
+## Evaluation Harness
+
+Run the evaluation harness to generate metrics:
+
+```bash
+PYTHONPATH=src python3 -m spendsense.evaluation
+```
+
+This generates:
+- Coverage metrics (persona + ≥3 behaviors)
+- Explainability metrics (rationales)
+- Relevance metrics (persona-content fit)
+- Latency metrics (generation time)
+- Fairness metrics (distribution analysis)
+
+Reports are saved to `metrics/` directory in JSON, CSV, and Markdown formats.
+
+## Deployment
+
+### Production Deployment (Render.com)
+
+See `docs/DEPLOYMENT.md` for detailed deployment instructions.
+
+**Quick Steps:**
+1. Create Render.com account and connect GitHub repository
+2. Create Web Service with:
+   - Build command: `pip install -r requirements.txt`
+   - Start command: `gunicorn -w 2 -k uvicorn.workers.UvicornWorker spendsense.app:app --bind 0.0.0.0:$PORT`
+3. Set environment variables (see `.env.example`)
+4. Deploy and verify
+
+### Environment Variables
+
+Create a `.env` file (see `.env.example` for template):
+
+```
+OPENAI_API_KEY=your_api_key_here
+DATABASE_URL=sqlite:///spendsense.db
+DEBUG=False
+```
 
 ## Future Enhancements
 
 See `planning/post_mvp_roadmap.md` for planned features:
-- Scale to 50-100 users
-- Add more personas (Savings Builder, Income Stability, Custom)
-- AI/LLM integration for personalized content generation
-- 180-day analysis window
-- Partner offer integration
-- End-user interface
-- Evaluation harness
+- ✅ Scale to 50-100 users (Phase 4)
+- ✅ Add more personas (Phase 5)
+- ✅ AI/LLM integration (Phase 6)
+- ✅ 180-day analysis window (Phase 5)
+- ✅ Partner offer integration (Phase 6)
+- ✅ Evaluation harness (Phase 6)
+- ⏳ End-user interface (Future phase)
 
 ## Documentation
 
 - **PRD**: `planning/PRD_MVP.md` - Complete product requirements
 - **Phase PRDs**: `planning/PRDs/` - Detailed phase-specific requirements
 - **Architecture**: `planning/architecture.mmd` - System architecture diagram
+- **Schema Documentation**: `docs/schema.md` - Database schema with ER diagrams
+- **Decision Log**: `docs/decisions.md` - Key technical decisions and rationale
+- **Deployment Guide**: `docs/DEPLOYMENT.md` - Production deployment instructions
 - **Memory Bank**: `memory-bank/` - Project documentation and context
 - **Testing Guide**: `md_files/MANUAL_TESTING_GUIDE.md` - Manual testing procedures
+- **API Documentation**: Available at `/docs` endpoint when server is running (FastAPI auto-generated OpenAPI/Swagger docs)
 
 ## License
 
