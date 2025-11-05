@@ -55,17 +55,30 @@ PYTHONPATH=src python3 -m spendsense.database
 
 This creates the SQLite database (`spendsense.db`) with all required tables and indexes.
 
-4. **Generate synthetic data**:
-```bash
-PYTHONPATH=src python3 -m spendsense.generate_data
-```
+4. **Generate or ingest data**:
 
-This generates 5 users with diverse financial profiles:
-- User 1: High Utilization (75% credit utilization)
-- User 2: High Utilization with Multiple Cards (one overdue)
-- User 3: Subscription-Heavy (major services)
-- User 4: Subscription-Heavy (many small subscriptions)
-- User 5: Neutral/Healthy financial behavior
+   **Option A: Generate synthetic data** (default):
+   ```bash
+   PYTHONPATH=src python3 -m spendsense.generate_data
+   ```
+   
+   This generates 75 users (configurable via `NUM_USERS` env var) with diverse financial profiles.
+
+   **Option B: Ingest from CSV/JSON files**:
+   ```bash
+   # JSON ingestion (nested structure)
+   PYTHONPATH=src python3 -m spendsense.data_ingest --format json --file data/sample_users.json
+   
+   # CSV ingestion (separate files)
+   PYTHONPATH=src python3 -m spendsense.data_ingest --format csv \
+     --users data/sample_users.csv \
+     --accounts data/sample_accounts.csv \
+     --transactions data/sample_transactions.csv \
+     --credit-cards data/sample_credit_cards.csv \
+     --liabilities data/sample_liabilities.csv
+   ```
+   
+   Sample data files are provided in the `data/` directory. See [Data Ingestion](#data-ingestion-from-csvjson) section below for details.
 
 5. **Detect signals**:
 ```bash
@@ -235,7 +248,70 @@ The test suite includes:
 - **Integration Tests**: Full pipeline from data generation to recommendations
 - **API Tests**: FastAPI endpoints (dashboard, user detail, consent toggle)
 
-**Test Coverage**: 100+ tests covering critical paths and edge cases (Phase 1: 10, Phase 2: 30, Phase 3: 8, Phase 4: 6+, Phase 5: 8+, Phase 6: 28+, Phase 7: 13+, Phase 8A: 20+).
+**Test Coverage**: 120+ tests covering critical paths and edge cases (Phase 1: 10, Phase 2: 30, Phase 3: 8, Phase 4: 6+, Phase 5: 8+, Phase 6: 28+, Phase 7: 13+, Phase 8A: 20+, Phase 8B: 25+, Phase 8C: 14+, Data Ingestion: 20+).
+
+## Data Ingestion from CSV/JSON
+
+SpendSense supports ingesting Plaid-compatible data from JSON or CSV files, in addition to synthetic data generation.
+
+### Supported Formats
+
+**JSON Format** (Nested Structure):
+- Single JSON file with users, each containing nested accounts, transactions, credit cards, and liabilities
+- Plaid-compatible field names with nested structures (e.g., `balances.available`, `personal_finance_category.primary`)
+- Example: `data/sample_users.json`
+
+**CSV Format** (Separate Files):
+- Multiple CSV files: `users.csv`, `accounts.csv`, `transactions.csv`, `credit_cards.csv`, `liabilities.csv`
+- Headers match Plaid field names
+- Foreign key relationships via `account_id` (for transactions) and `user_id` (for accounts)
+- Example files: `data/sample_*.csv`
+
+### Usage
+
+**JSON Ingestion:**
+```bash
+PYTHONPATH=src python3 -m spendsense.data_ingest --format json --file data/sample_users.json
+```
+
+**CSV Ingestion:**
+```bash
+PYTHONPATH=src python3 -m spendsense.data_ingest --format csv \
+  --users data/sample_users.csv \
+  --accounts data/sample_accounts.csv \
+  --transactions data/sample_transactions.csv \
+  --credit-cards data/sample_credit_cards.csv \
+  --liabilities data/sample_liabilities.csv
+```
+
+**Custom Database Path:**
+```bash
+PYTHONPATH=src python3 -m spendsense.data_ingest --format json --file data.json --db-path custom.db
+```
+
+### Field Mapping
+
+The ingestion system automatically maps Plaid-compatible fields to the database schema:
+
+- **Nested Values**: `balances.available` → `available_balance`, `balances.current` → `current_balance`
+- **Date Formats**: ISO format (YYYY-MM-DD) preferred, with fallback parsing
+- **Optional Fields**: Missing optional fields use defaults (e.g., `iso_currency_code` defaults to 'USD')
+- **Foreign Keys**: Account IDs are resolved automatically (Plaid `account_id` strings → database integer IDs)
+
+### Error Handling
+
+- **Validation**: All required fields are validated before insertion
+- **Transaction Safety**: Each user (JSON) or file (CSV) is processed in a transaction (rollback on errors)
+- **Error Reporting**: Detailed error messages with file/row information for debugging
+- **Duplicate Handling**: Duplicate emails or account_ids are skipped with warnings
+
+### Sample Data
+
+Sample data files are provided in the `data/` directory:
+- `sample_users.json` - Complete JSON example with nested structure
+- `sample_users.csv`, `sample_accounts.csv`, etc. - CSV examples
+
+See `md_files/CSV_JSON_INGESTION_DESIGN.md` for detailed field mappings and format specifications.
 
 ## Phase 6 Features (Production Readiness)
 

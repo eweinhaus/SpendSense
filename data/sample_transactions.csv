@@ -1,0 +1,6 @@
+account_id,date,amount,merchant_name,payment_channel,personal_finance_category,pending
+acc_checking_001,2024-01-15,-50.00,Coffee Shop,in store,FOOD_AND_DRINK,false
+acc_checking_001,2024-01-20,2500.00,PAYROLL,other,INCOME,false
+acc_checking_002,2024-01-10,-120.00,Netflix,online,GENERAL_MERCHANDISE,false
+acc_checking_002,2024-01-11,-15.99,Spotify,online,GENERAL_MERCHANDISE,false
+

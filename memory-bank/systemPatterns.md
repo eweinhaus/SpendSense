@@ -228,12 +228,13 @@ User → Consent Check → Generate Recommendations → Display
 
 ## Code Organization Patterns
 
-### Current Structure (Phase 8C Complete)
+### Current Structure (CSV/JSON Ingestion Complete)
 
 ```
 spendsense/
 ├── database.py         # SQLite setup & schema (Phase 4: liabilities table)
 ├── generate_data.py     # Synthetic data generator (Phase 4: scaled to 75 users)
+├── data_ingest.py      # CSV/JSON ingestion module (NEW: JSON and CSV support) ✅
 ├── detect_signals.py   # Signal detection engine (Phase 5: savings, income, dual-window) ✅
 ├── personas.py         # Persona assignment (Phase 2, Phase 5: 3 new personas) ✅
 ├── recommendations.py  # Recommendation engine (Phase 2, Phase 4: consent, Phase 5: new templates, Phase 6B: AI integration, 72 items) ✅
@@ -275,10 +276,11 @@ spendsense/
 │   ├── demo.html            # Design system demo page (Phase 8C: new) ✅
 │   └── js/
 ├── icon_helper.py      # Icon helper for templates (Phase 8C: new) ✅
-├── tests/              # Test suite (100+ tests) ✅
+├── tests/              # Test suite (120+ tests) ✅
 │   ├── test_phase8a.py # Phase 8A tests (20 tests) ✅
 │   ├── test_phase8a_auth.py # Phase 8A auth unit tests ✅
-│   └── test_phase8a_e2e.py # Phase 8A Playwright E2E tests ✅
+│   ├── test_phase8a_e2e.py # Phase 8A Playwright E2E tests ✅
+│   └── test_data_ingest.py # CSV/JSON ingestion tests (20 tests) ✅
 │   ├── __init__.py
 │   ├── test_database.py
 │   ├── test_signals.py (Phase 5: updated for windows)
