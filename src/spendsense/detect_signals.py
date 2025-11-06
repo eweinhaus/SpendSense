@@ -80,9 +80,11 @@ def store_signal(user_id: int, signal_type: str, value: Optional[float],
 def detect_credit_signals(user_id: int, window: str = '30d', conn: Optional[sqlite3.Connection] = None) -> Dict:
     """
     Detect all credit utilization signals for a user.
+    Uses historical transaction data to calculate balance at window start.
     
     Args:
         user_id: User ID
+        window: Time window ('30d' or '180d')
         conn: Database connection (creates new if None)
         
     Returns:
@@ -96,6 +98,10 @@ def detect_credit_signals(user_id: int, window: str = '30d', conn: Optional[sqli
     
     try:
         cursor = conn.cursor()
+        
+        # Calculate date range based on window
+        window_days = _get_window_days(window)
+        window_start = TODAY - timedelta(days=window_days)
         
         # Get all credit card accounts for user
         cursor.execute("""
@@ -115,10 +121,30 @@ def detect_credit_signals(user_id: int, window: str = '30d', conn: Optional[sqli
         card_details = []
         any_overdue = False
         
-        for card_id, account_id, balance, limit in credit_cards:
+        for card_id, account_id, current_balance, limit in credit_cards:
             if limit is None or limit <= 0:
                 # Skip cards with zero or missing limit
                 continue
+            
+            # Calculate historical balance at window start
+            # Sum all transactions from window_start to today
+            cursor.execute("""
+                SELECT COALESCE(SUM(t.amount), 0)
+                FROM transactions t
+                WHERE t.account_id = ?
+                AND t.date >= ?
+                AND t.pending = 0
+            """, (card_id, window_start))
+            
+            tx_summary = cursor.fetchone()
+            net_transactions = tx_summary[0] if tx_summary and tx_summary[0] else 0
+            
+            # Historical balance = current balance - net transactions in window
+            # (transactions are typically negative for credit card charges)
+            historical_balance = current_balance - net_transactions
+            
+            # Use historical balance for utilization calculation
+            balance = historical_balance
             
             # Calculate utilization
             utilization = (balance / limit) * 100 if limit > 0 else 0
@@ -143,9 +169,11 @@ def detect_credit_signals(user_id: int, window: str = '30d', conn: Optional[sqli
             card_details.append({
                 'account_id': account_id,
                 'balance': balance,
+                'current_balance': current_balance,
                 'limit': limit,
                 'utilization': utilization,
-                'is_overdue': is_overdue
+                'is_overdue': is_overdue,
+                'window': window
             })
         
         if not utilizations:
@@ -158,10 +186,17 @@ def detect_credit_signals(user_id: int, window: str = '30d', conn: Optional[sqli
         card_count = len(utilizations)
         
         # Get interest charges (if detectable from credit card data)
-        # For MVP, we'll estimate based on APR and balance
+        # For MVP, we'll estimate based on APR and historical balance
         total_interest = 0
-        for card_id, account_id, balance, limit in credit_cards:
-            if limit and limit > 0:
+        for card_detail in card_details:
+            card_id = None
+            # Find the card_id for this account
+            for cid, aid, _, _ in credit_cards:
+                if aid == card_detail['account_id']:
+                    card_id = cid
+                    break
+            
+            if card_id and card_detail['limit'] > 0:
                 cursor.execute("""
                     SELECT apr FROM credit_cards
                     WHERE account_id = ?
@@ -170,8 +205,8 @@ def detect_credit_signals(user_id: int, window: str = '30d', conn: Optional[sqli
                 apr_result = cursor.fetchone()
                 if apr_result and apr_result[0]:
                     apr = apr_result[0]
-                    # Monthly interest = (balance * apr / 100) / 12
-                    monthly_interest = (balance * apr / 100) / 12
+                    # Monthly interest = (historical balance * apr / 100) / 12
+                    monthly_interest = (card_detail['balance'] * apr / 100) / 12
                     total_interest += monthly_interest
         
         # Store signals

@@ -130,9 +130,12 @@
 .card {
   background: white;
   border-radius: 0.5rem;
-  padding: var(--spacing-6);
+  padding: var(--spacing-8);
+  margin-bottom: var(--spacing-6);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
 }
 
 .card:hover {
@@ -141,10 +144,16 @@
 }
 
 .card-header {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-6);
   color: var(--color-neutral-900);
+}
+
+.card p,
+.card div {
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-4);
 }
 
 .card-footer {
@@ -167,13 +176,16 @@
   line-height: 1;
 }
 
-/* Persona Badges */
+/* Persona Badges - Pill-shaped labels */
 .badge-persona {
-  padding: var(--spacing-2) var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-4);
   font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   white-space: nowrap;
   display: inline-block;
   flex-shrink: 0;
+  border-radius: 9999px; /* Fully rounded pill shape */
+  line-height: 1.2;
 }
 
 .badge-persona-high-utilization {
@@ -310,9 +322,13 @@
 }
 
 .alert-info {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary-dark);
-  border-left: 4px solid var(--color-primary);
+  background-color: var(--color-primary);
+  color: white;
+  border-left: 4px solid var(--color-primary-dark);
+}
+
+.alert-info strong {
+  color: white;
 }
 
 .alert-dismissible {

@@ -312,20 +312,31 @@ def get_user_signals_display(user_id: int) -> Dict:
                 util_signal = signals_dict[util_key]
                 utilization = util_signal.get('value', 0) or 0
                 
-                # Get credit card details
-                cursor.execute("""
-                    SELECT a.account_id, a.current_balance, a."limit", cc.is_overdue, cc.apr
-                    FROM accounts a
-                    LEFT JOIN credit_cards cc ON a.id = cc.account_id
-                    WHERE a.user_id = ? AND a.type = 'credit'
-                    ORDER BY (a.current_balance / NULLIF(a."limit", 0)) DESC
-                    LIMIT 1
-                """, (user_id,))
+                # Get credit card details from signal metadata (which includes historical balance)
+                metadata = util_signal.get('metadata', {})
+                cards = metadata.get('cards', [])
                 
-                card_row = cursor.fetchone()
-                if card_row:
-                    account_id, balance, limit, is_overdue, apr = card_row
+                if cards:
+                    # Use the card with highest utilization (first in list should be sorted)
+                    card_data = cards[0] if cards else {}
+                    account_id = card_data.get('account_id', '')
+                    balance = card_data.get('balance', 0)  # Historical balance from signal
+                    limit = card_data.get('limit', 0)
+                    is_overdue = card_data.get('is_overdue', False)
+                    
                     last_4 = account_id[-4:] if len(account_id) >= 4 else "XXXX"
+                    
+                    # Get APR from database
+                    cursor.execute("""
+                        SELECT cc.apr
+                        FROM accounts a
+                        LEFT JOIN credit_cards cc ON a.id = cc.account_id
+                        WHERE a.account_id = ? AND a.user_id = ?
+                        LIMIT 1
+                    """, (account_id, user_id))
+                    
+                    apr_row = cursor.fetchone()
+                    apr = apr_row[0] if apr_row and apr_row[0] else None
                     
                     interest = signals_dict.get('credit_interest_charges', {}).get('value', 0) or 0
                     
@@ -338,6 +349,33 @@ def get_user_signals_display(user_id: int) -> Dict:
                         'is_overdue': bool(is_overdue) if is_overdue is not None else False,
                         'apr': apr
                     }
+                else:
+                    # Fallback to current balance if no card data in metadata
+                    cursor.execute("""
+                        SELECT a.account_id, a.current_balance, a."limit", cc.is_overdue, cc.apr
+                        FROM accounts a
+                        LEFT JOIN credit_cards cc ON a.id = cc.account_id
+                        WHERE a.user_id = ? AND a.type = 'credit'
+                        ORDER BY (a.current_balance / NULLIF(a."limit", 0)) DESC
+                        LIMIT 1
+                    """, (user_id,))
+                    
+                    card_row = cursor.fetchone()
+                    if card_row:
+                        account_id, balance, limit, is_overdue, apr = card_row
+                        last_4 = account_id[-4:] if len(account_id) >= 4 else "XXXX"
+                        
+                        interest = signals_dict.get('credit_interest_charges', {}).get('value', 0) or 0
+                        
+                        window_result['credit'] = {
+                            'card_name': f"Card ending in {last_4}",
+                            'utilization': utilization,
+                            'balance': balance or 0,
+                            'limit': limit or 0,
+                            'interest_charges': interest,
+                            'is_overdue': bool(is_overdue) if is_overdue is not None else False,
+                            'apr': apr
+                        }
             
             # Subscription signals
             if 'subscription_count' in signals_dict:
