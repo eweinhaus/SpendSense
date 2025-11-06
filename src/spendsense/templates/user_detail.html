@@ -3,400 +3,1377 @@
 {% block title %}{{ user.name }} - SpendSense MVP{% endblock %}
 
 {% block content %}
-<div style="margin-bottom: var(--spacing-6);">
+<div style="margin-bottom: var(--spacing-4);">
     <a href="/" class="btn btn-secondary">← Back to Dashboard</a>
 </div>
 
-<!-- User Information -->
-<div class="card" style="margin-bottom: var(--spacing-6);">
-    <div class="card-header">User Information</div>
-    <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-4); align-items: start; padding: var(--spacing-3);">
-        <div style="flex: 1; min-width: 200px;">
-            <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
-                <div><strong>Name:</strong> <span style="color: var(--color-neutral-700);">{{ user.name }}</span></div>
-                <div><strong>Email:</strong> <span style="color: var(--color-neutral-700);">{{ user.email }}</span></div>
-                <div><strong>User ID:</strong> <span style="color: var(--color-neutral-700);">{{ user.id }}</span></div>
+<!-- Sticky Summary Header -->
+{% set window_signals_30d = signals.get('30d', {}) %}
+<div class="sticky-header" id="sticky-header">
+    <div class="sticky-header-content">
+        <div class="sticky-header-top">
+            <div class="sticky-header-user-info">
+                <h2 class="sticky-header-name">{{ user.name }}</h2>
+                <div class="sticky-header-meta">
+                    <span class="sticky-header-meta-item">
+                        <span class="meta-label">ID:</span>
+                        <span class="meta-value">{{ user.id }}</span>
+                    </span>
+                    <span class="sticky-header-meta-separator">•</span>
+                    <span class="sticky-header-meta-item">
+                        <span class="meta-label">Consent:</span>
+                        <span class="meta-value {% if user.consent_given %}meta-success{% else %}meta-error{% endif %}">
+                            {% if user.consent_given %}✓ Active{% else %}✗ Inactive{% endif %}
+                        </span>
+                    </span>
+                </div>
+            </div>
+            <div class="sticky-header-metrics">
+                {% if persona %}
+                    {% if persona.persona_type == 'high_utilization' %}
+                        <span class="badge badge-persona badge-persona-high-utilization">High Utilization</span>
+                    {% elif persona.persona_type == 'variable_income_budgeter' %}
+                        <span class="badge badge-persona badge-persona-variable-income">Variable Income</span>
+                    {% elif persona.persona_type == 'savings_builder' %}
+                        <span class="badge badge-persona badge-persona-savings-builder">Savings Builder</span>
+                    {% elif persona.persona_type == 'financial_newcomer' %}
+                        <span class="badge badge-persona badge-persona-financial-newcomer">Financial Newcomer</span>
+                    {% elif persona.persona_type == 'subscription_heavy' %}
+                        <span class="badge badge-persona badge-persona-subscription-heavy">Subscription-Heavy</span>
+                    {% else %}
+                        <span class="badge badge-persona badge-persona-neutral">Neutral</span>
+                    {% endif %}
+                {% endif %}
+                {% if window_signals_30d.get('credit') %}
+                    <div class="sticky-metric-card">
+                        <span class="sticky-metric-label">Credit</span>
+                        <span class="sticky-metric-value">{{ "%.0f"|format(window_signals_30d.credit.utilization) }}%</span>
+                    </div>
+                {% endif %}
+                {% if window_signals_30d.get('subscription') %}
+                    <div class="sticky-metric-card">
+                        <span class="sticky-metric-label">Subs</span>
+                        <span class="sticky-metric-value">{{ window_signals_30d.subscription.count }}</span>
+                    </div>
+                {% endif %}
+                {% if window_signals_30d.get('income') %}
+                    <div class="sticky-metric-card">
+                        <span class="sticky-metric-label">Income</span>
+                        <span class="sticky-metric-value">{{ window_signals_30d.income.frequency|default('N/A') }}</span>
+                    </div>
+                {% endif %}
             </div>
         </div>
-        <div style="flex: 1; min-width: 200px;">
-            <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
-                <label style="display: flex; align-items: center; gap: var(--spacing-2); cursor: pointer;">
-                    <input type="checkbox" id="consent-checkbox" 
-                           {% if user.consent_given %}checked{% endif %}
-                           onchange="toggleConsent({{ user.id }})">
-                    <span style="font-size: var(--font-size-sm);"><strong>Consent for data processing</strong></span>
-                </label>
-                <p style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin: 0;">
-                    Created: {{ user.created_at }}
-                </p>
-            </div>
-        </div>
+        <nav class="sticky-header-nav" aria-label="User detail navigation">
+            <a href="#signals-section" class="sticky-nav-link active">Signals</a>
+            <a href="#persona-section" class="sticky-nav-link">Persona</a>
+            <a href="#recommendations-section" class="sticky-nav-link">Recommendations</a>
+            {% if user.consent_given and partner_offers %}
+            <a href="#offers-section" class="sticky-nav-link">Offers</a>
+            {% endif %}
+        </nav>
     </div>
 </div>
 
-<!-- Detected Signals -->
-<div class="card" style="margin-bottom: var(--spacing-6);">
-    <div class="card-header">Detected Signals</div>
-    <div>
-        <!-- Tabs for 30d and 180d windows -->
-        <div style="display: flex; gap: var(--spacing-2); margin-bottom: var(--spacing-4); border-bottom: 2px solid var(--color-neutral-200);">
-            <button class="nav-link active" id="tab-30d" data-bs-toggle="tab" data-bs-target="#panel-30d" type="button" role="tab" 
-                    style="padding: var(--spacing-2) var(--spacing-4); border: none; background: none; border-bottom: 3px solid var(--color-primary); color: var(--color-primary); font-weight: var(--font-weight-medium); cursor: pointer;">
-                30-Day Window
-            </button>
-            <button class="nav-link" id="tab-180d" data-bs-toggle="tab" data-bs-target="#panel-180d" type="button" role="tab"
-                    style="padding: var(--spacing-2) var(--spacing-4); border: none; background: none; border-bottom: 3px solid transparent; color: var(--color-neutral-600); font-weight: var(--font-weight-medium); cursor: pointer;">
-                180-Day Window
-            </button>
+<!-- Two-Column Layout Container -->
+<div class="two-column-layout">
+    <!-- Left Column (60%) -->
+    <div class="left-column">
+        <!-- Detected Signals (Expanded by default) -->
+        <div class="card" id="signals-section" style="margin-bottom: var(--spacing-6);">
+            <div class="card-header">Detected Signals</div>
+            <div style="padding-top: var(--spacing-2);">
+                <!-- Tabs for 30d and 180d windows -->
+                <div style="display: flex; gap: var(--spacing-4); margin-bottom: var(--spacing-6); border-bottom: 2px solid var(--color-neutral-200); padding-bottom: var(--spacing-4);">
+                    <button class="nav-link active" id="tab-30d" data-bs-toggle="tab" data-bs-target="#panel-30d" type="button" role="tab" 
+                            style="padding: var(--spacing-2) var(--spacing-4); border: none; background: none; border-bottom: 3px solid var(--color-primary); color: var(--color-primary); font-weight: var(--font-weight-medium); cursor: pointer;">
+                        30-Day Window
+                    </button>
+                    <button class="nav-link" id="tab-180d" data-bs-toggle="tab" data-bs-target="#panel-180d" type="button" role="tab"
+                            style="padding: var(--spacing-2) var(--spacing-4); border: none; background: none; border-bottom: 3px solid transparent; color: var(--color-neutral-600); font-weight: var(--font-weight-medium); cursor: pointer;">
+                        180-Day Window
+                    </button>
+                </div>
+                
+                <div class="tab-content">
+                    <!-- 30-Day Window -->
+                    <div class="tab-pane fade show active" id="panel-30d" role="tabpanel">
+                        {% set window_signals = signals.get('30d', {}) %}
+                        
+                        <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
+                            {% if window_signals.get('credit') %}
+                            <div class="signal-section">
+                                <h5 class="signal-section-title">Credit Utilization</h5>
+                                <dl class="signal-details">
+                                    <div class="signal-detail-row">
+                                        <dt>Card</dt>
+                                        <dd>{{ window_signals.credit.card_name }}</dd>
+                                    </div>
+                                    <div class="signal-detail-row">
+                                        <dt>Utilization</dt>
+                                        <dd class="metric-highlight">{{ "%.0f"|format(window_signals.credit.utilization) }}%</dd>
+                                    </div>
+                                    <div class="signal-detail-row-group">
+                                        <div class="signal-detail-row">
+                                            <dt>Balance</dt>
+                                            <dd>${{ "%.2f"|format(window_signals.credit.balance) }}</dd>
+                                        </div>
+                                        <div class="signal-detail-row">
+                                            <dt>Limit</dt>
+                                            <dd>${{ "%.2f"|format(window_signals.credit.limit) }}</dd>
+                                        </div>
+                                    </div>
+                                    {% if window_signals.credit.interest_charges > 0 %}
+                                    <div class="signal-detail-row signal-detail-row-warning">
+                                        <dt>Interest Charges</dt>
+                                        <dd>${{ "%.2f"|format(window_signals.credit.interest_charges) }}/month</dd>
+                                    </div>
+                                    {% endif %}
+                                    {% if window_signals.credit.is_overdue %}
+                                    <div class="signal-detail-row">
+                                        <dt>Status</dt>
+                                        <dd><span class="badge badge-error">Overdue</span></dd>
+                                    </div>
+                                    {% endif %}
+                                </dl>
+                                <!-- Progress bar for utilization -->
+                                <div class="credit-utilization-progress">
+                                    <div class="progress-bar-header">
+                                        <span class="progress-bar-label">Credit Utilization</span>
+                                        <span class="progress-bar-value">{{ "%.0f"|format(window_signals.credit.utilization) }}%</span>
+                                    </div>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar">
+                                            <div class="progress-bar-fill" style="width: {{ window_signals.credit.utilization }}%; background-color: {% if window_signals.credit.utilization > 80 %}var(--color-error){% elif window_signals.credit.utilization > 50 %}var(--color-warning){% else %}var(--color-success){% endif %};"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if window_signals.get('subscription') %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Subscriptions</h5>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Recurring Merchants:</strong> {{ window_signals.subscription.count }}</div>
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Monthly Spend:</strong> ${{ "%.2f"|format(window_signals.subscription.monthly_spend) }}</div>
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Subscription Share:</strong> {{ "%.1f"|format(window_signals.subscription.share) }}%</div>
+                                    {% if window_signals.subscription.merchants %}
+                                    <div style="grid-column: 1 / -1; padding: var(--spacing-1) 0;">
+                                        <strong style="margin-right: var(--spacing-2);">Merchants:</strong> {{ window_signals.subscription.merchants|join(", ") }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if window_signals.get('savings') %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Savings Signals</h5>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+                                    {% if window_signals.savings.net_inflow is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Net Inflow:</strong> ${{ "%.2f"|format(window_signals.savings.net_inflow) }}</div>
+                                    {% endif %}
+                                    {% if window_signals.savings.growth_rate is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Growth Rate:</strong> {{ "%.2f"|format(window_signals.savings.growth_rate) }}%</div>
+                                    {% endif %}
+                                    {% if window_signals.savings.emergency_fund_coverage is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Emergency Fund Coverage:</strong> {{ "%.2f"|format(window_signals.savings.emergency_fund_coverage) }} months</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if window_signals.get('income') %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Income Signals</h5>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+                                    {% if window_signals.income.frequency is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Payment Frequency:</strong> {{ window_signals.income.frequency }}</div>
+                                    {% endif %}
+                                    {% if window_signals.income.variability is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</div>
+                                    {% endif %}
+                                    {% if window_signals.income.cash_flow_buffer is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</div>
+                                    {% endif %}
+                                    {% if window_signals.income.median_pay_gap is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Income Signals</h5>
+                                <div class="empty-state">
+                                    <p class="empty-state-description">No income signals detected in this window. This could mean there's insufficient transaction data or income transactions don't match expected patterns.</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if not window_signals.get('credit') and not window_signals.get('subscription') and not window_signals.get('savings') and not window_signals.get('income') %}
+                            <p style="color: var(--color-neutral-600);">No signals detected for 30-day window.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- 180-Day Window -->
+                    <div class="tab-pane fade" id="panel-180d" role="tabpanel">
+                        {% set window_signals = signals.get('180d', {}) %}
+                        
+                        <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
+                            {% if window_signals.get('credit') %}
+                            <div class="signal-section">
+                                <h5 class="signal-section-title">Credit Utilization</h5>
+                                <dl class="signal-details">
+                                    <div class="signal-detail-row">
+                                        <dt>Card</dt>
+                                        <dd>{{ window_signals.credit.card_name }}</dd>
+                                    </div>
+                                    <div class="signal-detail-row">
+                                        <dt>Utilization</dt>
+                                        <dd class="metric-highlight">{{ "%.0f"|format(window_signals.credit.utilization) }}%</dd>
+                                    </div>
+                                    <div class="signal-detail-row-group">
+                                        <div class="signal-detail-row">
+                                            <dt>Balance</dt>
+                                            <dd>${{ "%.2f"|format(window_signals.credit.balance) }}</dd>
+                                        </div>
+                                        <div class="signal-detail-row">
+                                            <dt>Limit</dt>
+                                            <dd>${{ "%.2f"|format(window_signals.credit.limit) }}</dd>
+                                        </div>
+                                    </div>
+                                    {% if window_signals.credit.interest_charges > 0 %}
+                                    <div class="signal-detail-row signal-detail-row-warning">
+                                        <dt>Interest Charges</dt>
+                                        <dd>${{ "%.2f"|format(window_signals.credit.interest_charges) }}/month</dd>
+                                    </div>
+                                    {% endif %}
+                                    {% if window_signals.credit.is_overdue %}
+                                    <div class="signal-detail-row">
+                                        <dt>Status</dt>
+                                        <dd><span class="badge badge-error">Overdue</span></dd>
+                                    </div>
+                                    {% endif %}
+                                </dl>
+                                <!-- Progress bar for utilization -->
+                                <div class="credit-utilization-progress">
+                                    <div class="progress-bar-header">
+                                        <span class="progress-bar-label">Credit Utilization</span>
+                                        <span class="progress-bar-value">{{ "%.0f"|format(window_signals.credit.utilization) }}%</span>
+                                    </div>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar">
+                                            <div class="progress-bar-fill" style="width: {{ window_signals.credit.utilization }}%; background-color: {% if window_signals.credit.utilization > 80 %}var(--color-error){% elif window_signals.credit.utilization > 50 %}var(--color-warning){% else %}var(--color-success){% endif %};"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if window_signals.get('subscription') %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Subscriptions</h5>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Recurring Merchants:</strong> {{ window_signals.subscription.count }}</div>
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Monthly Spend:</strong> ${{ "%.2f"|format(window_signals.subscription.monthly_spend) }}</div>
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Subscription Share:</strong> {{ "%.1f"|format(window_signals.subscription.share) }}%</div>
+                                    {% if window_signals.subscription.merchants %}
+                                    <div style="grid-column: 1 / -1; padding: var(--spacing-1) 0;">
+                                        <strong style="margin-right: var(--spacing-2);">Merchants:</strong> {{ window_signals.subscription.merchants|join(", ") }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if window_signals.get('savings') %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Savings Signals</h5>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+                                    {% if window_signals.savings.net_inflow is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Net Inflow:</strong> ${{ "%.2f"|format(window_signals.savings.net_inflow) }}</div>
+                                    {% endif %}
+                                    {% if window_signals.savings.growth_rate is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Growth Rate:</strong> {{ "%.2f"|format(window_signals.savings.growth_rate) }}%</div>
+                                    {% endif %}
+                                    {% if window_signals.savings.emergency_fund_coverage is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Emergency Fund Coverage:</strong> {{ "%.2f"|format(window_signals.savings.emergency_fund_coverage) }} months</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if window_signals.get('income') %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Income Signals</h5>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+                                    {% if window_signals.income.frequency is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Payment Frequency:</strong> {{ window_signals.income.frequency }}</div>
+                                    {% endif %}
+                                    {% if window_signals.income.variability is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</div>
+                                    {% endif %}
+                                    {% if window_signals.income.cash_flow_buffer is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</div>
+                                    {% endif %}
+                                    {% if window_signals.income.median_pay_gap is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Income Signals</h5>
+                                <div class="empty-state">
+                                    <p class="empty-state-description">No income signals detected in this window. This could mean there's insufficient transaction data or income transactions don't match expected patterns.</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if not window_signals.get('credit') and not window_signals.get('subscription') and not window_signals.get('savings') and not window_signals.get('income') %}
+                            <p style="color: var(--color-neutral-600);">No signals detected for 180-day window.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         
-        <div class="tab-content">
-            <!-- 30-Day Window -->
-            <div class="tab-pane fade show active" id="panel-30d" role="tabpanel">
-                {% set window_signals = signals.get('30d', {}) %}
-                
-                <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
-                    {% if window_signals.get('credit') %}
-                    <div>
-                        <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-3);">Credit Utilization</h5>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-2);">
-                            <div><strong>Card:</strong> {{ window_signals.credit.card_name }}</div>
-                            <div><strong>Utilization:</strong> {{ "%.0f"|format(window_signals.credit.utilization) }}%</div>
-                            <div><strong>Balance:</strong> ${{ "%.2f"|format(window_signals.credit.balance) }}</div>
-                            <div><strong>Limit:</strong> ${{ "%.2f"|format(window_signals.credit.limit) }}</div>
-                            {% if window_signals.credit.interest_charges > 0 %}
-                            <div><strong>Interest Charges:</strong> ${{ "%.2f"|format(window_signals.credit.interest_charges) }}/month</div>
-                            {% endif %}
-                            {% if window_signals.credit.is_overdue %}
-                            <div><span class="badge badge-error">Overdue</span></div>
-                            {% endif %}
-                        </div>
-                        <!-- Progress bar for utilization -->
-                        <div style="margin-top: var(--spacing-3);">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: var(--spacing-1);">
-                                <span style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">Credit Utilization</span>
-                                <span style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">{{ "%.0f"|format(window_signals.credit.utilization) }}%</span>
-                            </div>
-                            <div style="width: 100%; height: 8px; background-color: var(--color-neutral-200); border-radius: 4px; overflow: hidden;">
-                                <div style="height: 100%; width: {{ window_signals.credit.utilization }}%; background-color: {% if window_signals.credit.utilization > 80 %}var(--color-error){% elif window_signals.credit.utilization > 50 %}var(--color-warning){% else %}var(--color-success){% endif %}; transition: width 0.3s ease;"></div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if window_signals.get('subscription') %}
-                    <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-4);">
-                        <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-3);">Subscriptions</h5>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-2);">
-                            <div><strong>Recurring Merchants:</strong> {{ window_signals.subscription.count }}</div>
-                            <div><strong>Monthly Spend:</strong> ${{ "%.2f"|format(window_signals.subscription.monthly_spend) }}</div>
-                            <div><strong>Subscription Share:</strong> {{ "%.1f"|format(window_signals.subscription.share) }}%</div>
-                            {% if window_signals.subscription.merchants %}
-                            <div style="grid-column: 1 / -1;">
-                                <strong>Merchants:</strong> {{ window_signals.subscription.merchants|join(", ") }}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if window_signals.get('savings') %}
-                    <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-4);">
-                        <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-3);">Savings Signals</h5>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-2);">
-                            {% if window_signals.savings.net_inflow is defined %}
-                            <div><strong>Net Inflow:</strong> ${{ "%.2f"|format(window_signals.savings.net_inflow) }}</div>
-                            {% endif %}
-                            {% if window_signals.savings.growth_rate is defined %}
-                            <div><strong>Growth Rate:</strong> {{ "%.2f"|format(window_signals.savings.growth_rate) }}%</div>
-                            {% endif %}
-                            {% if window_signals.savings.emergency_fund_coverage is defined %}
-                            <div><strong>Emergency Fund Coverage:</strong> {{ "%.2f"|format(window_signals.savings.emergency_fund_coverage) }} months</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if window_signals.get('income') %}
-                    <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-4);">
-                        <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-3);">Income Signals</h5>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-2);">
-                            {% if window_signals.income.frequency is defined %}
-                            <div><strong>Payment Frequency:</strong> {{ window_signals.income.frequency }}</div>
-                            {% endif %}
-                            {% if window_signals.income.variability is defined %}
-                            <div><strong>Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</div>
-                            {% endif %}
-                            {% if window_signals.income.cash_flow_buffer is defined %}
-                            <div><strong>Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</div>
-                            {% endif %}
-                            {% if window_signals.income.median_pay_gap is defined %}
-                            <div><strong>Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if not window_signals.get('credit') and not window_signals.get('subscription') and not window_signals.get('savings') and not window_signals.get('income') %}
-                    <p style="color: var(--color-neutral-600);">No signals detected for 30-day window.</p>
-                    {% endif %}
-                </div>
+        <!-- Recommendations (Collapsible) -->
+        <div class="card" id="recommendations-section" style="margin-bottom: var(--spacing-6);">
+            <div class="card-header">
+                Recommendations{% if recommendations %} ({{ recommendations|length }}){% endif %}
             </div>
-            
-            <!-- 180-Day Window -->
-            <div class="tab-pane fade" id="panel-180d" role="tabpanel">
-                {% set window_signals = signals.get('180d', {}) %}
-                
-                <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
-                    {% if window_signals.get('credit') %}
-                    <div>
-                        <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-3);">Credit Utilization</h5>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-2);">
-                            <div><strong>Card:</strong> {{ window_signals.credit.card_name }}</div>
-                            <div><strong>Utilization:</strong> {{ "%.0f"|format(window_signals.credit.utilization) }}%</div>
-                            <div><strong>Balance:</strong> ${{ "%.2f"|format(window_signals.credit.balance) }}</div>
-                            <div><strong>Limit:</strong> ${{ "%.2f"|format(window_signals.credit.limit) }}</div>
-                            {% if window_signals.credit.interest_charges > 0 %}
-                            <div><strong>Interest Charges:</strong> ${{ "%.2f"|format(window_signals.credit.interest_charges) }}/month</div>
-                            {% endif %}
-                            {% if window_signals.credit.is_overdue %}
-                            <div><span class="badge badge-error">Overdue</span></div>
-                            {% endif %}
-                        </div>
-                        <!-- Progress bar for utilization -->
-                        <div style="margin-top: var(--spacing-3);">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: var(--spacing-1);">
-                                <span style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">Credit Utilization</span>
-                                <span style="font-size: var(--font-size-sm); color: var(--color-neutral-600);">{{ "%.0f"|format(window_signals.credit.utilization) }}%</span>
-                            </div>
-                            <div style="width: 100%; height: 8px; background-color: var(--color-neutral-200); border-radius: 4px; overflow: hidden;">
-                                <div style="height: 100%; width: {{ window_signals.credit.utilization }}%; background-color: {% if window_signals.credit.utilization > 80 %}var(--color-error){% elif window_signals.credit.utilization > 50 %}var(--color-warning){% else %}var(--color-success){% endif %}; transition: width 0.3s ease;"></div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if window_signals.get('subscription') %}
-                    <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-4);">
-                        <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-3);">Subscriptions</h5>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-2);">
-                            <div><strong>Recurring Merchants:</strong> {{ window_signals.subscription.count }}</div>
-                            <div><strong>Monthly Spend:</strong> ${{ "%.2f"|format(window_signals.subscription.monthly_spend) }}</div>
-                            <div><strong>Subscription Share:</strong> {{ "%.1f"|format(window_signals.subscription.share) }}%</div>
-                            {% if window_signals.subscription.merchants %}
-                            <div style="grid-column: 1 / -1;">
-                                <strong>Merchants:</strong> {{ window_signals.subscription.merchants|join(", ") }}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if window_signals.get('savings') %}
-                    <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-4);">
-                        <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-3);">Savings Signals</h5>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-2);">
-                            {% if window_signals.savings.net_inflow is defined %}
-                            <div><strong>Net Inflow:</strong> ${{ "%.2f"|format(window_signals.savings.net_inflow) }}</div>
-                            {% endif %}
-                            {% if window_signals.savings.growth_rate is defined %}
-                            <div><strong>Growth Rate:</strong> {{ "%.2f"|format(window_signals.savings.growth_rate) }}%</div>
-                            {% endif %}
-                            {% if window_signals.savings.emergency_fund_coverage is defined %}
-                            <div><strong>Emergency Fund Coverage:</strong> {{ "%.2f"|format(window_signals.savings.emergency_fund_coverage) }} months</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if window_signals.get('income') %}
-                    <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-4);">
-                        <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-3);">Income Signals</h5>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-2);">
-                            {% if window_signals.income.frequency is defined %}
-                            <div><strong>Payment Frequency:</strong> {{ window_signals.income.frequency }}</div>
-                            {% endif %}
-                            {% if window_signals.income.variability is defined %}
-                            <div><strong>Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</div>
-                            {% endif %}
-                            {% if window_signals.income.cash_flow_buffer is defined %}
-                            <div><strong>Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</div>
-                            {% endif %}
-                            {% if window_signals.income.median_pay_gap is defined %}
-                            <div><strong>Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if not window_signals.get('credit') and not window_signals.get('subscription') and not window_signals.get('savings') and not window_signals.get('income') %}
-                    <p style="color: var(--color-neutral-600);">No signals detected for 180-day window.</p>
-                    {% endif %}
+            <div>
+                {% if not user.consent_given %}
+                <div class="alert alert-warning" role="alert">
+                    <div style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin-bottom: var(--spacing-2);">Consent Required</div>
+                    <p style="margin: 0;">User consent is required to receive personalized recommendations. Please enable consent using the checkbox above to view recommendations.</p>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Persona Assignment -->
-{% if persona %}
-<div class="card" style="margin-bottom: var(--spacing-6);">
-    <div class="card-header">Persona Assignment</div>
-    <div>
-        <div style="margin-bottom: var(--spacing-4);">
-            {% if persona.persona_type == 'high_utilization' %}
-                <span class="badge badge-persona badge-persona-high-utilization" style="font-size: var(--font-size-lg);">High Utilization</span>
-            {% elif persona.persona_type == 'variable_income_budgeter' %}
-                <span class="badge badge-persona badge-persona-variable-income" style="font-size: var(--font-size-lg);">Variable Income Budgeter</span>
-            {% elif persona.persona_type == 'savings_builder' %}
-                <span class="badge badge-persona badge-persona-savings-builder" style="font-size: var(--font-size-lg);">Savings Builder</span>
-            {% elif persona.persona_type == 'financial_newcomer' %}
-                <span class="badge badge-persona badge-persona-financial-newcomer" style="font-size: var(--font-size-lg);">Financial Newcomer</span>
-            {% elif persona.persona_type == 'subscription_heavy' %}
-                <span class="badge badge-persona badge-persona-subscription-heavy" style="font-size: var(--font-size-lg);">Subscription-Heavy</span>
-            {% else %}
-                <span class="badge badge-persona badge-persona-neutral" style="font-size: var(--font-size-lg);">Neutral</span>
-            {% endif %}
-        </div>
-        <div style="margin-bottom: var(--spacing-4);">
-            <strong style="color: var(--color-neutral-900);">Assignment Rationale:</strong>
-            <p style="margin-top: var(--spacing-2); color: var(--color-neutral-700);">{{ persona.criteria_matched }}</p>
-        </div>
-        {% if persona.signal_windows %}
-        <div style="margin-bottom: var(--spacing-4);">
-            <details style="margin-top: var(--spacing-2);">
-                <summary style="color: var(--color-primary); font-size: var(--font-size-sm); cursor: pointer; font-weight: var(--font-weight-medium); list-style: none; display: flex; align-items: center; gap: var(--spacing-2); padding: var(--spacing-2); border-radius: 0.375rem; transition: background-color 0.2s;">
-                    <span class="details-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block;">▼</span>
-                    <strong style="color: var(--color-neutral-900);">Signals Used ({{ persona.signal_windows|length }} window{{ 's' if persona.signal_windows|length > 1 else '' }})</strong>
-                </summary>
-                <div style="margin-top: var(--spacing-3); padding-left: var(--spacing-6);">
-                    {% for window, signal_list in persona.signal_windows.items() %}
-                    <div style="margin-bottom: var(--spacing-3);">
-                        <strong style="color: var(--color-neutral-700); font-size: var(--font-size-sm);">{{ window }} window:</strong>
-                        <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-1); margin-top: var(--spacing-2);">
-                            {% for signal in signal_list %}
-                            <span class="badge badge-info" style="font-size: var(--font-size-xs); font-weight: var(--font-weight-normal); padding: var(--spacing-1) var(--spacing-2);">{{ signal }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </details>
-        </div>
-        {% endif %}
-        <p style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin: 0;">
-            Assigned: {{ persona.assigned_at }}
-        </p>
-    </div>
-</div>
-{% endif %}
-
-<!-- Recommendations -->
-<div class="card" style="margin-bottom: var(--spacing-6);">
-    <div class="card-header">Recommendations</div>
-    <div>
-        {% if not user.consent_given %}
-        <div class="alert alert-warning" role="alert">
-            <div style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin-bottom: var(--spacing-2);">Consent Required</div>
-            <p style="margin: 0;">User consent is required to receive personalized recommendations. Please enable consent using the checkbox above to view recommendations.</p>
-        </div>
-        {% elif recommendations %}
-            <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
-                {% for rec in recommendations %}
-                <div class="card">
-                    <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">{{ rec.title }}</h5>
-                    <div style="color: var(--color-neutral-700); margin-bottom: var(--spacing-4); line-height: var(--line-height-normal);">
-                        <p>{{ rec.content|replace('\n', '<br>')|safe }}</p>
-                    </div>
-                    <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-4); margin-bottom: var(--spacing-4);">
-                        <strong style="color: var(--color-neutral-900);">Rationale:</strong>
-                        <p style="margin-top: var(--spacing-2); color: var(--color-neutral-700);">{{ rec.rationale|replace('\n', '<br>')|safe }}</p>
-                    </div>
-                    <button class="btn btn-secondary btn-sm" type="button" 
-                            data-bs-toggle="collapse" 
-                            data-bs-target="#trace-{{ rec.id }}" 
-                            aria-expanded="false">
-                        View Decision Trace
-                    </button>
-                    <div class="collapse mt-3" id="trace-{{ rec.id }}">
-                        <div style="padding: var(--spacing-4); background-color: var(--color-neutral-50); border-radius: 0.375rem;">
-                            {% if traces.get(rec.id) %}
-                                <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
-                                    {% for trace_step in traces[rec.id] %}
-                                    <div style="padding-bottom: var(--spacing-4); border-bottom: 1px solid var(--color-neutral-200);">
-                                        <div style="display: flex; align-items: center; gap: var(--spacing-2); margin-bottom: var(--spacing-2);">
-                                            <span class="badge badge-info">Step {{ trace_step.step }}</span>
-                                            <span style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">
-                                                {% if trace_step.step == 1 %}
-                                                    Signal Detected
-                                                {% elif trace_step.step == 2 %}
-                                                    Persona Assigned
-                                                {% elif trace_step.step == 3 %}
-                                                    Recommendation Selected
-                                                {% elif trace_step.step == 4 %}
-                                                    Rationale Generated
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                        <p style="margin-bottom: var(--spacing-2); color: var(--color-neutral-700);">{{ trace_step.reasoning }}</p>
-                                        {% if trace_step.data_cited %}
-                                        <details style="margin-top: var(--spacing-2);">
-                                            <summary style="color: var(--color-primary); font-size: var(--font-size-sm); cursor: pointer; font-weight: var(--font-weight-medium);">View Data Cited</summary>
-                                            <pre style="background-color: white; padding: var(--spacing-3); margin-top: var(--spacing-2); border-radius: 0.375rem; border: 1px solid var(--color-neutral-200); max-height: 200px; overflow-y: auto; font-size: var(--font-size-sm);">{{ trace_step.data_cited|tojsonpretty }}</pre>
-                                        </details>
+                {% elif recommendations %}
+                    <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
+                        {% for rec in recommendations %}
+                        <details class="recommendation-item" {% if loop.index <= 2 %}open{% endif %}>
+                            <summary class="recommendation-summary">
+                                <strong>{{ rec.title }}</strong>
+                                <span class="details-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; margin-left: auto;">▼</span>
+                            </summary>
+                            <div class="recommendation-content" style="padding: var(--spacing-2) 0;">
+                                <div style="color: var(--color-neutral-700); margin-bottom: var(--spacing-5); line-height: 1.7; padding: var(--spacing-1) 0;">
+                                    <p style="margin-top: var(--spacing-4); margin-bottom: var(--spacing-3); padding: var(--spacing-1) 0;">{{ rec.content|replace('\n', '<br>')|safe }}</p>
+                                </div>
+                                <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-5); margin-bottom: var(--spacing-5); padding: var(--spacing-1) 0;">
+                                    <strong style="color: var(--color-neutral-900); display: block; margin-bottom: var(--spacing-3); padding: var(--spacing-1) 0;">Rationale:</strong>
+                                    <p style="margin-top: var(--spacing-3); margin-bottom: var(--spacing-4); color: var(--color-neutral-700); line-height: 1.7; padding: var(--spacing-1) 0;">{{ rec.rationale|replace('\n', '<br>')|safe }}</p>
+                                </div>
+                                <button class="btn btn-secondary btn-sm" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#trace-{{ rec.id }}" 
+                                        aria-expanded="false"
+                                        style="margin-top: var(--spacing-4);">
+                                    View Decision Trace
+                                </button>
+                                <div class="collapse mt-3" id="trace-{{ rec.id }}" style="margin-top: var(--spacing-4);">
+                                    <div style="padding: var(--spacing-4); background-color: var(--color-neutral-50); border-radius: 0.375rem;">
+                                        {% if traces.get(rec.id) %}
+                                            <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
+                                                {% for trace_step in traces[rec.id] %}
+                                                <div style="padding-bottom: var(--spacing-4); border-bottom: 1px solid var(--color-neutral-200);">
+                                                    <div style="display: flex; align-items: center; gap: var(--spacing-2); margin-bottom: var(--spacing-2);">
+                                                        <span class="badge badge-info" style="padding: var(--spacing-2) var(--spacing-3);">Step {{ trace_step.step }}</span>
+                                                        <span style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">
+                                                            {% if trace_step.step == 1 %}
+                                                                Signal Detected
+                                                            {% elif trace_step.step == 2 %}
+                                                                Persona Assigned
+                                                            {% elif trace_step.step == 3 %}
+                                                                Recommendation Selected
+                                                            {% elif trace_step.step == 4 %}
+                                                                Rationale Generated
+                                                            {% endif %}
+                                                        </span>
+                                                    </div>
+                                                    <p style="margin-bottom: var(--spacing-2); color: var(--color-neutral-700);">{{ trace_step.reasoning }}</p>
+                                                    {% if trace_step.data_cited %}
+                                                    <details style="margin-top: var(--spacing-2);">
+                                                        <summary style="color: var(--color-primary); font-size: var(--font-size-sm); cursor: pointer; font-weight: var(--font-weight-medium);">View Data Cited</summary>
+                                                        <pre style="background-color: white; padding: var(--spacing-3); margin-top: var(--spacing-2); border-radius: 0.375rem; border: 1px solid var(--color-neutral-200); max-height: 200px; overflow-y: auto; font-size: var(--font-size-sm);">{{ trace_step.data_cited|tojsonpretty }}</pre>
+                                                    </details>
+                                                    {% endif %}
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <p style="color: var(--color-neutral-600); margin: 0;">No trace data available.</p>
                                         {% endif %}
                                     </div>
-                                    {% endfor %}
                                 </div>
-                            {% else %}
-                                <p style="color: var(--color-neutral-600); margin: 0;">No trace data available.</p>
-                            {% endif %}
-                        </div>
+                            </div>
+                        </details>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="color: var(--color-neutral-600); margin: 0;">No recommendations available for this user.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column (40%) -->
+    <div class="right-column">
+        <!-- User Information (Collapsible) -->
+        <details class="card collapsible-section" style="margin-bottom: var(--spacing-6);" open>
+            <summary class="card-header collapsible-summary">
+                User Information
+                <span class="details-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; margin-left: auto;">▼</span>
+            </summary>
+            <div class="user-info-content">
+                <div class="user-info-section">
+                    <div class="user-info-item">
+                        <span class="user-info-label">Name</span>
+                        <span class="user-info-value">{{ user.name }}</span>
+                    </div>
+                    <div class="user-info-item">
+                        <span class="user-info-label">Email</span>
+                        <span class="user-info-value">{{ user.email }}</span>
+                    </div>
+                    <div class="user-info-item">
+                        <span class="user-info-label">User ID</span>
+                        <span class="user-info-value">{{ user.id }}</span>
                     </div>
                 </div>
-                {% endfor %}
+                
+                <div class="user-info-divider"></div>
+                
+                <div class="user-info-section">
+                    <div class="user-info-item">
+                        <label class="user-info-consent">
+                            <input type="checkbox" id="consent-checkbox" 
+                                   {% if user.consent_given %}checked{% endif %}
+                                   onchange="toggleConsent({{ user.id }})">
+                            <span class="consent-indicator {% if user.consent_given %}consent-active{% endif %}">
+                                {% if user.consent_given %}
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                {% endif %}
+                            </span>
+                            <span class="consent-label">Consent for data processing</span>
+                        </label>
+                    </div>
+                    <div class="user-info-item">
+                        <span class="user-info-label">Created</span>
+                        <span class="user-info-value user-info-timestamp">{{ user.created_at }}</span>
+                    </div>
+                </div>
             </div>
-        {% else %}
-            <p style="color: var(--color-neutral-600); margin: 0;">No recommendations available for this user.</p>
+        </details>
+        
+        <!-- Persona Assignment (Collapsible) -->
+        {% if persona %}
+        <details class="card collapsible-section" id="persona-section" style="margin-bottom: var(--spacing-6);">
+            <summary class="card-header collapsible-summary">
+                Persona Assignment
+                <span class="details-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; margin-left: auto;">▼</span>
+            </summary>
+            <div style="padding: var(--spacing-6) var(--spacing-6); padding-bottom: var(--spacing-6);">
+                <div style="margin-bottom: var(--spacing-6); padding: var(--spacing-1) 0;">
+                    {% if persona.persona_type == 'high_utilization' %}
+                        <span class="badge badge-persona badge-persona-high-utilization" style="font-size: var(--font-size-lg);">High Utilization</span>
+                    {% elif persona.persona_type == 'variable_income_budgeter' %}
+                        <span class="badge badge-persona badge-persona-variable-income" style="font-size: var(--font-size-lg);">Variable Income Budgeter</span>
+                    {% elif persona.persona_type == 'savings_builder' %}
+                        <span class="badge badge-persona badge-persona-savings-builder" style="font-size: var(--font-size-lg);">Savings Builder</span>
+                    {% elif persona.persona_type == 'financial_newcomer' %}
+                        <span class="badge badge-persona badge-persona-financial-newcomer" style="font-size: var(--font-size-lg);">Financial Newcomer</span>
+                    {% elif persona.persona_type == 'subscription_heavy' %}
+                        <span class="badge badge-persona badge-persona-subscription-heavy" style="font-size: var(--font-size-lg);">Subscription-Heavy</span>
+                    {% else %}
+                        <span class="badge badge-persona badge-persona-neutral" style="font-size: var(--font-size-lg);">Neutral</span>
+                    {% endif %}
+                </div>
+                <div style="margin-bottom: var(--spacing-5); padding: var(--spacing-1) 0;">
+                    <strong style="color: var(--color-neutral-900); display: block; margin-bottom: var(--spacing-4); padding: var(--spacing-1) 0;">Assignment Rationale:</strong>
+                    <p style="margin-top: var(--spacing-4); color: var(--color-neutral-700); line-height: 1.8; padding: var(--spacing-1) 0;">{{ persona.criteria_matched }}</p>
+                </div>
+                {% if persona.signal_windows %}
+                <div style="margin-bottom: var(--spacing-4);">
+                    <details style="margin-top: var(--spacing-2);">
+                        <summary style="color: var(--color-primary); font-size: var(--font-size-sm); cursor: pointer; font-weight: var(--font-weight-medium); list-style: none; display: flex; align-items: center; gap: var(--spacing-2); padding: var(--spacing-2); border-radius: 0.375rem; transition: background-color 0.2s;">
+                            <span class="details-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block;">▼</span>
+                            <strong style="color: var(--color-neutral-900);">Signals Used ({{ persona.signal_windows|length }} window{{ 's' if persona.signal_windows|length > 1 else '' }})</strong>
+                        </summary>
+                        <div style="margin-top: var(--spacing-3); padding-left: var(--spacing-6);">
+                            {% for window, signal_list in persona.signal_windows.items() %}
+                            <div style="margin-bottom: var(--spacing-3);">
+                                <strong style="color: var(--color-neutral-700); font-size: var(--font-size-sm);">{{ window }} window:</strong>
+                                <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-1); margin-top: var(--spacing-2);">
+                                    {% for signal in signal_list %}
+                                    <span class="badge badge-info" style="font-size: var(--font-size-xs); font-weight: var(--font-weight-normal); padding: var(--spacing-1) var(--spacing-2);">{{ signal }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </details>
+                </div>
+                {% endif %}
+                <p style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin: 0; padding: var(--spacing-1) 0;">
+                    <strong style="margin-right: var(--spacing-2);">Assigned:</strong>{{ persona.assigned_at }}
+                </p>
+            </div>
+        </details>
+        {% endif %}
+        
+        <!-- Partner Offers (Collapsible) -->
+        {% if user.consent_given and partner_offers %}
+        <details class="card collapsible-section" id="offers-section" style="margin-bottom: var(--spacing-6);">
+            <summary class="card-header collapsible-summary">
+                Partner Offers ({{ partner_offers|length }})
+                <span class="details-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; margin-left: auto;">▼</span>
+            </summary>
+            <div style="padding: var(--spacing-6) var(--spacing-6); padding-bottom: var(--spacing-6);">
+                <div class="alert alert-info" role="alert" style="margin-bottom: var(--spacing-6); padding: var(--spacing-4);">
+                    <div style="font-size: var(--font-size-sm); padding: var(--spacing-1) 0;"><strong>Note:</strong> Partner offers are provided for informational purposes. We may receive compensation.</div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-5); padding: var(--spacing-1) 0;">
+                    {% for offer in partner_offers %}
+                    <details class="offer-item">
+                        <summary class="offer-summary">
+                            <strong>{{ offer.title }}</strong>
+                            {% if offer.eligibility_rationale %}
+                                <span style="font-size: var(--font-size-sm); color: var(--color-neutral-600); font-weight: normal;">
+                                    - {{ offer.eligibility_rationale[:50] }}{% if offer.eligibility_rationale|length > 50 %}...{% endif %}
+                                </span>
+                            {% endif %}
+                            <span class="details-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; margin-left: auto;">▼</span>
+                        </summary>
+                        <div class="offer-content" style="padding: var(--spacing-2) 0;">
+                            <p style="color: var(--color-neutral-700); margin-bottom: var(--spacing-4); line-height: 1.7; padding: var(--spacing-1) 0;">{{ offer.description }}</p>
+                            {% if offer.benefits %}
+                            <ul style="margin-bottom: var(--spacing-4); padding-left: var(--spacing-6); padding: var(--spacing-1) 0;">
+                                {% for benefit in offer.benefits %}
+                                <li style="margin-bottom: var(--spacing-2); color: var(--color-neutral-700); line-height: 1.6; padding: var(--spacing-1) 0;">• {{ benefit }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-4); padding: var(--spacing-1) 0;">
+                                <p style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-3); padding: var(--spacing-1) 0;">Why this offer:</p>
+                                <p style="color: var(--color-neutral-700); margin: 0; line-height: 1.7; padding: var(--spacing-1) 0;">{{ offer.eligibility_rationale }}</p>
+                            </div>
+                        </div>
+                    </details>
+                    {% endfor %}
+                </div>
+            </div>
+        </details>
         {% endif %}
     </div>
 </div>
 
-<!-- Partner Offers -->
-{% if user.consent_given and partner_offers %}
-<div class="card" style="margin-bottom: var(--spacing-6);">
-    <div class="card-header">Partner Offers</div>
-    <div>
-        <div class="alert alert-info" role="alert" style="margin-bottom: var(--spacing-4);">
-            <div style="font-size: var(--font-size-sm);"><strong>Note:</strong> Partner offers are provided for informational purposes. We may receive compensation.</div>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
-            {% for offer in partner_offers %}
-            <div class="card" style="border-left: 4px solid var(--color-primary);">
-                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-3);">{{ offer.title }}</h5>
-                <p style="color: var(--color-neutral-700); margin-bottom: var(--spacing-3); line-height: var(--line-height-normal);">{{ offer.description }}</p>
-                {% if offer.benefits %}
-                <ul style="margin-bottom: var(--spacing-3); padding-left: var(--spacing-6);">
-                    {% for benefit in offer.benefits %}
-                    <li style="margin-bottom: var(--spacing-1); color: var(--color-neutral-700);">• {{ benefit }}</li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-                <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-3);">
-                    <p style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-2);">Why this offer:</p>
-                    <p style="color: var(--color-neutral-700); margin: 0;">{{ offer.eligibility_rationale }}</p>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-{% endif %}
-
 <style>
+    /* Page-level spacing */
+    .two-column-layout {
+        margin-top: var(--spacing-4);
+    }
+    
+    /* Sticky Header */
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: var(--spacing-6);
+        border-radius: 0.5rem;
+        /* Increased padding to account for rounded corner visual space - rounded corners need extra breathing room */
+        padding-top: 2rem; /* 32px - extra space for rounded top corner */
+        padding-right: var(--spacing-6);
+        padding-bottom: var(--spacing-6);
+        padding-left: 2rem; /* 32px - extra space for rounded left corner */
+        border: 1px solid var(--color-neutral-200);
+        overflow: hidden; /* Ensures border-radius works with child elements */
+    }
+    
+    .sticky-header-content {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-4);
+        padding: 0;
+        margin: 0;
+    }
+    
+    .sticky-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: var(--spacing-6);
+        flex-wrap: wrap;
+    }
+    
+    .sticky-header-user-info {
+        flex: 1;
+        min-width: 200px;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .sticky-header-name {
+        font-size: var(--font-size-2xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-neutral-900);
+        margin: 0 0 var(--spacing-3) 0;
+        line-height: 1.2;
+        padding: 0;
+    }
+    
+    .sticky-header-meta {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        font-size: var(--font-size-sm);
+    }
+    
+    .sticky-header-meta-item {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-1);
+    }
+    
+    .meta-label {
+        color: var(--color-neutral-600);
+    }
+    
+    .meta-value {
+        font-weight: var(--font-weight-medium);
+        color: var(--color-neutral-900);
+    }
+    
+    .meta-success {
+        color: var(--color-success);
+    }
+    
+    .meta-error {
+        color: var(--color-error);
+    }
+    
+    .sticky-header-meta-separator {
+        color: var(--color-neutral-400);
+    }
+    
+    .sticky-header-metrics {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--spacing-4);
+        flex-wrap: wrap;
+        flex-direction: row;
+    }
+    
+    .sticky-header-metrics .badge-persona {
+        margin-right: var(--spacing-2);
+        margin-bottom: 0;
+        align-self: flex-start;
+    }
+    
+    .sticky-metric-card {
+        display: flex;
+        flex-direction: column;
+        /* Generous padding to account for rounded corner visual space - text should not touch edges */
+        padding-top: var(--spacing-5);
+        padding-right: var(--spacing-5);
+        padding-bottom: var(--spacing-5);
+        padding-left: var(--spacing-5);
+        background-color: var(--color-neutral-50);
+        border-radius: 0.375rem;
+        border: 1px solid var(--color-neutral-200);
+        min-width: 110px;
+    }
+    
+    .sticky-metric-label {
+        font-size: 0.75rem; /* 12px - smaller than sm */
+        color: var(--color-neutral-600);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0 0 var(--spacing-3) 0; /* Ensure no negative margins */
+        padding: 0; /* Ensure no padding on label itself */
+        line-height: 1.4;
+    }
+    
+    .sticky-metric-value {
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-neutral-900);
+        margin: 0; /* Ensure no margins */
+        padding: 0; /* Ensure no padding on value itself */
+        line-height: 1.4;
+    }
+    
+    .sticky-header-nav {
+        display: flex;
+        gap: var(--spacing-1);
+        padding-top: var(--spacing-4);
+        border-top: 1px solid var(--color-neutral-200);
+    }
+    
+    .sticky-nav-link {
+        color: var(--color-neutral-600);
+        text-decoration: none;
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        padding: var(--spacing-2) var(--spacing-4);
+        border-radius: 0.375rem;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    
+    .sticky-nav-link:hover:not(.active) {
+        background-color: var(--color-neutral-50);
+        color: var(--color-primary);
+    }
+    
+    .sticky-nav-link.active {
+        color: white;
+        background-color: var(--color-primary);
+        font-weight: var(--font-weight-semibold);
+    }
+    
+    .sticky-nav-link.active:hover {
+        background-color: var(--color-primary-dark);
+    }
+    
+    .sticky-nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background-color: var(--color-primary);
+        border-radius: 0;
+    }
+    
+    /* Two-Column Layout */
+    .two-column-layout {
+        display: grid;
+        grid-template-columns: 60% 40%;
+        gap: var(--spacing-6);
+        align-items: start;
+    }
+    
+    .left-column,
+    .right-column {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Card spacing improvements */
+    .card {
+        padding: var(--spacing-6) !important;
+        margin-bottom: var(--spacing-6) !important;
+    }
+    
+    .card-header {
+        padding-bottom: var(--spacing-4) !important;
+        margin-bottom: var(--spacing-4) !important;
+    }
+    
+    /* Signal sections spacing */
+    #signals-section .card-header {
+        margin-bottom: var(--spacing-5) !important;
+    }
+    
+    .signal-section {
+        margin-bottom: var(--spacing-6);
+    }
+    
+    .signal-section-title {
+        font-size: var(--font-size-xl);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-neutral-900);
+        margin-bottom: var(--spacing-4);
+        margin-top: var(--spacing-5);
+    }
+    
+    .signal-details {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-4);
+        margin-bottom: var(--spacing-6);
+    }
+    
+    .signal-detail-row {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: var(--spacing-4);
+        align-items: baseline;
+        padding: var(--spacing-2) 0;
+    }
+    
+    .signal-detail-row dt {
+        font-weight: var(--font-weight-medium);
+        color: var(--color-neutral-700);
+        font-size: var(--font-size-sm);
+    }
+    
+    .signal-detail-row dd {
+        color: var(--color-neutral-900);
+        font-size: var(--font-size-base);
+        margin: 0;
+    }
+    
+    .signal-detail-row-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-6);
+        padding: var(--spacing-3) 0;
+        border-top: 1px solid var(--color-neutral-200);
+        border-bottom: 1px solid var(--color-neutral-200);
+    }
+    
+    .metric-highlight {
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-lg);
+        color: var(--color-primary);
+    }
+    
+    .signal-detail-row-warning {
+        background-color: var(--color-warning-light);
+        padding: var(--spacing-3);
+        border-radius: 0.375rem;
+        margin-top: var(--spacing-2);
+    }
+    
+    .credit-utilization-progress {
+        margin-top: var(--spacing-6);
+        padding: var(--spacing-4);
+        background-color: var(--color-neutral-50);
+        border-radius: 0.5rem;
+    }
+    
+    .progress-bar-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: var(--spacing-3);
+    }
+    
+    .progress-bar-label {
+        font-size: var(--font-size-sm);
+        color: var(--color-neutral-600);
+        font-weight: var(--font-weight-medium);
+    }
+    
+    .progress-bar-value {
+        font-size: var(--font-size-sm);
+        color: var(--color-neutral-900);
+        font-weight: var(--font-weight-semibold);
+    }
+    
+    .progress-bar-container {
+        position: relative;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 12px;
+        background-color: var(--color-neutral-200);
+        border-radius: 6px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .progress-bar-fill {
+        height: 100%;
+        transition: width 0.3s ease, background-color 0.3s ease;
+        border-radius: 6px;
+    }
+    
+    /* Progress bar threshold indicator */
+    .progress-bar::after {
+        content: '';
+        position: absolute;
+        left: 30%;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: var(--color-neutral-400);
+        opacity: 0.5;
+    }
+    
+    #signals-section h5 {
+        margin-bottom: var(--spacing-4) !important;
+        margin-top: var(--spacing-4) !important;
+    }
+    
+    #signals-section .tab-content h5:first-of-type {
+        margin-top: var(--spacing-5) !important;
+    }
+    
+    /* Tabs spacing */
+    #signals-section .nav-link {
+        padding: var(--spacing-3) var(--spacing-5) !important;
+        margin-bottom: 0 !important;
+    }
+    
+    #signals-section .tab-content {
+        margin-top: var(--spacing-5) !important;
+    }
+    
+    /* Grid spacing in signals */
+    #signals-section div[style*="grid-template-columns"] {
+        gap: var(--spacing-4) !important;
+        margin-bottom: var(--spacing-3) !important;
+    }
+    
+    /* Progress bar spacing */
+    #signals-section div[style*="margin-top: var(--spacing-3)"] {
+        margin-top: var(--spacing-5) !important;
+        margin-bottom: var(--spacing-4) !important;
+    }
+    
+    /* Border-top sections spacing */
+    #signals-section div[style*="border-top"] {
+        padding-top: var(--spacing-6) !important;
+        margin-top: var(--spacing-6) !important;
+    }
+    
+    /* Text line spacing */
+    #signals-section div[style*="display: grid"] > div {
+        line-height: 1.6 !important;
+        padding: var(--spacing-1) 0 !important;
+    }
+    
+    /* Collapsible Sections */
+    .collapsible-section {
+        padding: 0 !important;
+    }
+    
+    .collapsible-summary {
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        /* Increased padding, especially top/left to account for rounded corner visual space */
+        padding-top: 2rem; /* 32px - extra space for rounded top corner */
+        padding-right: var(--spacing-6);
+        padding-bottom: var(--spacing-5);
+        padding-left: 2rem; /* 32px - extra space for rounded left corner */
+        margin: 0;
+        user-select: none;
+    }
+    
+    /* Ensure details arrow has proper spacing from right edge */
+    .collapsible-summary .details-arrow {
+        margin-left: var(--spacing-2);
+        flex-shrink: 0;
+    }
+    
+    .collapsible-summary:hover {
+        background-color: var(--color-neutral-50);
+    }
+    
+    .collapsible-summary::-webkit-details-marker {
+        display: none;
+    }
+    
+    /* Collapsible section content padding - but user-info-content manages its own */
+    .collapsible-section > div:not(.user-info-content) {
+        padding: var(--spacing-6) !important;
+    }
+    
+    /* User info content has its own padding */
+    .user-info-content {
+        padding: var(--spacing-6) !important;
+    }
+    
+    /* Only apply gap rules to non-user-info sections */
+    .collapsible-section > div:not(.user-info-content) > div {
+        gap: var(--spacing-4) !important;
+    }
+    
+    /* Labels need proper spacing */
+    .collapsible-section strong {
+        margin-right: var(--spacing-2) !important;
+    }
+    
+    /* Only remove horizontal padding from deeply nested elements in non-user-info sections */
+    .collapsible-section > div:not(.user-info-content) p,
+    .collapsible-section > div:not(.user-info-content) > div > div {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    details[open] .collapsible-summary .details-arrow,
+    details[open] .recommendation-summary .details-arrow,
+    details[open] .offer-summary .details-arrow {
+        transform: rotate(180deg);
+    }
+    
+    /* Recommendation Items */
+    .recommendation-item {
+        border: 1px solid var(--color-neutral-200);
+        border-radius: 0.375rem;
+        /* Increased padding to account for rounded corner visual space */
+        padding: var(--spacing-6);
+        background: white;
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .recommendation-summary {
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-neutral-900);
+        padding: var(--spacing-2) 0;
+        user-select: none;
+    }
+    
+    /* Ensure recommendation arrow has proper spacing */
+    .recommendation-summary .details-arrow {
+        margin-left: var(--spacing-2);
+        flex-shrink: 0;
+    }
+    
+    .recommendation-summary:hover {
+        color: var(--color-primary);
+    }
+    
+    .recommendation-summary::-webkit-details-marker {
+        display: none;
+    }
+    
+    .recommendation-content {
+        margin-top: var(--spacing-5);
+        padding-top: var(--spacing-5);
+        border-top: 1px solid var(--color-neutral-200);
+    }
+    
+    .recommendation-content p {
+        line-height: 1.7 !important;
+        margin-bottom: var(--spacing-4) !important;
+    }
+    
+    /* Rationale heading spacing */
+    .recommendation-content strong {
+        display: block;
+        margin-bottom: var(--spacing-3) !important;
+    }
+    
+    /* Offer Items */
+    .offer-item {
+        border: 1px solid var(--color-neutral-200);
+        border-radius: 0.375rem;
+        /* Increased padding to account for rounded corner visual space */
+        padding: var(--spacing-6);
+        background: var(--color-neutral-50);
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .offer-summary {
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--spacing-3);
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-neutral-900);
+        padding: var(--spacing-2) 0;
+        user-select: none;
+        line-height: 1.6;
+    }
+    
+    /* Ensure offer arrow has proper spacing */
+    .offer-summary .details-arrow {
+        margin-left: var(--spacing-2);
+        flex-shrink: 0;
+    }
+    
+    .offer-summary:hover {
+        color: var(--color-primary);
+    }
+    
+    .offer-summary::-webkit-details-marker {
+        display: none;
+    }
+    
+    .offer-content {
+        margin-top: var(--spacing-5);
+        padding-top: var(--spacing-5);
+        border-top: 1px solid var(--color-neutral-200);
+    }
+    
+    .offer-content p {
+        line-height: 1.7 !important;
+        margin-bottom: var(--spacing-4) !important;
+    }
+    
+    /* Badge spacing - increased padding to account for rounded corners */
+    .badge {
+        padding: var(--spacing-3) var(--spacing-4) !important;
+        line-height: 1.4 !important;
+        margin: 0 !important; /* Reset any margins */
+        display: inline-block; /* Ensure proper box model */
+    }
+    
+    .badge-persona {
+        /* Generous padding for persona badges to account for rounded corners - text should not touch edges */
+        padding-top: var(--spacing-4) !important;
+        padding-right: var(--spacing-6) !important;
+        padding-bottom: var(--spacing-4) !important;
+        padding-left: var(--spacing-6) !important;
+        line-height: 1.4 !important;
+        margin: 0 !important; /* Reset any margins */
+        display: inline-block; /* Ensure proper box model */
+    }
+    
+    /* Ensure badge text has no margins or padding */
+    .badge * {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .badge-error,
+    .badge-success,
+    .badge-warning,
+    .badge-info {
+        padding: var(--spacing-3) var(--spacing-4) !important;
+        line-height: 1.4 !important;
+        margin: 0 !important; /* Reset any margins */
+        display: inline-block; /* Ensure proper box model */
+    }
+    
+    /* Persona section spacing - override margin for spacing below badge */
+    #persona-section .badge-persona {
+        margin-bottom: var(--spacing-6) !important;
+        margin-top: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    #persona-section strong {
+        margin-bottom: var(--spacing-4) !important;
+        display: block;
+    }
+    
+    #persona-section p {
+        line-height: 1.8 !important;
+        margin-top: var(--spacing-4) !important;
+    }
+    
+    /* User Information section spacing */
+    .collapsible-section[open] > div {
+        padding-bottom: var(--spacing-6) !important;
+    }
+    
+    .user-info-content {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-6);
+        padding: var(--spacing-6) !important;
+        margin: 0 !important;
+    }
+    
+    .user-info-section {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-4);
+    }
+    
+    .user-info-item {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-1);
+    }
+    
+    .user-info-label {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-neutral-600);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .user-info-value {
+        font-size: var(--font-size-base);
+        color: var(--color-neutral-900);
+        font-weight: var(--font-weight-normal);
+    }
+    
+    .user-info-divider {
+        height: 1px;
+        background-color: var(--color-neutral-200);
+        margin: var(--spacing-2) 0;
+    }
+    
+    .user-info-consent {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-3);
+        cursor: pointer;
+        padding: var(--spacing-2) 0;
+    }
+    
+    .user-info-consent input[type="checkbox"] {
+        display: none;
+    }
+    
+    .consent-indicator {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--color-neutral-300);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+    
+    .consent-indicator.consent-active {
+        background-color: var(--color-success);
+        border-color: var(--color-success);
+        color: white;
+    }
+    
+    .user-info-consent:hover .consent-indicator {
+        border-color: var(--color-primary);
+    }
+    
+    .consent-label {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-neutral-900);
+    }
+    
+    .user-info-timestamp {
+        font-size: var(--font-size-sm);
+        color: var(--color-neutral-600);
+    }
+    
+    /* Empty States */
+    .empty-state {
+        padding: var(--spacing-6) 0;
+        text-align: left;
+    }
+    
+    .empty-state-description {
+        font-size: var(--font-size-sm);
+        color: var(--color-neutral-600);
+        line-height: 1.6;
+        margin: 0;
+    }
+    
+    /* Ensure proper spacing in user info columns */
+    .collapsible-section > div > div[style*="display: flex"] {
+        gap: var(--spacing-6) !important;
+    }
+    
+    .collapsible-section > div > div > div[style*="flex-direction: column"] {
+        gap: var(--spacing-5) !important;
+    }
+    
+    /* Ensure all text elements have padding from borders - but preserve user-info-content and its children */
+    .card > div:not(.card-header):not(.collapsible-summary):not(.user-info-content) p,
+    .card > div:not(.card-header):not(.collapsible-summary):not(.user-info-content) div:not(.card-header):not(.user-info-content):not(.user-info-section):not(.user-info-item):not(.user-info-label):not(.user-info-value),
+    .card details > div:not(.user-info-content) p,
+    .card details > div:not(.user-info-content) div:not(.user-info-content):not(.user-info-section):not(.user-info-item):not(.user-info-label):not(.user-info-value) {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    /* Preserve padding for user-info-content - children don't need horizontal padding since parent has it */
+    .user-info-content {
+        padding: var(--spacing-6) !important;
+    }
+    
+    /* Ensure user-info-content children don't have horizontal padding removed incorrectly */
+    .user-info-section,
+    .user-info-item,
+    .user-info-label,
+    .user-info-value,
+    .user-info-divider,
+    .user-info-consent,
+    .consent-label,
+    .user-info-timestamp {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    /* Signal section text spacing */
+    #signals-section > div > div > div > div {
+        padding: var(--spacing-2) 0 !important;
+    }
+    
+    /* Recommendations and offers content padding */
+    .recommendation-content > div,
+    .offer-content {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    /* Partner Offers spacing */
+    #offers-section .alert {
+        margin-top: var(--spacing-2) !important;
+    }
+    
+    #offers-section .offer-item {
+        margin-bottom: var(--spacing-5) !important;
+    }
+    
+    /* Recommendations spacing */
+    .recommendation-summary {
+        margin-bottom: var(--spacing-2) !important;
+    }
+    
+    .recommendation-content > div:first-child p {
+        margin-top: var(--spacing-4) !important;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 1023px) {
+        .two-column-layout {
+            grid-template-columns: 1fr;
+        }
+        
+        .sticky-header {
+            position: relative;
+        }
+    }
+    
     @media (max-width: 767px) {
         div[style*="grid-template-columns"] {
             grid-template-columns: 1fr !important;
+        }
+        
+        .sticky-header-top {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .sticky-header-metrics {
+            width: 100%;
+            justify-content: flex-start;
+        }
+        
+        .sticky-header-nav {
+            flex-wrap: wrap;
+        }
+        
+        .signal-detail-row {
+            grid-template-columns: 1fr;
+            gap: var(--spacing-2);
+        }
+        
+        .signal-detail-row-group {
+            grid-template-columns: 1fr;
         }
     }
     
@@ -420,16 +1397,67 @@
         background-color: var(--color-neutral-50);
     }
     
-    details[open] summary .details-arrow {
-        transform: rotate(180deg);
-    }
-    
     details summary::-webkit-details-marker {
         display: none;
+    }
+    
+    /* Smooth scroll for anchor links */
+    html {
+        scroll-behavior: smooth;
     }
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script src="/static/js/consent.js?v=2"></script>
+<script>
+    // Smooth scroll for sticky header navigation
+    document.querySelectorAll('.sticky-nav-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                const headerOffset = 100;
+                const elementPosition = targetElement.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+                
+                // Update active state
+                document.querySelectorAll('.sticky-nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+    
+    // Set initial active state based on current section
+    function updateActiveNav() {
+        const sections = ['signals-section', 'persona-section', 'recommendations-section', 'offers-section'];
+        const scrollPosition = window.scrollY + 150;
+        
+        sections.forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                const sectionTop = section.offsetTop;
+                const sectionBottom = sectionTop + section.offsetHeight;
+                const link = document.querySelector(`.sticky-nav-link[href="#${sectionId}"]`);
+                
+                if (scrollPosition >= sectionTop && scrollPosition < sectionBottom && link) {
+                    document.querySelectorAll('.sticky-nav-link').forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                }
+            }
+        });
+    }
+    
+    // Update on scroll
+    window.addEventListener('scroll', updateActiveNav);
+    
+    // Set initial active state
+    updateActiveNav();
+</script>
 {% endblock %}
