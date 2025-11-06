@@ -420,7 +420,7 @@ def get_user_persona_display(user_id: int) -> Optional[Dict]:
             ORDER BY window, signal_type
         """, (user_id,))
         
-        signal_windows = {'30d': [], '180d': []}
+        signal_windows = {'30d': set(), '180d': set()}
         for signal_row in cursor.fetchall():
             signal_type, window = signal_row
             # Extract base signal type (remove window suffix if present)
@@ -438,22 +438,22 @@ def get_user_persona_display(user_id: int) -> Optional[Dict]:
             # Only include relevant signals based on persona type
             if persona_type == 'high_utilization':
                 if 'credit_utilization' in base_type or 'credit_interest' in base_type or 'credit_overdue' in base_type:
-                    signal_windows[target_window].append(base_type)
+                    signal_windows[target_window].add(base_type)
             elif persona_type == 'variable_income_budgeter':
                 if 'income' in base_type or 'cash_flow' in base_type or 'median_pay' in base_type:
-                    signal_windows[target_window].append(base_type)
+                    signal_windows[target_window].add(base_type)
             elif persona_type == 'savings_builder':
                 if 'savings' in base_type or 'credit_utilization' in base_type:
-                    signal_windows[target_window].append(base_type)
+                    signal_windows[target_window].add(base_type)
             elif persona_type == 'financial_newcomer':
                 if 'credit_utilization' in base_type:
-                    signal_windows[target_window].append(base_type)
+                    signal_windows[target_window].add(base_type)
             elif persona_type == 'subscription_heavy':
                 if 'subscription' in base_type:
-                    signal_windows[target_window].append(base_type)
+                    signal_windows[target_window].add(base_type)
         
-        # Remove empty windows
-        signal_windows = {k: v for k, v in signal_windows.items() if v}
+        # Convert sets to sorted lists and remove empty windows
+        signal_windows = {k: sorted(list(v)) for k, v in signal_windows.items() if v}
         
         return {
             'persona_type': persona_type,

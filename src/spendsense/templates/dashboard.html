@@ -9,13 +9,13 @@
 
 {% if stats %}
 <!-- Quick Stats Cards -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--spacing-6); margin-bottom: var(--spacing-8);">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-8);">
     <!-- Total Users Card -->
-    <div class="card" style="display: flex; flex-direction: column;">
-        <div style="font-size: var(--font-size-base); font-weight: var(--font-weight-medium); color: var(--color-neutral-600); margin-bottom: var(--spacing-3); text-transform: uppercase; letter-spacing: 0.5px;">
+    <div class="card" style="display: flex; flex-direction: column; padding: var(--spacing-4);">
+        <div style="font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--color-neutral-600); margin-bottom: var(--spacing-2); text-transform: uppercase; letter-spacing: 0.5px;">
             Total Users
         </div>
-        <div style="font-size: var(--font-size-4xl); font-weight: var(--font-weight-bold); color: var(--color-primary); margin-bottom: var(--spacing-2); line-height: 1;">
+        <div style="font-size: 3rem; font-weight: var(--font-weight-bold); color: var(--color-primary); margin-bottom: var(--spacing-1); line-height: 1;">
             {{ stats.total_users }}
         </div>
         <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-top: auto;">
@@ -24,12 +24,12 @@
     </div>
 
     <!-- Personas Breakdown Card -->
-    <div class="card" style="display: flex; flex-direction: column;">
-        <div style="font-size: var(--font-size-base); font-weight: var(--font-weight-medium); color: var(--color-neutral-600); margin-bottom: var(--spacing-3); text-transform: uppercase; letter-spacing: 0.5px;">
+    <div class="card" style="display: flex; flex-direction: column; padding: var(--spacing-4);">
+        <div style="font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--color-neutral-600); margin-bottom: var(--spacing-2); text-transform: uppercase; letter-spacing: 0.5px;">
             Personas Distribution
         </div>
-        <div style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 180px; margin: var(--spacing-2) 0;">
-            <canvas id="personaChart" style="max-height: 180px; max-width: 100%;"></canvas>
+        <div style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 160px; margin: var(--spacing-1) 0;">
+            <canvas id="personaChart" style="max-height: 160px; max-width: 100%;"></canvas>
         </div>
         <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-top: auto; text-align: center;">
             {{ stats.persona_counts|length }} persona types
@@ -37,11 +37,11 @@
     </div>
 
     <!-- Consent Stats Card -->
-    <div class="card" style="display: flex; flex-direction: column;">
-        <div style="font-size: var(--font-size-base); font-weight: var(--font-weight-medium); color: var(--color-neutral-600); margin-bottom: var(--spacing-3); text-transform: uppercase; letter-spacing: 0.5px;">
+    <div class="card" style="display: flex; flex-direction: column; padding: var(--spacing-4);">
+        <div style="font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--color-neutral-600); margin-bottom: var(--spacing-2); text-transform: uppercase; letter-spacing: 0.5px;">
             Consent Status
         </div>
-        <div style="font-size: var(--font-size-4xl); font-weight: var(--font-weight-bold); color: var(--color-success); margin-bottom: var(--spacing-3); line-height: 1;">
+        <div style="font-size: 3rem; font-weight: var(--font-weight-bold); color: var(--color-success); margin-bottom: var(--spacing-2); line-height: 1;">
             {{ stats.users_with_consent }}
         </div>
         <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-bottom: var(--spacing-1);">
@@ -53,11 +53,11 @@
     </div>
 
     <!-- Recent Activity Card -->
-    <div class="card" style="display: flex; flex-direction: column;">
-        <div style="font-size: var(--font-size-base); font-weight: var(--font-weight-medium); color: var(--color-neutral-600); margin-bottom: var(--spacing-3); text-transform: uppercase; letter-spacing: 0.5px;">
+    <div class="card" style="display: flex; flex-direction: column; padding: var(--spacing-4);">
+        <div style="font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--color-neutral-600); margin-bottom: var(--spacing-2); text-transform: uppercase; letter-spacing: 0.5px;">
             Recent Activity
         </div>
-        <div style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); color: var(--color-primary); margin-bottom: var(--spacing-2); line-height: 1;">
+        <div style="font-size: 2.75rem; font-weight: var(--font-weight-bold); color: var(--color-primary); margin-bottom: var(--spacing-1); line-height: 1;">
             {{ stats.recent_users|length }}
         </div>
         <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-top: auto;">
