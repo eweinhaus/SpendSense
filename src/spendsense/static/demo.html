@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design System Demo - SpendSense</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .demo-section {
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .demo-section h2 {
+            margin-bottom: 1.5rem;
+            color: var(--color-neutral-900);
+        }
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .demo-item {
+            padding: 1rem;
+            background: var(--color-neutral-50);
+            border-radius: 0.375rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4 mb-5">
+        <h1 class="mb-4">SpendSense Design System Demo</h1>
+        <p class="text-muted mb-5">This page demonstrates all design system components and their variants.</p>
+
+        <!-- Buttons Section -->
+        <section class="demo-section">
+            <h2>Buttons</h2>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h4>Primary Button</h4>
+                    <button class="btn btn-primary">Primary Button</button>
+                </div>
+                <div class="demo-item">
+                    <h4>Secondary Button</h4>
+                    <button class="btn btn-secondary">Secondary Button</button>
+                </div>
+                <div class="demo-item">
+                    <h4>Danger Button</h4>
+                    <button class="btn btn-danger">Delete</button>
+                </div>
+                <div class="demo-item">
+                    <h4>Disabled Button</h4>
+                    <button class="btn btn-primary" disabled>Disabled</button>
+                </div>
+            </div>
+            <p class="text-muted"><small>Test keyboard navigation: Tab to focus, Enter/Space to activate</small></p>
+        </section>
+
+        <!-- Cards Section -->
+        <section class="demo-section">
+            <h2>Cards</h2>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h4>Basic Card</h4>
+                    <div class="card">
+                        <div class="card-header">Card Title</div>
+                        <p>This is card content. It demonstrates the card component with proper spacing and styling.</p>
+                    </div>
+                </div>
+                <div class="demo-item">
+                    <h4>Card with Footer</h4>
+                    <div class="card">
+                        <div class="card-header">Card Title</div>
+                        <p>Card content goes here.</p>
+                        <div class="card-footer">Footer content</div>
+                    </div>
+                </div>
+            </div>
+            <p class="text-muted"><small>Hover over cards to see elevation effect</small></p>
+        </section>
+
+        <!-- Badges Section -->
+        <section class="demo-section">
+            <h2>Badges</h2>
+            <div class="demo-item mb-3">
+                <h4>Persona Badges</h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    <span class="badge badge-persona badge-persona-high-utilization">High Utilization</span>
+                    <span class="badge badge-persona badge-persona-variable-income">Variable Income</span>
+                    <span class="badge badge-persona badge-persona-savings-builder">Savings Builder</span>
+                    <span class="badge badge-persona badge-persona-financial-newcomer">Financial Newcomer</span>
+                    <span class="badge badge-persona badge-persona-subscription-heavy">Subscription-Heavy</span>
+                    <span class="badge badge-persona badge-persona-neutral">Neutral</span>
+                </div>
+            </div>
+            <div class="demo-item">
+                <h4>Status Badges</h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    <span class="badge badge-success">Success</span>
+                    <span class="badge badge-warning">Warning</span>
+                    <span class="badge badge-error">Error</span>
+                    <span class="badge badge-info">Info</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Forms Section -->
+        <section class="demo-section">
+            <h2>Forms</h2>
+            <div class="demo-item">
+                <h4>Form Input</h4>
+                <div class="form-group">
+                    <label for="demo-email" class="form-label">Email Address</label>
+                    <input type="email" id="demo-email" class="form-input" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="demo-password" class="form-label">Password</label>
+                    <input type="password" id="demo-password" class="form-input" placeholder="Enter your password">
+                </div>
+            </div>
+            <div class="demo-item">
+                <h4>Form Input with Error</h4>
+                <div class="form-group">
+                    <label for="demo-error" class="form-label">Email Address</label>
+                    <input type="email" id="demo-error" class="form-input error" value="invalid-email">
+                    <span class="form-error">Please enter a valid email address</span>
+                </div>
+            </div>
+            <p class="text-muted"><small>Tab to focus inputs and see focus states</small></p>
+        </section>
+
+        <!-- Alerts Section -->
+        <section class="demo-section">
+            <h2>Alerts</h2>
+            <div class="demo-item mb-3">
+                <h4>Alert Variants</h4>
+                <div class="alert alert-success">
+                    <svg class="icon icon-md" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="Success" role="img">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Operation completed successfully!</span>
+                </div>
+                <div class="alert alert-warning">
+                    <svg class="icon icon-md" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="Warning" role="img">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>Please review before proceeding.</span>
+                </div>
+                <div class="alert alert-error">
+                    <svg class="icon icon-md" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="Error" role="img">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>An error occurred. Please try again.</span>
+                </div>
+                <div class="alert alert-info">
+                    <svg class="icon icon-md" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="Information" role="img">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Here's some helpful information.</span>
+                </div>
+            </div>
+            <div class="demo-item">
+                <h4>Dismissible Alert</h4>
+                <div class="alert alert-success alert-dismissible">
+                    <svg class="icon icon-md" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="Success" role="img">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>This alert can be dismissed (JavaScript required).</span>
+                    <button class="alert-close" aria-label="Close alert">
+                        <svg class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Typography Section -->
+        <section class="demo-section">
+            <h2>Typography</h2>
+            <div class="demo-item">
+                <h1>Heading 1 (2.5rem / 40px)</h1>
+                <h2>Heading 2 (2rem / 32px)</h2>
+                <h3>Heading 3 (1.5rem / 24px)</h3>
+                <h4>Heading 4 (1.25rem / 20px)</h4>
+                <p>Body text (1rem / 16px) - This is the default body text size. It uses Inter font with a line height of 1.5 for optimal readability.</p>
+                <small>Small text (0.875rem / 14px) - Used for secondary information, captions, and helper text.</small>
+            </div>
+        </section>
+
+        <!-- Color Palette Section -->
+        <section class="demo-section">
+            <h2>Color Palette</h2>
+            <div class="demo-item">
+                <h4>Primary Colors</h4>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <div style="background: var(--color-primary); color: white; padding: 1rem; border-radius: 0.375rem; min-width: 120px; text-align: center;">
+                        Primary<br><small>#2563EB</small>
+                    </div>
+                    <div style="background: var(--color-secondary); color: white; padding: 1rem; border-radius: 0.375rem; min-width: 120px; text-align: center;">
+                        Secondary<br><small>#7C3AED</small>
+                    </div>
+                </div>
+            </div>
+            <div class="demo-item">
+                <h4>Semantic Colors</h4>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <div style="background: var(--color-success); color: white; padding: 1rem; border-radius: 0.375rem; min-width: 120px; text-align: center;">
+                        Success<br><small>#10B981</small>
+                    </div>
+                    <div style="background: var(--color-warning); color: white; padding: 1rem; border-radius: 0.375rem; min-width: 120px; text-align: center;">
+                        Warning<br><small>#F59E0B</small>
+                    </div>
+                    <div style="background: var(--color-error); color: white; padding: 1rem; border-radius: 0.375rem; min-width: 120px; text-align: center;">
+                        Error<br><small>#EF4444</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Spacing Section -->
+        <section class="demo-section">
+            <h2>Spacing Scale</h2>
+            <div class="demo-item">
+                <div style="margin-bottom: 1rem;">
+                    <div style="background: var(--color-primary); height: var(--spacing-1); width: 100px; margin-bottom: 0.5rem;"></div>
+                    <small>spacing-1 (4px)</small>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <div style="background: var(--color-primary); height: var(--spacing-2); width: 100px; margin-bottom: 0.5rem;"></div>
+                    <small>spacing-2 (8px)</small>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <div style="background: var(--color-primary); height: var(--spacing-4); width: 100px; margin-bottom: 0.5rem;"></div>
+                    <small>spacing-4 (16px)</small>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <div style="background: var(--color-primary); height: var(--spacing-6); width: 100px; margin-bottom: 0.5rem;"></div>
+                    <small>spacing-6 (24px)</small>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <div style="background: var(--color-primary); height: var(--spacing-8); width: 100px; margin-bottom: 0.5rem;"></div>
+                    <small>spacing-8 (32px)</small>
+                </div>
+            </div>
+        </section>
+
+        <footer class="mt-5 pt-4 border-top">
+            <p class="text-muted text-center">
+                <small>SpendSense Design System - Phase 8C Demo</small>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

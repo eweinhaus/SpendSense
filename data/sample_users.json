@@ -1,0 +1,141 @@
+{
+  "users": [
+    {
+      "user_id": "user_001",
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "consent_given": true,
+      "accounts": [
+        {
+          "account_id": "acc_checking_001",
+          "type": "depository",
+          "subtype": "checking",
+          "balances": {
+            "available": 3000.00,
+            "current": 3000.00
+          },
+          "iso_currency_code": "USD",
+          "holder_category": "consumer",
+          "transactions": [
+            {
+              "transaction_id": "tx_001",
+              "date": "2024-01-15",
+              "amount": -50.00,
+              "merchant_name": "Coffee Shop",
+              "payment_channel": "in store",
+              "personal_finance_category": {
+                "primary": "FOOD_AND_DRINK",
+                "detailed": "RESTAURANTS"
+              },
+              "pending": false
+            },
+            {
+              "transaction_id": "tx_002",
+              "date": "2024-01-20",
+              "amount": 2500.00,
+              "merchant_name": "PAYROLL",
+              "payment_channel": "other",
+              "personal_finance_category": {
+                "primary": "INCOME",
+                "detailed": "WAGES"
+              },
+              "pending": false
+            }
+          ]
+        },
+        {
+          "account_id": "acc_credit_001",
+          "type": "credit",
+          "subtype": "credit card",
+          "balances": {
+            "current": 2000.00,
+            "limit": 5000.00
+          },
+          "iso_currency_code": "USD",
+          "holder_category": "consumer",
+          "credit_card": {
+            "apr": 22.0,
+            "minimum_payment_amount": 50.00,
+            "last_payment_amount": 200.00,
+            "is_overdue": false,
+            "next_payment_due_date": "2024-02-15",
+            "last_statement_balance": 2000.00
+          }
+        }
+      ]
+    },
+    {
+      "user_id": "user_002",
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com",
+      "consent_given": false,
+      "accounts": [
+        {
+          "account_id": "acc_checking_002",
+          "type": "depository",
+          "subtype": "checking",
+          "balances": {
+            "available": 5000.00,
+            "current": 5000.00
+          },
+          "iso_currency_code": "USD",
+          "holder_category": "consumer",
+          "transactions": [
+            {
+              "transaction_id": "tx_003",
+              "date": "2024-01-10",
+              "amount": -120.00,
+              "merchant_name": "Netflix",
+              "payment_channel": "online",
+              "personal_finance_category": {
+                "primary": "GENERAL_MERCHANDISE",
+                "detailed": "SUBSCRIPTIONS"
+              },
+              "pending": false
+            },
+            {
+              "transaction_id": "tx_004",
+              "date": "2024-01-11",
+              "amount": -15.99,
+              "merchant_name": "Spotify",
+              "payment_channel": "online",
+              "personal_finance_category": {
+                "primary": "GENERAL_MERCHANDISE",
+                "detailed": "SUBSCRIPTIONS"
+              },
+              "pending": false
+            }
+          ]
+        },
+        {
+          "account_id": "acc_savings_002",
+          "type": "depository",
+          "subtype": "savings",
+          "balances": {
+            "available": 10000.00,
+            "current": 10000.00
+          },
+          "iso_currency_code": "USD",
+          "holder_category": "consumer"
+        },
+        {
+          "account_id": "acc_mortgage_002",
+          "type": "liability",
+          "subtype": "mortgage",
+          "balances": {
+            "current": 150000.00
+          },
+          "iso_currency_code": "USD",
+          "holder_category": "consumer",
+          "liability": {
+            "liability_type": "mortgage",
+            "interest_rate": 3.5,
+            "next_payment_due_date": "2024-02-01",
+            "last_payment_amount": 1500.00
+          }
+        }
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,4 @@
+user_id,name,email,consent_given
+user_001,John Doe,john.doe@example.com,true
+user_002,Jane Smith,jane.smith@example.com,false
+

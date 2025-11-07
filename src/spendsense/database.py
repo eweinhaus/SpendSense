@@ -212,6 +212,19 @@ def init_database(db_path: Optional[str] = None) -> None:
         )
     """)
     
+    # Create consent_audit_log table (Phase 8B: Compliance & Audit Interface)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS consent_audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            changed_by TEXT NOT NULL,
+            previous_status BOOLEAN,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+    
     # Create indexes
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_transactions_account 
@@ -251,6 +264,16 @@ def init_database(db_path: Optional[str] = None) -> None:
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_liabilities_account 
         ON liabilities(account_id)
+    """)
+    
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_consent_audit_user 
+        ON consent_audit_log(user_id)
+    """)
+    
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_consent_audit_timestamp 
+        ON consent_audit_log(timestamp)
     """)
     
     conn.commit()

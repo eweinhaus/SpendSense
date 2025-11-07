@@ -13,7 +13,7 @@ Banks generate massive transaction data through Plaid integrations but struggle 
 
 ## Project Overview
 
-Individual or small team project with no strict deadline.
+This is a take home project for an AI Software Engineer inteview. Candidate will build this app then show it in the interview. Candidate must prioritize requirements, additional useful/intuitive features, and technical complexity.
 
 ### Deliverables
 

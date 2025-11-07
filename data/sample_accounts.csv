@@ -1,0 +1,7 @@
+account_id,user_id,type,subtype,available_balance,current_balance,limit,iso_currency_code,holder_category
+acc_checking_001,user_001,depository,checking,3000.00,3000.00,,USD,consumer
+acc_credit_001,user_001,credit,credit card,,2000.00,5000.00,USD,consumer
+acc_checking_002,user_002,depository,checking,5000.00,5000.00,,USD,consumer
+acc_savings_002,user_002,depository,savings,10000.00,10000.00,,USD,consumer
+acc_mortgage_002,user_002,liability,mortgage,,150000.00,,USD,consumer
+

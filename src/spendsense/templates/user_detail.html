@@ -3,350 +3,1612 @@
 {% block title %}{{ user.name }} - SpendSense MVP{% endblock %}
 
 {% block content %}
-<div class="mb-4">
+<div style="margin-bottom: var(--spacing-4);">
     <a href="/" class="btn btn-secondary">← Back to Dashboard</a>
 </div>
 
-<!-- User Information -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h3 class="mb-0">User Information</h3>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <p><strong>Name:</strong> {{ user.name }}</p>
-                <p><strong>Email:</strong> {{ user.email }}</p>
-                <p><strong>User ID:</strong> {{ user.id }}</p>
-            </div>
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label class="form-check-label">
-                        <input type="checkbox" id="consent-checkbox" 
-                               {% if user.consent_given %}checked{% endif %}
-                               onchange="toggleConsent({{ user.id }})">
-                        User has given consent for data processing
-                    </label>
+<!-- Sticky Summary Header -->
+{% set window_signals_30d = signals.get('30d', {}) %}
+<div class="sticky-header" id="sticky-header">
+    <div class="sticky-header-content">
+        <div class="sticky-header-top">
+            <div class="sticky-header-user-info">
+                <h2 class="sticky-header-name">{{ user.name }}</h2>
+                <div class="sticky-header-meta">
+                    <span class="sticky-header-meta-item">
+                        <span class="meta-label">ID:</span>
+                        <span class="meta-value">{{ user.id }}</span>
+                    </span>
+                    <span class="sticky-header-meta-separator">•</span>
+                    <span class="sticky-header-meta-item">
+                        <span class="meta-label">Consent:</span>
+                        <span class="meta-value {% if user.consent_given %}meta-success{% else %}meta-error{% endif %}">
+                            {% if user.consent_given %}✓ Active{% else %}✗ Inactive{% endif %}
+                        </span>
+                    </span>
                 </div>
-                <p><small class="text-muted">Created: {{ user.created_at }}</small></p>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Detected Signals -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h3 class="mb-0">Detected Signals</h3>
-    </div>
-    <div class="card-body">
-        <!-- Tabs for 30d and 180d windows -->
-        <ul class="nav nav-tabs mb-3" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="tab-30d" data-bs-toggle="tab" data-bs-target="#panel-30d" type="button" role="tab">
-                    30-Day Window
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-180d" data-bs-toggle="tab" data-bs-target="#panel-180d" type="button" role="tab">
-                    180-Day Window
-                </button>
-            </li>
-        </ul>
-        
-        <div class="tab-content">
-            <!-- 30-Day Window -->
-            <div class="tab-pane fade show active" id="panel-30d" role="tabpanel">
-                {% set window_signals = signals.get('30d', {}) %}
-                
-                {% if window_signals.get('credit') %}
-                <h5 class="mb-3">Credit Utilization</h5>
-                <ul class="list-unstyled">
-                    <li><strong>Card:</strong> {{ window_signals.credit.card_name }}</li>
-                    <li><strong>Utilization:</strong> {{ "%.0f"|format(window_signals.credit.utilization) }}%</li>
-                    <li><strong>Balance:</strong> ${{ "%.2f"|format(window_signals.credit.balance) }}</li>
-                    <li><strong>Limit:</strong> ${{ "%.2f"|format(window_signals.credit.limit) }}</li>
-                    {% if window_signals.credit.interest_charges > 0 %}
-                    <li><strong>Interest Charges:</strong> ${{ "%.2f"|format(window_signals.credit.interest_charges) }}/month</li>
+            <div class="sticky-header-metrics">
+                {% if persona %}
+                    {% if persona.persona_type == 'high_utilization' %}
+                        <span class="badge badge-persona badge-persona-high-utilization">High Utilization</span>
+                    {% elif persona.persona_type == 'variable_income_budgeter' %}
+                        <span class="badge badge-persona badge-persona-variable-income">Variable Income</span>
+                    {% elif persona.persona_type == 'savings_builder' %}
+                        <span class="badge badge-persona badge-persona-savings-builder">Savings Builder</span>
+                    {% elif persona.persona_type == 'financial_newcomer' %}
+                        <span class="badge badge-persona badge-persona-financial-newcomer">Financial Newcomer</span>
+                    {% elif persona.persona_type == 'subscription_heavy' %}
+                        <span class="badge badge-persona badge-persona-subscription-heavy">Subscription-Heavy</span>
+                    {% else %}
+                        <span class="badge badge-persona badge-persona-neutral">Neutral</span>
                     {% endif %}
-                    {% if window_signals.credit.is_overdue %}
-                    <li><span class="badge bg-danger">Overdue</span></li>
-                    {% endif %}
-                </ul>
                 {% endif %}
-                
-                {% if window_signals.get('subscription') %}
-                <hr>
-                <h5 class="mb-3">Subscriptions</h5>
-                <ul class="list-unstyled">
-                    <li><strong>Recurring Merchants:</strong> {{ window_signals.subscription.count }}</li>
-                    {% if window_signals.subscription.merchants %}
-                    <li><strong>Merchants:</strong> {{ window_signals.subscription.merchants|join(", ") }}</li>
-                    {% endif %}
-                    <li><strong>Monthly Spend:</strong> ${{ "%.2f"|format(window_signals.subscription.monthly_spend) }}</li>
-                    <li><strong>Subscription Share:</strong> {{ "%.1f"|format(window_signals.subscription.share) }}%</li>
-                </ul>
-                {% endif %}
-                
-                {% if window_signals.get('savings') %}
-                <hr>
-                <h5 class="mb-3">Savings Signals</h5>
-                <ul class="list-unstyled">
-                    {% if window_signals.savings.net_inflow is defined %}
-                    <li><strong>Net Inflow:</strong> ${{ "%.2f"|format(window_signals.savings.net_inflow) }}</li>
-                    {% endif %}
-                    {% if window_signals.savings.growth_rate is defined %}
-                    <li><strong>Growth Rate:</strong> {{ "%.2f"|format(window_signals.savings.growth_rate) }}%</li>
-                    {% endif %}
-                    {% if window_signals.savings.emergency_fund_coverage is defined %}
-                    <li><strong>Emergency Fund Coverage:</strong> {{ "%.2f"|format(window_signals.savings.emergency_fund_coverage) }} months</li>
-                    {% endif %}
-                </ul>
-                {% endif %}
-                
-                {% if window_signals.get('income') %}
-                <hr>
-                <h5 class="mb-3">Income Signals</h5>
-                <ul class="list-unstyled">
-                    {% if window_signals.income.frequency is defined %}
-                    <li><strong>Payment Frequency:</strong> {{ window_signals.income.frequency }}</li>
-                    {% endif %}
-                    {% if window_signals.income.variability is defined %}
-                    <li><strong>Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</li>
-                    {% endif %}
-                    {% if window_signals.income.cash_flow_buffer is defined %}
-                    <li><strong>Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</li>
-                    {% endif %}
-                    {% if window_signals.income.median_pay_gap is defined %}
-                    <li><strong>Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</li>
-                    {% endif %}
-                </ul>
-                {% endif %}
-                
-                {% if not window_signals.get('credit') and not window_signals.get('subscription') and not window_signals.get('savings') and not window_signals.get('income') %}
-                <p class="text-muted">No signals detected for 30-day window.</p>
-                {% endif %}
-            </div>
-            
-            <!-- 180-Day Window -->
-            <div class="tab-pane fade" id="panel-180d" role="tabpanel">
-                {% set window_signals = signals.get('180d', {}) %}
-                
-                {% if window_signals.get('credit') %}
-                <h5 class="mb-3">Credit Utilization</h5>
-                <ul class="list-unstyled">
-                    <li><strong>Card:</strong> {{ window_signals.credit.card_name }}</li>
-                    <li><strong>Utilization:</strong> {{ "%.0f"|format(window_signals.credit.utilization) }}%</li>
-                    <li><strong>Balance:</strong> ${{ "%.2f"|format(window_signals.credit.balance) }}</li>
-                    <li><strong>Limit:</strong> ${{ "%.2f"|format(window_signals.credit.limit) }}</li>
-                    {% if window_signals.credit.interest_charges > 0 %}
-                    <li><strong>Interest Charges:</strong> ${{ "%.2f"|format(window_signals.credit.interest_charges) }}/month</li>
-                    {% endif %}
-                    {% if window_signals.credit.is_overdue %}
-                    <li><span class="badge bg-danger">Overdue</span></li>
-                    {% endif %}
-                </ul>
-                {% endif %}
-                
-                {% if window_signals.get('subscription') %}
-                <hr>
-                <h5 class="mb-3">Subscriptions</h5>
-                <ul class="list-unstyled">
-                    <li><strong>Recurring Merchants:</strong> {{ window_signals.subscription.count }}</li>
-                    {% if window_signals.subscription.merchants %}
-                    <li><strong>Merchants:</strong> {{ window_signals.subscription.merchants|join(", ") }}</li>
-                    {% endif %}
-                    <li><strong>Monthly Spend:</strong> ${{ "%.2f"|format(window_signals.subscription.monthly_spend) }}</li>
-                    <li><strong>Subscription Share:</strong> {{ "%.1f"|format(window_signals.subscription.share) }}%</li>
-                </ul>
-                {% endif %}
-                
-                {% if window_signals.get('savings') %}
-                <hr>
-                <h5 class="mb-3">Savings Signals</h5>
-                <ul class="list-unstyled">
-                    {% if window_signals.savings.net_inflow is defined %}
-                    <li><strong>Net Inflow:</strong> ${{ "%.2f"|format(window_signals.savings.net_inflow) }}</li>
-                    {% endif %}
-                    {% if window_signals.savings.growth_rate is defined %}
-                    <li><strong>Growth Rate:</strong> {{ "%.2f"|format(window_signals.savings.growth_rate) }}%</li>
-                    {% endif %}
-                    {% if window_signals.savings.emergency_fund_coverage is defined %}
-                    <li><strong>Emergency Fund Coverage:</strong> {{ "%.2f"|format(window_signals.savings.emergency_fund_coverage) }} months</li>
-                    {% endif %}
-                </ul>
-                {% endif %}
-                
-                {% if window_signals.get('income') %}
-                <hr>
-                <h5 class="mb-3">Income Signals</h5>
-                <ul class="list-unstyled">
-                    {% if window_signals.income.frequency is defined %}
-                    <li><strong>Payment Frequency:</strong> {{ window_signals.income.frequency }}</li>
-                    {% endif %}
-                    {% if window_signals.income.variability is defined %}
-                    <li><strong>Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</li>
-                    {% endif %}
-                    {% if window_signals.income.cash_flow_buffer is defined %}
-                    <li><strong>Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</li>
-                    {% endif %}
-                    {% if window_signals.income.median_pay_gap is defined %}
-                    <li><strong>Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</li>
-                    {% endif %}
-                </ul>
-                {% endif %}
-                
-                {% if not window_signals.get('credit') and not window_signals.get('subscription') and not window_signals.get('savings') and not window_signals.get('income') %}
-                <p class="text-muted">No signals detected for 180-day window.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Persona Assignment -->
-{% if persona %}
-<div class="card mb-4">
-    <div class="card-header">
-        <h3 class="mb-0">Persona Assignment</h3>
-    </div>
-    <div class="card-body">
-        <div class="mb-3">
-            {% if persona.persona_type == 'high_utilization' %}
-                <span class="badge bg-danger fs-6">High Utilization</span>
-            {% elif persona.persona_type == 'variable_income_budgeter' %}
-                <span class="badge bg-warning fs-6">Variable Income Budgeter</span>
-            {% elif persona.persona_type == 'savings_builder' %}
-                <span class="badge bg-success fs-6">Savings Builder</span>
-            {% elif persona.persona_type == 'financial_newcomer' %}
-                <span class="badge bg-info fs-6">Financial Newcomer</span>
-            {% elif persona.persona_type == 'subscription_heavy' %}
-                <span class="badge bg-primary fs-6">Subscription-Heavy</span>
-            {% else %}
-                <span class="badge bg-secondary fs-6">Neutral</span>
-            {% endif %}
-        </div>
-        <div class="mb-2">
-            <strong>Assignment Rationale:</strong>
-            <p class="mb-0">{{ persona.criteria_matched }}</p>
-        </div>
-        {% if persona.signal_windows %}
-        <div class="mb-2">
-            <strong>Signals Used:</strong>
-            <ul class="mb-0 small">
-                {% for window, signal_list in persona.signal_windows.items() %}
-                <li><strong>{{ window }} window:</strong> {{ signal_list|join(", ") }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-        <p class="mb-0"><small class="text-muted">Assigned: {{ persona.assigned_at }}</small></p>
-    </div>
-</div>
-{% endif %}
-
-<!-- Recommendations -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h3 class="mb-0">Recommendations</h3>
-    </div>
-    <div class="card-body">
-        {% if not user.consent_given %}
-        <div class="alert alert-warning" role="alert">
-            <h5 class="alert-heading">Consent Required</h5>
-            <p class="mb-0">User consent is required to receive personalized recommendations. Please enable consent using the checkbox above to view recommendations.</p>
-        </div>
-        {% elif recommendations %}
-            {% for rec in recommendations %}
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">{{ rec.title }}</h5>
-                    <div class="card-text">
-                        <p>{{ rec.content|replace('\n', '<br>')|safe }}</p>
-                        <hr>
-                        <p><strong>Rationale:</strong></p>
-                        <p class="text-muted">{{ rec.rationale|replace('\n', '<br>')|safe }}</p>
+                {% if window_signals_30d.get('credit') %}
+                    <div class="sticky-metric-card">
+                        <span class="sticky-metric-value">{{ "%.0f"|format(window_signals_30d.credit.utilization) }}%</span>
+                        <span class="sticky-metric-label">Credit</span>
                     </div>
-                    <button class="btn btn-sm btn-outline-info" type="button" 
-                            data-bs-toggle="collapse" 
-                            data-bs-target="#trace-{{ rec.id }}" 
-                            aria-expanded="false">
-                        View Decision Trace
+                {% endif %}
+                {% if window_signals_30d.get('subscription') %}
+                    <div class="sticky-metric-card">
+                        <span class="sticky-metric-value">{{ window_signals_30d.subscription.count }}</span>
+                        <span class="sticky-metric-label">Subs</span>
+                    </div>
+                {% endif %}
+                {% if window_signals_30d.get('income') %}
+                    <div class="sticky-metric-card">
+                        <span class="sticky-metric-value">{{ window_signals_30d.income.frequency|default('N/A')|title }}</span>
+                        <span class="sticky-metric-label">Income</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <nav class="sticky-header-nav" aria-label="User detail navigation">
+            <a href="#signals-section" class="sticky-nav-link active">Signals</a>
+            <a href="#persona-section" class="sticky-nav-link">Persona</a>
+            <a href="#recommendations-section" class="sticky-nav-link">Recommendations</a>
+            {% if user.consent_given and partner_offers %}
+            <a href="#offers-section" class="sticky-nav-link">Offers</a>
+            {% endif %}
+        </nav>
+    </div>
+</div>
+
+<!-- Two-Column Layout Container -->
+<div class="two-column-layout">
+    <!-- Left Column (60%) -->
+    <div class="left-column">
+        <!-- Detected Signals (Expanded by default) -->
+        <div class="card" id="signals-section" style="margin-bottom: var(--spacing-6);">
+            <div class="card-header">Detected Signals</div>
+            <div style="padding-top: var(--spacing-2);">
+                <!-- Tabs for 30d and 180d windows -->
+                <div class="window-tabs-container" style="display: flex; gap: var(--spacing-4); margin-bottom: var(--spacing-3); padding-bottom: var(--spacing-4); position: relative;">
+                    <button class="window-tab-btn window-tab-active" id="tab-30d" type="button" role="tab">
+                        <span class="window-tab-text">30-Day Window</span>
                     </button>
-                    <div class="collapse mt-3" id="trace-{{ rec.id }}">
-                        <div class="card card-body bg-light">
-                            {% if traces.get(rec.id) %}
-                                {% for trace_step in traces[rec.id] %}
-                                <div class="mb-3 pb-3 border-bottom">
-                                    <h6 class="mb-2">
-                                        <span class="badge bg-primary me-2">Step {{ trace_step.step }}</span>
-                                        {% if trace_step.step == 1 %}
-                                            Signal Detected
-                                        {% elif trace_step.step == 2 %}
-                                            Persona Assigned
-                                        {% elif trace_step.step == 3 %}
-                                            Recommendation Selected
-                                        {% elif trace_step.step == 4 %}
-                                            Rationale Generated
-                                        {% endif %}
-                                    </h6>
-                                    <p class="mb-2">{{ trace_step.reasoning }}</p>
-                                    {% if trace_step.data_cited %}
-                                    <details class="mt-2">
-                                        <summary class="text-primary small" style="cursor: pointer;">View Data Cited</summary>
-                                        <pre class="bg-white p-2 mt-2 mb-0 small border rounded" style="max-height: 200px; overflow-y: auto;">{{ trace_step.data_cited|tojsonpretty }}</pre>
-                                    </details>
+                    <button class="window-tab-btn" id="tab-180d" type="button" role="tab">
+                        <span class="window-tab-text">180-Day Window</span>
+                    </button>
+                </div>
+                
+                <div class="tab-content">
+                    <!-- 30-Day Window -->
+                    <div class="tab-pane fade show active" id="panel-30d" role="tabpanel">
+                        {% set window_signals = signals.get('30d', {}) %}
+                        
+                        <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
+                            {% if window_signals.get('credit') %}
+                            <div class="signal-section">
+                                <h5 class="signal-section-title">Credit Utilization</h5>
+                                <dl class="signal-details">
+                                    <div class="signal-detail-row">
+                                        <dt>Card</dt>
+                                        <dd>{{ window_signals.credit.card_name }}</dd>
+                                    </div>
+                                    <div class="signal-detail-row">
+                                        <dt>Utilization</dt>
+                                        <dd class="metric-highlight">{{ "%.0f"|format(window_signals.credit.utilization) }}%</dd>
+                                    </div>
+                                    <div class="signal-detail-row-group">
+                                        <div class="signal-detail-row">
+                                            <dt>Balance</dt>
+                                            <dd>${{ "%.2f"|format(window_signals.credit.balance) }}</dd>
+                                        </div>
+                                        <div class="signal-detail-row">
+                                            <dt>Limit</dt>
+                                            <dd>${{ "%.2f"|format(window_signals.credit.limit) }}</dd>
+                                        </div>
+                                    </div>
+                                    {% if window_signals.credit.interest_charges > 0 %}
+                                    <div class="signal-detail-row signal-detail-row-warning">
+                                        <dt>Interest Charges</dt>
+                                        <dd>${{ "%.2f"|format(window_signals.credit.interest_charges) }}/month</dd>
+                                    </div>
+                                    {% endif %}
+                                    {% if window_signals.credit.is_overdue %}
+                                    <div class="signal-detail-row">
+                                        <dt>Status</dt>
+                                        <dd><span class="badge badge-error">Overdue</span></dd>
+                                    </div>
+                                    {% endif %}
+                                </dl>
+                                <!-- Progress bar for utilization -->
+                                <div class="credit-utilization-progress">
+                                    <div class="progress-bar-header">
+                                        <span class="progress-bar-label">Credit Utilization</span>
+                                        <span class="progress-bar-value">{{ "%.0f"|format(window_signals.credit.utilization) }}%</span>
+                                    </div>
+                                    <div class="progress-bar-container">
+                                        <div class="credit-utilization-track">
+                                            <div class="credit-utilization-fill {% if window_signals.credit.utilization > 80 %}is-danger{% elif window_signals.credit.utilization > 50 %}is-warning{% else %}is-success{% endif %}" style="width: {{ window_signals.credit.utilization }}%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if window_signals.get('subscription') %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-2) !important; padding-bottom: 0 !important; margin-top: var(--spacing-3) !important; margin-bottom: 0 !important;">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: 32px !important; margin-top: 0 !important;">Subscriptions</h5>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 2px !important; column-gap: var(--spacing-4); margin-bottom: 0 !important;">
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Recurring Merchants:</strong> {{ window_signals.subscription.count }}</div>
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Monthly Spend:</strong> ${{ "%.2f"|format(window_signals.subscription.monthly_spend) }}</div>
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Subscription Share:</strong> {{ "%.1f"|format(window_signals.subscription.share) }}%</div>
+                                    {% if window_signals.subscription.merchants %}
+                                    <div style="grid-column: 1 / -1; padding: var(--spacing-1) 0;">
+                                        <strong style="margin-right: var(--spacing-2);">Merchants:</strong> {{ window_signals.subscription.merchants|join(", ") }}
+                                    </div>
                                     {% endif %}
                                 </div>
-                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            {% if window_signals.get('savings') %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-2) !important; padding-bottom: 0 !important; margin-top: var(--spacing-3) !important; margin-bottom: 0 !important;">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: 32px !important; margin-top: 0 !important;">Savings Signals</h5>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 2px !important; column-gap: var(--spacing-4); margin-bottom: 0 !important;">
+                                    {% if window_signals.savings.net_inflow is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Net Inflow:</strong> ${{ "%.2f"|format(window_signals.savings.net_inflow) }}</div>
+                                    {% endif %}
+                                    {% if window_signals.savings.growth_rate is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Growth Rate:</strong> {{ "%.2f"|format(window_signals.savings.growth_rate) }}%</div>
+                                    {% endif %}
+                                    {% if window_signals.savings.emergency_fund_coverage is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Emergency Fund Coverage:</strong> {{ "%.2f"|format(window_signals.savings.emergency_fund_coverage) }} months</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if window_signals.get('income') %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-2) !important; padding-bottom: 0 !important; margin-top: var(--spacing-3) !important; margin-bottom: 0 !important;">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: 32px !important; margin-top: 0 !important;">Income Signals</h5>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 2px !important; column-gap: var(--spacing-4); margin-bottom: 0 !important;">
+                                    {% if window_signals.income.frequency is defined %}
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Payment Frequency:</strong> {{ window_signals.income.frequency }}</div>
+                                    {% endif %}
+                                    {% if window_signals.income.variability is defined %}
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</div>
+                                    {% endif %}
+                                    {% if window_signals.income.cash_flow_buffer is defined %}
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</div>
+                                    {% endif %}
+                                    {% if window_signals.income.median_pay_gap is defined %}
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</div>
+                                    {% endif %}
+                                </div>
+                            </div>
                             {% else %}
-                                <p class="text-muted">No trace data available.</p>
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-4); margin-top: var(--spacing-3);">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Income Signals</h5>
+                                <div class="empty-state">
+                                    <p class="empty-state-description">No income signals detected in this window. This could mean there's insufficient transaction data or income transactions don't match expected patterns.</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if not window_signals.get('credit') and not window_signals.get('subscription') and not window_signals.get('savings') and not window_signals.get('income') %}
+                            <p style="color: var(--color-neutral-600);">No signals detected for 30-day window.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- 180-Day Window -->
+                    <div class="tab-pane fade" id="panel-180d" role="tabpanel">
+                        {% set window_signals = signals.get('180d', {}) %}
+                        
+                        <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
+                            {% if window_signals.get('credit') %}
+                            <div class="signal-section">
+                                <h5 class="signal-section-title">Credit Utilization</h5>
+                                <dl class="signal-details">
+                                    <div class="signal-detail-row">
+                                        <dt>Card</dt>
+                                        <dd>{{ window_signals.credit.card_name }}</dd>
+                                    </div>
+                                    <div class="signal-detail-row">
+                                        <dt>Utilization</dt>
+                                        <dd class="metric-highlight">{{ "%.0f"|format(window_signals.credit.utilization) }}%</dd>
+                                    </div>
+                                    <div class="signal-detail-row-group">
+                                        <div class="signal-detail-row">
+                                            <dt>Balance</dt>
+                                            <dd>${{ "%.2f"|format(window_signals.credit.balance) }}</dd>
+                                        </div>
+                                        <div class="signal-detail-row">
+                                            <dt>Limit</dt>
+                                            <dd>${{ "%.2f"|format(window_signals.credit.limit) }}</dd>
+                                        </div>
+                                    </div>
+                                    {% if window_signals.credit.interest_charges > 0 %}
+                                    <div class="signal-detail-row signal-detail-row-warning">
+                                        <dt>Interest Charges</dt>
+                                        <dd>${{ "%.2f"|format(window_signals.credit.interest_charges) }}/month</dd>
+                                    </div>
+                                    {% endif %}
+                                    {% if window_signals.credit.is_overdue %}
+                                    <div class="signal-detail-row">
+                                        <dt>Status</dt>
+                                        <dd><span class="badge badge-error">Overdue</span></dd>
+                                    </div>
+                                    {% endif %}
+                                </dl>
+                                <!-- Progress bar for utilization -->
+                                <div class="credit-utilization-progress">
+                                    <div class="progress-bar-header">
+                                        <span class="progress-bar-label">Credit Utilization</span>
+                                        <span class="progress-bar-value">{{ "%.0f"|format(window_signals.credit.utilization) }}%</span>
+                                    </div>
+                                    <div class="progress-bar-container">
+                                        <div class="credit-utilization-track">
+                                            <div class="credit-utilization-fill {% if window_signals.credit.utilization > 80 %}is-danger{% elif window_signals.credit.utilization > 50 %}is-warning{% else %}is-success{% endif %}" style="width: {{ window_signals.credit.utilization }}%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if window_signals.get('subscription') %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-2) !important; padding-bottom: 0 !important; margin-top: var(--spacing-3) !important; margin-bottom: 0 !important;">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: 32px !important; margin-top: 0 !important;">Subscriptions</h5>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 2px !important; column-gap: var(--spacing-4); margin-bottom: 0 !important;">
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Recurring Merchants:</strong> {{ window_signals.subscription.count }}</div>
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Monthly Spend:</strong> ${{ "%.2f"|format(window_signals.subscription.monthly_spend) }}</div>
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Subscription Share:</strong> {{ "%.1f"|format(window_signals.subscription.share) }}%</div>
+                                    {% if window_signals.subscription.merchants %}
+                                    <div style="grid-column: 1 / -1; padding: var(--spacing-1) 0;">
+                                        <strong style="margin-right: var(--spacing-2);">Merchants:</strong> {{ window_signals.subscription.merchants|join(", ") }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if window_signals.get('savings') %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-2) !important; padding-bottom: 0 !important; margin-top: var(--spacing-3) !important; margin-bottom: 0 !important;">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: 32px !important; margin-top: 0 !important;">Savings Signals</h5>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 2px !important; column-gap: var(--spacing-4); margin-bottom: 0 !important;">
+                                    {% if window_signals.savings.net_inflow is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Net Inflow:</strong> ${{ "%.2f"|format(window_signals.savings.net_inflow) }}</div>
+                                    {% endif %}
+                                    {% if window_signals.savings.growth_rate is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Growth Rate:</strong> {{ "%.2f"|format(window_signals.savings.growth_rate) }}%</div>
+                                    {% endif %}
+                                    {% if window_signals.savings.emergency_fund_coverage is defined %}
+                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Emergency Fund Coverage:</strong> {{ "%.2f"|format(window_signals.savings.emergency_fund_coverage) }} months</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if window_signals.get('income') %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-2) !important; padding-bottom: 0 !important; margin-top: var(--spacing-3) !important; margin-bottom: 0 !important;">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: 32px !important; margin-top: 0 !important;">Income Signals</h5>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 2px !important; column-gap: var(--spacing-4); margin-bottom: 0 !important;">
+                                    {% if window_signals.income.frequency is defined %}
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Payment Frequency:</strong> {{ window_signals.income.frequency }}</div>
+                                    {% endif %}
+                                    {% if window_signals.income.variability is defined %}
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</div>
+                                    {% endif %}
+                                    {% if window_signals.income.cash_flow_buffer is defined %}
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</div>
+                                    {% endif %}
+                                    {% if window_signals.income.median_pay_gap is defined %}
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-4); margin-top: var(--spacing-3);">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Income Signals</h5>
+                                <div class="empty-state">
+                                    <p class="empty-state-description">No income signals detected in this window. This could mean there's insufficient transaction data or income transactions don't match expected patterns.</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if not window_signals.get('credit') and not window_signals.get('subscription') and not window_signals.get('savings') and not window_signals.get('income') %}
+                            <p style="color: var(--color-neutral-600);">No signals detected for 180-day window.</p>
                             {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
-            {% endfor %}
-        {% else %}
-            <p class="text-muted">No recommendations available for this user.</p>
+        </div>
+        
+        <!-- Recommendations (Collapsible) -->
+        <div class="card" id="recommendations-section" style="margin-bottom: var(--spacing-6);">
+            <div class="card-header">
+                Recommendations{% if recommendations %} ({{ recommendations|length }}){% endif %}
+            </div>
+            <div>
+                {% if not user.consent_given %}
+                <div class="alert alert-warning" role="alert">
+                    <div style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin-bottom: var(--spacing-2);">Consent Required</div>
+                    <p style="margin: 0;">User consent is required to receive personalized recommendations. Please enable consent using the checkbox above to view recommendations.</p>
+                </div>
+                {% elif recommendations %}
+                    <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
+                        {% for rec in recommendations %}
+                        <details class="recommendation-item" {% if loop.index <= 2 %}open{% endif %}>
+                            <summary class="recommendation-summary">
+                                <strong>{{ rec.title }}</strong>
+                                <span class="details-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; margin-left: auto;">▼</span>
+                            </summary>
+                            <div class="recommendation-content" style="padding: var(--spacing-2) 0;">
+                                <div style="color: var(--color-neutral-700); margin-bottom: var(--spacing-5); line-height: 1.7; padding: var(--spacing-1) 0;">
+                                    <p style="margin-top: var(--spacing-4); margin-bottom: var(--spacing-3); padding: var(--spacing-1) 0;">{{ rec.content|replace('\n', '<br>')|safe }}</p>
+                                </div>
+                                <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-5); margin-bottom: var(--spacing-5); padding: var(--spacing-1) 0;">
+                                    <strong style="color: var(--color-neutral-900); display: block; margin-bottom: var(--spacing-3); padding: var(--spacing-1) 0;">Rationale:</strong>
+                                    <p style="margin-top: var(--spacing-3); margin-bottom: var(--spacing-4); color: var(--color-neutral-700); line-height: 1.7; padding: var(--spacing-1) 0;">{{ rec.rationale|replace('\n', '<br>')|safe }}</p>
+                                </div>
+                                <button class="btn btn-secondary btn-sm" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#trace-{{ rec.id }}" 
+                                        aria-expanded="false"
+                                        style="margin-top: var(--spacing-4);">
+                                    View Decision Trace
+                                </button>
+                                <div class="collapse mt-3" id="trace-{{ rec.id }}" style="margin-top: var(--spacing-4);">
+                                    <div style="padding: var(--spacing-4); background-color: var(--color-neutral-50); border-radius: 0.375rem;">
+                                        {% if traces.get(rec.id) %}
+                                            <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
+                                                {% for trace_step in traces[rec.id] %}
+                                                <div style="padding-bottom: var(--spacing-5); border-bottom: 1px solid var(--color-neutral-200); margin-bottom: var(--spacing-4);">
+                                                    <div style="display: flex; align-items: center; gap: var(--spacing-3); margin-bottom: var(--spacing-3);">
+                                                        <span class="badge badge-info" style="padding: var(--spacing-2) var(--spacing-3);">Step {{ trace_step.step }}</span>
+                                                        <span style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); font-size: var(--font-size-base);">
+                                                            {% if trace_step.step == 1 %}
+                                                                Signal Detected
+                                                            {% elif trace_step.step == 2 %}
+                                                                Persona Assigned
+                                                            {% elif trace_step.step == 3 %}
+                                                                Recommendation Selected
+                                                            {% elif trace_step.step == 4 %}
+                                                                Rationale Generated
+                                                            {% endif %}
+                                                        </span>
+                                                    </div>
+                                                    <p style="margin-bottom: var(--spacing-3); color: var(--color-neutral-700); line-height: 1.6;">{{ trace_step.reasoning }}</p>
+                                                    {% if trace_step.data_cited %}
+                                                    <details style="margin-top: var(--spacing-3);">
+                                                        <summary style="color: var(--color-primary); font-size: var(--font-size-sm); cursor: pointer; font-weight: var(--font-weight-medium); padding: var(--spacing-1) 0; display: flex; align-items: center; gap: var(--spacing-2);">▸ View Data Cited</summary>
+                                                        <pre style="background-color: white; padding: var(--spacing-4); margin-top: var(--spacing-3); border-radius: 0.375rem; border: 1px solid var(--color-neutral-200); max-height: 200px; overflow-y: auto; font-size: var(--font-size-sm); line-height: 1.5;">{{ trace_step.data_cited|tojsonpretty }}</pre>
+                                                    </details>
+                                                    {% endif %}
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <p style="color: var(--color-neutral-600); margin: 0;">No trace data available.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="color: var(--color-neutral-600); margin: 0;">No recommendations available for this user.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column (40%) -->
+    <div class="right-column">
+        <!-- User Information (Collapsible) -->
+        <details class="card collapsible-section" style="margin-bottom: var(--spacing-6);" open>
+            <summary class="card-header collapsible-summary">
+                User Information
+                <span class="details-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; margin-left: auto;">▼</span>
+            </summary>
+            <div class="user-info-content">
+                <div class="user-info-section">
+                    <div class="user-info-item">
+                        <span class="user-info-label">Name</span>
+                        <span class="user-info-value">{{ user.name }}</span>
+                    </div>
+                    <div class="user-info-item">
+                        <span class="user-info-label">Email</span>
+                        <span class="user-info-value">{{ user.email }}</span>
+                    </div>
+                    <div class="user-info-item">
+                        <span class="user-info-label">User ID</span>
+                        <span class="user-info-value">{{ user.id }}</span>
+                    </div>
+                </div>
+                
+                <div class="user-info-divider"></div>
+                
+                <div class="user-info-section">
+                    <div class="user-info-item">
+                        <label class="user-info-consent">
+                            <input type="checkbox" id="consent-checkbox" 
+                                   {% if user.consent_given %}checked{% endif %}
+                                   onchange="toggleConsent({{ user.id }})">
+                            <span class="consent-indicator {% if user.consent_given %}consent-active{% endif %}">
+                                {% if user.consent_given %}
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                {% endif %}
+                            </span>
+                            <span class="consent-label">Consent for data processing</span>
+                        </label>
+                    </div>
+                    <div class="user-info-item">
+                        <span class="user-info-label">Created</span>
+                        <span class="user-info-value user-info-timestamp">{{ user.created_at }}</span>
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <!-- Persona Assignment (Collapsible) -->
+        {% if persona %}
+        <details class="card collapsible-section" id="persona-section" style="margin-bottom: var(--spacing-6);">
+            <summary class="card-header collapsible-summary">
+                Persona Assignment
+                <span class="details-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; margin-left: auto;">▼</span>
+            </summary>
+            <div style="padding: var(--spacing-6) var(--spacing-6); padding-bottom: var(--spacing-6);">
+                <div style="margin-bottom: var(--spacing-6); padding: var(--spacing-1) 0;">
+                    {% if persona.persona_type == 'high_utilization' %}
+                        <span class="badge badge-persona badge-persona-high-utilization" style="font-size: var(--font-size-lg);">High Utilization</span>
+                    {% elif persona.persona_type == 'variable_income_budgeter' %}
+                        <span class="badge badge-persona badge-persona-variable-income" style="font-size: var(--font-size-lg);">Variable Income Budgeter</span>
+                    {% elif persona.persona_type == 'savings_builder' %}
+                        <span class="badge badge-persona badge-persona-savings-builder" style="font-size: var(--font-size-lg);">Savings Builder</span>
+                    {% elif persona.persona_type == 'financial_newcomer' %}
+                        <span class="badge badge-persona badge-persona-financial-newcomer" style="font-size: var(--font-size-lg);">Financial Newcomer</span>
+                    {% elif persona.persona_type == 'subscription_heavy' %}
+                        <span class="badge badge-persona badge-persona-subscription-heavy" style="font-size: var(--font-size-lg);">Subscription-Heavy</span>
+                    {% else %}
+                        <span class="badge badge-persona badge-persona-neutral" style="font-size: var(--font-size-lg);">Neutral</span>
+                    {% endif %}
+                </div>
+                <div style="margin-bottom: var(--spacing-5); padding: var(--spacing-1) 0;">
+                    <strong style="color: var(--color-neutral-900); display: block; margin-bottom: var(--spacing-4); padding: var(--spacing-1) 0;">Assignment Rationale:</strong>
+                    <p style="margin-top: var(--spacing-4); color: var(--color-neutral-700); line-height: 1.8; padding: var(--spacing-1) 0;">{{ persona.criteria_matched }}</p>
+                </div>
+                {% if persona.signal_windows %}
+                <div style="margin-bottom: var(--spacing-4);">
+                    <details style="margin-top: var(--spacing-2);">
+                        <summary style="color: var(--color-primary); font-size: var(--font-size-sm); cursor: pointer; font-weight: var(--font-weight-medium); list-style: none; display: flex; align-items: center; gap: var(--spacing-2); padding: var(--spacing-2); border-radius: 0.375rem; transition: background-color 0.2s;">
+                            <span class="details-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block;">▼</span>
+                            <strong style="color: var(--color-neutral-900);">Signals Used ({{ persona.signal_windows|length }} window{{ 's' if persona.signal_windows|length > 1 else '' }})</strong>
+                        </summary>
+                        <div style="margin-top: var(--spacing-3); padding-left: var(--spacing-6);">
+                            {% for window, signal_list in persona.signal_windows.items() %}
+                            <div style="margin-bottom: var(--spacing-3);">
+                                <strong style="color: var(--color-neutral-700); font-size: var(--font-size-sm);">{{ window }} window:</strong>
+                                <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-1); margin-top: var(--spacing-2);">
+                                    {% for signal in signal_list %}
+                                    <span class="badge badge-info" style="font-size: var(--font-size-xs); font-weight: var(--font-weight-normal); padding: var(--spacing-1) var(--spacing-2);">{{ signal }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </details>
+                </div>
+                {% endif %}
+                <p style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin: 0; padding: var(--spacing-1) 0;">
+                    <strong style="margin-right: var(--spacing-2);">Assigned:</strong>{{ persona.assigned_at }}
+                </p>
+            </div>
+        </details>
+        {% endif %}
+        
+        <!-- Partner Offers (Collapsible) -->
+        {% if user.consent_given and partner_offers %}
+        <details class="card collapsible-section" id="offers-section" style="margin-bottom: var(--spacing-6);">
+            <summary class="card-header collapsible-summary">
+                Partner Offers ({{ partner_offers|length }})
+                <span class="details-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; margin-left: auto;">▼</span>
+            </summary>
+            <div style="padding: var(--spacing-6) var(--spacing-6); padding-bottom: var(--spacing-6);">
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-5); padding: var(--spacing-1) 0;">
+                    {% for offer in partner_offers %}
+                    <details class="offer-item">
+                        <summary class="offer-summary">
+                            <strong>{{ offer.title }}</strong>
+                            {% if offer.eligibility_rationale %}
+                                <span style="font-size: var(--font-size-sm); color: var(--color-neutral-600); font-weight: normal;">
+                                    - {{ offer.eligibility_rationale[:50] }}{% if offer.eligibility_rationale|length > 50 %}...{% endif %}
+                                </span>
+                            {% endif %}
+                            <span class="details-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; margin-left: auto;">▼</span>
+                        </summary>
+                        <div class="offer-content" style="padding: var(--spacing-2) 0;">
+                            <p style="color: var(--color-neutral-700); margin-bottom: var(--spacing-4); line-height: 1.7; padding: var(--spacing-1) 0;">{{ offer.description }}</p>
+                            {% if offer.benefits %}
+                            <ul style="margin-bottom: var(--spacing-4); padding-left: var(--spacing-6); list-style-type: disc; padding: var(--spacing-1) 0;">
+                                {% for benefit in offer.benefits %}
+                                <li style="margin-bottom: var(--spacing-2); color: var(--color-neutral-700); line-height: 1.6; padding: var(--spacing-1) 0;">{{ benefit }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-4); padding: var(--spacing-1) 0;">
+                                <p style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-3); padding: var(--spacing-1) 0;">Why this offer:</p>
+                                <p style="color: var(--color-neutral-700); margin: 0; line-height: 1.7; padding: var(--spacing-1) 0;">{{ offer.eligibility_rationale }}</p>
+                            </div>
+                        </div>
+                    </details>
+                    {% endfor %}
+                </div>
+            </div>
+        </details>
         {% endif %}
     </div>
 </div>
 
-<!-- Partner Offers -->
-{% if user.consent_given and partner_offers %}
-<div class="card mb-4">
-    <div class="card-header">
-        <h3 class="mb-0">Partner Offers</h3>
-    </div>
-    <div class="card-body">
-        <div class="alert alert-info" role="alert">
-            <small><strong>Note:</strong> Partner offers are provided for informational purposes. We may receive compensation.</small>
-        </div>
-        {% for offer in partner_offers %}
-        <div class="card mb-3 border-primary">
-            <div class="card-body">
-                <h5 class="card-title">{{ offer.title }}</h5>
-                <p class="card-text">{{ offer.description }}</p>
-                {% if offer.benefits %}
-                <ul class="list-unstyled">
-                    {% for benefit in offer.benefits %}
-                    <li>• {{ benefit }}</li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-                <hr>
-                <p><strong>Why this offer:</strong></p>
-                <p class="text-muted">{{ offer.eligibility_rationale }}</p>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
+<style>
+    /* Page-level spacing */
+    .two-column-layout {
+        margin-top: var(--spacing-4);
+    }
+    
+    /* Sticky Header */
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: var(--spacing-6);
+        border-radius: 0.5rem;
+        /* Increased padding to account for rounded corner visual space - rounded corners need extra breathing room */
+        padding-top: 2rem; /* 32px - extra space for rounded top corner */
+        padding-right: var(--spacing-6);
+        padding-bottom: var(--spacing-6);
+        padding-left: 2rem; /* 32px - extra space for rounded left corner */
+        border: 1px solid var(--color-neutral-200);
+        overflow: hidden; /* Ensures border-radius works with child elements */
+    }
+    
+    .sticky-header-content {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-4);
+        padding: 0;
+        margin: 0;
+    }
+    
+    .sticky-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: var(--spacing-6);
+        flex-wrap: wrap;
+    }
+    
+    .sticky-header-user-info {
+        flex: 1;
+        min-width: 200px;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .sticky-header-name {
+        font-size: var(--font-size-2xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-neutral-900);
+        margin: 0 0 var(--spacing-3) 0;
+        line-height: 1.2;
+        padding: 0;
+    }
+    
+    .sticky-header-meta {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        font-size: var(--font-size-sm);
+    }
+    
+    .sticky-header-meta-item {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-1);
+    }
+    
+    .meta-label {
+        color: var(--color-neutral-600);
+    }
+    
+    .meta-value {
+        font-weight: var(--font-weight-medium);
+        color: var(--color-neutral-900);
+    }
+    
+    .meta-success {
+        color: var(--color-success);
+    }
+    
+    .meta-error {
+        color: var(--color-error);
+    }
+    
+    .sticky-header-meta-separator {
+        color: var(--color-neutral-400);
+    }
+    
+    .sticky-header-metrics {
+        display: flex;
+        align-items: center; /* Vertically center all items including badge */
+        gap: var(--spacing-4);
+        flex-wrap: wrap;
+        flex-direction: row;
+    }
+    
+    .sticky-header-metrics .badge-persona {
+        margin-right: var(--spacing-2);
+        margin-bottom: 0;
+        align-self: center; /* Vertically center the badge */
+        /* Pill-shaped badge in header */
+        padding: var(--spacing-2) var(--spacing-4) !important;
+        border-radius: 9999px !important;
+    }
+    
+    .sticky-metric-card {
+        display: flex;
+        flex-direction: column;
+        /* Clean white card design with increased top/bottom padding */
+        padding: calc(var(--spacing-3) + 4px) var(--spacing-8);
+        background-color: white;
+        border-radius: 0.75rem;
+        border: none;
+        min-width: 120px;
+        box-shadow: none;
+        align-items: center; /* Center content horizontally */
+        text-align: center;
+    }
+    
+    .sticky-metric-label {
+        font-size: 0.8125rem; /* Slightly smaller (was 0.875rem) */
+        color: var(--color-neutral-600);
+        text-transform: none;
+        letter-spacing: 0;
+        margin: 0;
+        padding: 0;
+        line-height: 1.5;
+        font-weight: var(--font-weight-normal);
+        margin-top: var(--spacing-3); /* Smaller margin between value and label */
+    }
+    
+    .sticky-metric-value {
+        font-size: 1.375rem; /* Slightly smaller (was 1.5rem) */
+        font-weight: var(--font-weight-bold);
+        color: var(--color-neutral-900);
+        margin: 0;
+        padding: 0;
+        line-height: 1.2;
+    }
+    
+    .sticky-header-nav {
+        display: flex;
+        gap: var(--spacing-1);
+        padding-top: var(--spacing-4);
+        border-top: 1px solid var(--color-neutral-200);
+    }
+    
+    .sticky-nav-link {
+        color: var(--color-neutral-600);
+        text-decoration: none;
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        padding: var(--spacing-2) var(--spacing-4);
+        border-radius: 0.375rem;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    
+    .sticky-nav-link:hover:not(.active) {
+        background-color: var(--color-neutral-50);
+        color: var(--color-primary);
+    }
+    
+    .sticky-nav-link.active {
+        color: white;
+        background-color: var(--color-primary);
+        font-weight: var(--font-weight-semibold);
+    }
+    
+    .sticky-nav-link.active:hover {
+        background-color: var(--color-primary-dark);
+    }
+    
+    .sticky-nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background-color: var(--color-primary);
+        border-radius: 0;
+    }
+    
+    /* Two-Column Layout */
+    .two-column-layout {
+        display: grid;
+        grid-template-columns: 60% 40%;
+        gap: var(--spacing-6);
+        align-items: start;
+    }
+    
+    .left-column,
+    .right-column {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Card spacing improvements - smaller text, more margin */
+    .card {
+        padding: var(--spacing-8) !important;
+        margin-bottom: var(--spacing-6) !important;
+        font-size: var(--font-size-sm) !important;
+        line-height: 1.6 !important;
+    }
+    
+    .card-header {
+        padding-bottom: var(--spacing-4) !important;
+        margin-bottom: var(--spacing-6) !important;
+        font-size: var(--font-size-lg) !important;
+    }
+    
+    .card p,
+    .card div:not(.card-header):not(.sticky-header-content) {
+        font-size: var(--font-size-sm) !important;
+        margin-bottom: var(--spacing-4) !important;
+    }
+    
+    /* Signal sections spacing */
+    #signals-section .card-header {
+        margin-bottom: var(--spacing-5) !important;
+    }
+    
+    .signal-section {
+        margin-bottom: var(--spacing-3);
+    }
+    
+    .signal-section-title {
+        font-size: var(--font-size-xl);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-neutral-900);
+        margin-bottom: var(--spacing-2);
+        margin-top: var(--spacing-2);
+    }
+    
+    .signal-details {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-4);
+        margin-bottom: var(--spacing-3);
+    }
+    
+    .signal-detail-row {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: var(--spacing-4);
+        align-items: baseline;
+        padding: var(--spacing-3) 0;
+    }
+    
+    .signal-detail-row dt {
+        font-weight: var(--font-weight-medium);
+        color: var(--color-neutral-700);
+        font-size: var(--font-size-sm);
+    }
+    
+    .signal-detail-row dd {
+        color: var(--color-neutral-900);
+        font-size: var(--font-size-base);
+        margin: 0;
+    }
+    
+    .signal-detail-row-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-6);
+        padding: var(--spacing-3) 0;
+        border-top: 1px solid var(--color-neutral-200);
+        border-bottom: 1px solid var(--color-neutral-200);
+    }
+    
+    .metric-highlight {
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-lg);
+        color: var(--color-primary);
+    }
+    
+    .signal-detail-row-warning {
+        background-color: var(--color-warning-light);
+        padding: var(--spacing-4) var(--spacing-5);
+        border-radius: 0.5rem;
+        margin-top: var(--spacing-3);
+        margin-bottom: var(--spacing-1);
+    }
+    
+    .signal-detail-row-warning dt {
+        margin-bottom: 0;
+        font-weight: var(--font-weight-semibold);
+    }
+    
+    .signal-detail-row-warning dd {
+        margin-bottom: 0;
+        font-weight: var(--font-weight-medium);
+    }
+    
+    .credit-utilization-progress {
+        margin-top: var(--spacing-3);
+        padding: var(--spacing-6) var(--spacing-6); /* More top/bottom padding */
+        background-color: var(--color-neutral-50);
+        border-radius: 0.5rem;
+    }
+    
+    .progress-bar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-4);
+        margin-left: var(--spacing-4); /* More left margin */
+        margin-right: var(--spacing-4); /* More right margin */
+    }
+    
+    .progress-bar-label {
+        font-size: var(--font-size-sm);
+        color: var(--color-neutral-600);
+        font-weight: var(--font-weight-semibold);
+    }
+    
+    .progress-bar-value {
+        font-size: var(--font-size-base);
+        color: var(--color-neutral-900);
+        font-weight: var(--font-weight-bold);
+    }
+    
+    .progress-bar-container {
+        position: relative;
+        margin-left: var(--spacing-4); /* More left margin */
+        margin-right: var(--spacing-4); /* More right margin */
+    }
+    
+    /* Credit utilization progress bar */
+    .credit-utilization-track {
+        width: 100%;
+        height: 12px;
+        background-color: var(--color-neutral-200);
+        border-radius: 999px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .credit-utilization-fill {
+        height: 100%;
+        border-radius: inherit;
+        transition: width 0.3s ease;
+    }
+
+    .credit-utilization-fill.is-success {
+        background-color: #10B981;
+    }
+
+    .credit-utilization-fill.is-warning {
+        background-color: #F59E0B;
+    }
+
+    .credit-utilization-fill.is-danger {
+        background-color: #EF4444;
+    }
+    
+    #signals-section h5 {
+        margin-bottom: var(--spacing-2) !important;
+        margin-top: var(--spacing-2) !important;
+    }
+    
+    #signals-section .tab-content h5:first-of-type {
+        margin-top: var(--spacing-2) !important;
+    }
+    
+    /* Tabs spacing */
+    #signals-section .nav-link {
+        padding: var(--spacing-3) var(--spacing-5) !important;
+        margin-bottom: 0 !important;
+    }
+    
+    #signals-section .tab-content {
+        margin-top: var(--spacing-5) !important;
+    }
+    
+    /* Grid spacing in signals */
+    #signals-section div[style*="grid-template-columns"] {
+        gap: var(--spacing-4) !important;
+        margin-bottom: var(--spacing-3) !important;
+    }
+    
+    /* Progress bar spacing */
+    #signals-section div[style*="margin-top: var(--spacing-3)"] {
+        margin-top: var(--spacing-5) !important;
+        margin-bottom: var(--spacing-4) !important;
+    }
+    
+    /* Border-top sections spacing */
+    #signals-section div[style*="border-top"] {
+        padding-top: var(--spacing-4) !important;
+        margin-top: var(--spacing-3) !important;
+    }
+    
+    /* Text line spacing */
+    #signals-section div[style*="display: grid"] > div {
+        line-height: 1.6 !important;
+        padding: var(--spacing-1) 0 !important;
+    }
+    
+    /* Collapsible Sections */
+    .collapsible-section {
+        padding: 0 !important;
+    }
+    
+    .collapsible-summary {
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        /* Reduced vertical padding, keeping horizontal for rounded corner visual space */
+        padding-top: var(--spacing-4); /* Reduced from 2rem */
+        padding-right: var(--spacing-6);
+        padding-bottom: var(--spacing-2); /* Reduced from var(--spacing-5) */
+        padding-left: 2rem; /* 32px - extra space for rounded left corner */
+        margin: 0;
+        user-select: none;
+    }
+    
+    /* Ensure details arrow has proper spacing from right edge */
+    .collapsible-summary .details-arrow {
+        margin-left: var(--spacing-2);
+        flex-shrink: 0;
+    }
+    
+    .collapsible-summary:hover {
+        background-color: var(--color-neutral-50);
+    }
+    
+    .collapsible-summary::-webkit-details-marker {
+        display: none;
+    }
+    
+    /* Collapsible section content padding - but user-info-content manages its own */
+    .collapsible-section > div:not(.user-info-content) {
+        padding-top: var(--spacing-3) !important;
+        padding-right: var(--spacing-6) !important;
+        padding-bottom: var(--spacing-3) !important;
+        padding-left: var(--spacing-6) !important;
+    }
+    
+    /* User info content has its own padding - reduced vertical only */
+    .user-info-content {
+        padding-top: var(--spacing-3) !important;
+        padding-right: var(--spacing-6) !important;
+        padding-bottom: var(--spacing-3) !important;
+        padding-left: var(--spacing-6) !important;
+    }
+    
+    /* Only apply gap rules to non-user-info sections - reduced vertical gap */
+    .collapsible-section > div:not(.user-info-content) > div {
+        gap: var(--spacing-2) !important;
+    }
+    
+    /* Labels need proper spacing */
+    .collapsible-section strong {
+        margin-right: var(--spacing-2) !important;
+    }
+    
+    /* Only remove horizontal padding from deeply nested elements in non-user-info sections */
+    .collapsible-section > div:not(.user-info-content) p,
+    .collapsible-section > div:not(.user-info-content) > div > div {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    details[open] .collapsible-summary .details-arrow,
+    details[open] .recommendation-summary .details-arrow,
+    details[open] .offer-summary .details-arrow {
+        transform: rotate(180deg);
+    }
+    
+    /* Recommendation Items */
+    .recommendation-item {
+        border: 1px solid var(--color-neutral-200);
+        border-radius: 0.375rem;
+        /* Increased padding to account for rounded corner visual space */
+        padding: var(--spacing-6);
+        background: white;
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .recommendation-summary {
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-neutral-900);
+        padding: var(--spacing-2) 0;
+        user-select: none;
+    }
+    
+    /* Ensure recommendation arrow has proper spacing */
+    .recommendation-summary .details-arrow {
+        margin-left: var(--spacing-2);
+        flex-shrink: 0;
+    }
+    
+    .recommendation-summary:hover {
+        color: var(--color-primary);
+    }
+    
+    .recommendation-summary::-webkit-details-marker {
+        display: none;
+    }
+    
+    .recommendation-content {
+        margin-top: var(--spacing-5);
+        padding-top: var(--spacing-5);
+        border-top: 1px solid var(--color-neutral-200);
+    }
+    
+    .recommendation-content p {
+        line-height: 1.7 !important;
+        margin-bottom: var(--spacing-4) !important;
+    }
+    
+    /* Rationale heading spacing */
+    .recommendation-content strong {
+        display: block;
+        margin-bottom: var(--spacing-3) !important;
+    }
+    
+    /* Offer Items */
+    .offer-item {
+        border: 1px solid var(--color-neutral-200);
+        border-radius: 0.375rem;
+        /* Increased padding to account for rounded corner visual space */
+        padding: var(--spacing-6);
+        background: var(--color-neutral-50);
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .offer-summary {
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--spacing-3);
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-neutral-900);
+        padding: var(--spacing-2) 0;
+        user-select: none;
+        line-height: 1.6;
+    }
+    
+    /* Ensure offer arrow has proper spacing */
+    .offer-summary .details-arrow {
+        margin-left: var(--spacing-2);
+        flex-shrink: 0;
+    }
+    
+    .offer-summary:hover {
+        color: var(--color-primary);
+    }
+    
+    .offer-summary::-webkit-details-marker {
+        display: none;
+    }
+    
+    .offer-content {
+        margin-top: var(--spacing-5);
+        padding-top: var(--spacing-5);
+        border-top: 1px solid var(--color-neutral-200);
+    }
+    
+    .offer-content p {
+        line-height: 1.7 !important;
+        margin-bottom: var(--spacing-4) !important;
+    }
+    
+    /* Badge spacing - pill-shaped labels */
+    .badge {
+        padding: var(--spacing-2) var(--spacing-4) !important;
+        line-height: 1.2 !important;
+        margin: 0 !important; /* Reset any margins */
+        display: inline-block; /* Ensure proper box model */
+        border-radius: 9999px !important; /* Fully rounded pill shape */
+    }
+    
+    .badge-persona {
+        /* Pill-shaped persona badges matching design system */
+        padding: var(--spacing-2) var(--spacing-4) !important;
+        font-size: var(--font-size-sm) !important;
+        font-weight: var(--font-weight-medium) !important;
+        line-height: 1.2 !important;
+        margin: 0 !important; /* Reset any margins */
+        display: inline-block; /* Ensure proper box model */
+        border-radius: 9999px !important; /* Fully rounded pill shape */
+        white-space: nowrap;
+    }
+    
+    /* Ensure badge text has no margins or padding */
+    .badge * {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .badge-error,
+    .badge-success,
+    .badge-warning,
+    .badge-info {
+        padding: var(--spacing-2) var(--spacing-4) !important;
+        line-height: 1.5 !important;
+        margin: 0 !important; /* Reset any margins */
+        display: inline-block; /* Ensure proper box model */
+        border-radius: 0.375rem !important;
+        font-size: var(--font-size-sm) !important;
+    }
+    
+    /* Persona section spacing - override margin for spacing below badge */
+    #persona-section .badge-persona {
+        margin-bottom: var(--spacing-2) !important;
+        margin-top: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    #persona-section strong {
+        margin-bottom: var(--spacing-2) !important;
+        margin-top: var(--spacing-2) !important;
+        display: block;
+    }
+    
+    #persona-section p {
+        line-height: 1.8 !important;
+        margin-top: var(--spacing-2) !important;
+        margin-bottom: var(--spacing-2) !important;
+    }
+    
+    /* User Information section spacing */
+    .collapsible-section[open] > div {
+        padding-bottom: var(--spacing-3) !important;
+    }
+    
+    .user-info-content {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-2);
+        padding: var(--spacing-6) !important;
+        margin: 0 !important;
+    }
+    
+    .user-info-section {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-2);
+    }
+    
+    .user-info-item {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-1);
+    }
+    
+    .user-info-label {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-neutral-600);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .user-info-value {
+        font-size: var(--font-size-base);
+        color: var(--color-neutral-900);
+        font-weight: var(--font-weight-normal);
+    }
+    
+    .user-info-divider {
+        height: 1px;
+        background-color: var(--color-neutral-200);
+        margin: var(--spacing-1) 0;
+    }
+    
+    .user-info-consent {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-4);
+        cursor: pointer;
+        padding: var(--spacing-3) 0;
+    }
+    
+    .user-info-consent input[type="checkbox"] {
+        display: none;
+    }
+    
+    .consent-indicator {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--color-neutral-300);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+    
+    .consent-indicator.consent-active {
+        background-color: var(--color-success);
+        border-color: var(--color-success);
+        color: white;
+    }
+    
+    .user-info-consent:hover .consent-indicator {
+        border-color: var(--color-primary);
+    }
+    
+    .consent-label {
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-neutral-900);
+    }
+    
+    .user-info-timestamp {
+        font-size: var(--font-size-sm);
+        color: var(--color-neutral-600);
+    }
+    
+    /* Empty States */
+    .empty-state {
+        padding: var(--spacing-6) 0;
+        text-align: left;
+    }
+    
+    .empty-state-description {
+        font-size: var(--font-size-sm);
+        color: var(--color-neutral-600);
+        line-height: 1.6;
+        margin: 0;
+    }
+    
+    /* Ensure proper spacing in user info columns */
+    .collapsible-section > div > div[style*="display: flex"] {
+        gap: var(--spacing-6) !important;
+    }
+    
+    .collapsible-section > div > div > div[style*="flex-direction: column"] {
+        gap: var(--spacing-5) !important;
+    }
+    
+    /* Ensure all text elements have padding from borders - but preserve user-info-content and its children */
+    .card > div:not(.card-header):not(.collapsible-summary):not(.user-info-content) p,
+    .card > div:not(.card-header):not(.collapsible-summary):not(.user-info-content) div:not(.card-header):not(.user-info-content):not(.user-info-section):not(.user-info-item):not(.user-info-label):not(.user-info-value),
+    .card details > div:not(.user-info-content) p,
+    .card details > div:not(.user-info-content) div:not(.user-info-content):not(.user-info-section):not(.user-info-item):not(.user-info-label):not(.user-info-value) {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    /* Preserve padding for user-info-content - children don't need horizontal padding since parent has it */
+    .user-info-content {
+        padding: var(--spacing-6) !important;
+    }
+    
+    /* Ensure user-info-content children don't have horizontal padding removed incorrectly */
+    .user-info-section,
+    .user-info-item,
+    .user-info-label,
+    .user-info-value,
+    .user-info-divider,
+    .user-info-consent,
+    .consent-label,
+    .user-info-timestamp {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    /* Signal section text spacing */
+    #signals-section > div > div > div > div {
+        padding: var(--spacing-2) 0 !important;
+    }
+    
+    /* Recommendations and offers content padding */
+    .recommendation-content > div,
+    .offer-content {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    /* Partner Offers spacing */
+    #offers-section .alert {
+        margin-top: var(--spacing-2) !important;
+    }
+    
+    #offers-section .offer-item {
+        margin-bottom: var(--spacing-5) !important;
+    }
+    
+    /* Recommendations spacing */
+    .recommendation-summary {
+        margin-bottom: var(--spacing-2) !important;
+    }
+    
+    .recommendation-content > div:first-child p {
+        margin-top: var(--spacing-4) !important;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 1023px) {
+        .two-column-layout {
+            grid-template-columns: 1fr;
+        }
+        
+        .sticky-header {
+            position: relative;
+        }
+    }
+    
+    @media (max-width: 767px) {
+        div[style*="grid-template-columns"] {
+            grid-template-columns: 1fr !important;
+        }
+        
+        .sticky-header-top {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .sticky-header-metrics {
+            width: 100%;
+            justify-content: flex-start;
+        }
+        
+        .sticky-header-nav {
+            flex-wrap: wrap;
+        }
+        
+        .signal-detail-row {
+            grid-template-columns: 1fr;
+            gap: var(--spacing-2);
+        }
+        
+        .signal-detail-row-group {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Window Tab styling with arc effect */
+    .window-tabs-container {
+        border-bottom: 1px solid var(--color-neutral-200);
+        position: relative;
+    }
+    
+    .window-tab-btn {
+        position: relative;
+        padding: var(--spacing-2) var(--spacing-4);
+        border: none;
+        background: none;
+        color: var(--color-neutral-600);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+    
+    .window-tab-btn .window-tab-text {
+        position: relative;
+        display: inline-block;
+    }
+    
+    /* Active tab styling */
+    .window-tab-btn.window-tab-active {
+        color: var(--color-primary);
+    }
+    
+    /* Arc above active tab - subtle curved line */
+    .window-tab-btn.window-tab-active .window-tab-text::before {
+        content: '';
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% + 24px);
+        height: 2px;
+        background: var(--color-primary);
+        border-radius: 100px 100px 0 0;
+        opacity: 0.35;
+    }
+    
+    /* Underline below active tab - extends beyond text */
+    .window-tab-btn.window-tab-active .window-tab-text::after {
+        content: '';
+        position: absolute;
+        bottom: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% + 24px);
+        height: 3px;
+        background: var(--color-primary);
+        border-radius: 0;
+    }
+    
+    /* Hover state for inactive tabs */
+    .window-tab-btn:hover:not(.window-tab-active) {
+        color: var(--color-primary);
+        opacity: 0.8;
+    }
+    
+    /* Tab panel visibility - ensure proper show/hide */
+    .tab-pane {
+        display: none;
+    }
+    
+    .tab-pane.show.active {
+        display: block !important;
+    }
+    
+    /* Ensure initial active panel is visible */
+    #panel-30d.show.active {
+        display: block !important;
+    }
+    
+    #panel-180d.show.active {
+        display: block !important;
+    }
+    
+    /* Details/summary styling */
+    details summary:hover {
+        background-color: var(--color-neutral-50);
+    }
+    
+    details summary::-webkit-details-marker {
+        display: none;
+    }
+    
+    /* Smooth scroll for anchor links */
+    html {
+        scroll-behavior: smooth;
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
 <script src="/static/js/consent.js?v=2"></script>
+<script>
+    // Smooth scroll for sticky header navigation
+    document.querySelectorAll('.sticky-nav-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                const headerOffset = 100;
+                const elementPosition = targetElement.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+                
+                // Update active state
+                document.querySelectorAll('.sticky-nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+    
+    // Set initial active state based on current section
+    function updateActiveNav() {
+        const sections = ['signals-section', 'persona-section', 'recommendations-section', 'offers-section'];
+        const scrollPosition = window.scrollY + 150;
+        
+        sections.forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                const sectionTop = section.offsetTop;
+                const sectionBottom = sectionTop + section.offsetHeight;
+                const link = document.querySelector(`.sticky-nav-link[href="#${sectionId}"]`);
+                
+                if (scrollPosition >= sectionTop && scrollPosition < sectionBottom && link) {
+                    document.querySelectorAll('.sticky-nav-link').forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                }
+            }
+        });
+    }
+    
+    // Update on scroll
+    window.addEventListener('scroll', updateActiveNav);
+    
+    // Set initial active state
+    updateActiveNav();
+    
+    // Handle 30d and 180d window tab switching
+    (function initTabs() {
+        function setupTabs() {
+            const tab30d = document.getElementById('tab-30d');
+            const tab180d = document.getElementById('tab-180d');
+            const panel30d = document.getElementById('panel-30d');
+            const panel180d = document.getElementById('panel-180d');
+            
+            if (!tab30d || !tab180d || !panel30d || !panel180d) {
+                // Retry if elements not found yet
+                setTimeout(setupTabs, 50);
+                return;
+            }
+            
+            // Function to switch panels
+            function switchToPanel(showPanel, hidePanel, activeTab, inactiveTab) {
+                // Hide the inactive panel
+                hidePanel.classList.remove('show', 'active');
+                
+                // Show the active panel
+                showPanel.classList.add('show', 'active');
+                
+                // Update tab classes - use window-tab-active for styling
+                activeTab.classList.add('window-tab-active');
+                inactiveTab.classList.remove('window-tab-active');
+            }
+            
+            // Handle 30d tab click
+            tab30d.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                switchToPanel(panel30d, panel180d, tab30d, tab180d);
+            });
+            
+            // Handle 180d tab click
+            tab180d.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                switchToPanel(panel180d, panel30d, tab180d, tab30d);
+            });
+        }
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupTabs);
+        } else {
+            setupTabs();
+        }
+    })();
+</script>
 {% endblock %}
-

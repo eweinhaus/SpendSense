@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Consent Audit Log - SpendSense Compliance{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6); flex-wrap: wrap; gap: var(--spacing-2);">
+    <h2 style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin: 0;">
+        Consent Audit Log
+    </h2>
+    <div style="display: flex; gap: var(--spacing-2);">
+        <a href="/compliance/consent-audit/export?format=csv" class="btn btn-secondary btn-sm">Export CSV</a>
+        <a href="/compliance/consent-audit/export?format=json" class="btn btn-secondary btn-sm">Export JSON</a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card" style="margin-bottom: var(--spacing-6);">
+    <div class="card-header">Filters</div>
+    <div>
+        <form method="get" action="/compliance/consent-audit">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4); align-items: end;">
+                <div class="form-group">
+                    <label for="user_id" class="form-label">User</label>
+                    <select class="form-input" id="user_id" name="user_id">
+                        <option value="">All Users</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if filters.user_id == user.id %}selected{% endif %}>
+                            {{ user.name }} (ID: {{ user.id }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="action" class="form-label">Action</label>
+                    <select class="form-input" id="action" name="action">
+                        <option value="">All Actions</option>
+                        <option value="granted" {% if filters.action == 'granted' %}selected{% endif %}>Granted</option>
+                        <option value="revoked" {% if filters.action == 'revoked' %}selected{% endif %}>Revoked</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-input" id="start_date" name="start_date" value="{{ filters.start_date or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-input" id="end_date" name="end_date" value="{{ filters.end_date or '' }}">
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Filter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if user %}
+<div class="alert alert-info">
+    <strong>User:</strong> {{ user.name }} (ID: {{ user.id }})
+</div>
+{% endif %}
+
+{% if audit_log %}
+<div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--color-neutral-200);">
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">ID</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">User ID</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">User Name</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Action</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Timestamp</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Changed By</th>
+                <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Previous Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in audit_log %}
+            <tr style="border-bottom: 1px solid var(--color-neutral-200);">
+                <td style="padding: var(--spacing-2) var(--spacing-4); color: var(--color-neutral-700);">{{ entry.id }}</td>
+                <td style="padding: var(--spacing-2) var(--spacing-4);">
+                    <a href="/user/{{ entry.user_id }}" style="color: var(--color-primary); text-decoration: none;">{{ entry.user_id }}</a>
+                </td>
+                <td style="padding: var(--spacing-2) var(--spacing-4); color: var(--color-neutral-700);">{{ entry.user_name }}</td>
+                <td style="padding: var(--spacing-2) var(--spacing-4);">
+                    {% if entry.action == 'granted' %}
+                        <span class="badge badge-success">Granted</span>
+                    {% else %}
+                        <span class="badge badge-error">Revoked</span>
+                    {% endif %}
+                </td>
+                <td style="padding: var(--spacing-2) var(--spacing-4); color: var(--color-neutral-700);">{{ entry.timestamp }}</td>
+                <td style="padding: var(--spacing-2) var(--spacing-4);">
+                    <span class="badge badge-info">{{ entry.changed_by }}</span>
+                </td>
+                <td style="padding: var(--spacing-2) var(--spacing-4);">
+                    {% if entry.previous_status %}
+                        <span class="badge badge-success">Had Consent</span>
+                    {% else %}
+                        <span class="badge badge-info">No Consent</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <strong>No records found.</strong> No consent changes have been logged yet.
+</div>
+{% endif %}
+
+<div style="margin-top: var(--spacing-6);">
+    <a href="/compliance/dashboard" class="btn btn-secondary">Back to Compliance Dashboard</a>
+</div>
+
+<style>
+    @media (max-width: 767px) {
+        div[style*="grid-template-columns"] {
+            grid-template-columns: 1fr !important;
+        }
+        
+        table {
+            font-size: var(--font-size-sm);
+        }
+        
+        th, td {
+            padding: var(--spacing-1) var(--spacing-2) !important;
+        }
+    }
+</style>
+{% endblock %}

@@ -55,17 +55,30 @@ PYTHONPATH=src python3 -m spendsense.database
 
 This creates the SQLite database (`spendsense.db`) with all required tables and indexes.
 
-4. **Generate synthetic data**:
-```bash
-PYTHONPATH=src python3 -m spendsense.generate_data
-```
+4. **Generate or ingest data**:
 
-This generates 5 users with diverse financial profiles:
-- User 1: High Utilization (75% credit utilization)
-- User 2: High Utilization with Multiple Cards (one overdue)
-- User 3: Subscription-Heavy (major services)
-- User 4: Subscription-Heavy (many small subscriptions)
-- User 5: Neutral/Healthy financial behavior
+   **Option A: Generate synthetic data** (default):
+   ```bash
+   PYTHONPATH=src python3 -m spendsense.generate_data
+   ```
+   
+   This generates 75 users (configurable via `NUM_USERS` env var) with diverse financial profiles.
+
+   **Option B: Ingest from CSV/JSON files**:
+   ```bash
+   # JSON ingestion (nested structure)
+   PYTHONPATH=src python3 -m spendsense.data_ingest --format json --file data/sample_users.json
+   
+   # CSV ingestion (separate files)
+   PYTHONPATH=src python3 -m spendsense.data_ingest --format csv \
+     --users data/sample_users.csv \
+     --accounts data/sample_accounts.csv \
+     --transactions data/sample_transactions.csv \
+     --credit-cards data/sample_credit_cards.csv \
+     --liabilities data/sample_liabilities.csv
+   ```
+   
+   Sample data files are provided in the `data/` directory. See [Data Ingestion](#data-ingestion-from-csvjson) section below for details.
 
 5. **Detect signals**:
 ```bash
@@ -91,6 +104,9 @@ PYTHONPATH=src python3 -m uvicorn spendsense.app:app --reload --host 0.0.0.0 --p
 
 9. **Open in browser**:
 Navigate to `http://localhost:8000` to view the operator dashboard.
+
+10. **Access End-User Interface (Phase 8A)**:
+Navigate to `http://localhost:8000/login` to log in as an end user. Use any user's email address or user ID from the operator dashboard to log in (demo mode - no password required).
 
 ## Project Structure
 
@@ -232,7 +248,70 @@ The test suite includes:
 - **Integration Tests**: Full pipeline from data generation to recommendations
 - **API Tests**: FastAPI endpoints (dashboard, user detail, consent toggle)
 
-**Test Coverage**: 90+ tests covering critical paths and edge cases (Phase 1: 10, Phase 2: 30, Phase 3: 8, Phase 4: 6+, Phase 5: 8+, Phase 6: 28+, Phase 7: 13+).
+**Test Coverage**: 120+ tests covering critical paths and edge cases (Phase 1: 10, Phase 2: 30, Phase 3: 8, Phase 4: 6+, Phase 5: 8+, Phase 6: 28+, Phase 7: 13+, Phase 8A: 20+, Phase 8B: 25+, Phase 8C: 14+, Data Ingestion: 20+).
+
+## Data Ingestion from CSV/JSON
+
+SpendSense supports ingesting Plaid-compatible data from JSON or CSV files, in addition to synthetic data generation.
+
+### Supported Formats
+
+**JSON Format** (Nested Structure):
+- Single JSON file with users, each containing nested accounts, transactions, credit cards, and liabilities
+- Plaid-compatible field names with nested structures (e.g., `balances.available`, `personal_finance_category.primary`)
+- Example: `data/sample_users.json`
+
+**CSV Format** (Separate Files):
+- Multiple CSV files: `users.csv`, `accounts.csv`, `transactions.csv`, `credit_cards.csv`, `liabilities.csv`
+- Headers match Plaid field names
+- Foreign key relationships via `account_id` (for transactions) and `user_id` (for accounts)
+- Example files: `data/sample_*.csv`
+
+### Usage
+
+**JSON Ingestion:**
+```bash
+PYTHONPATH=src python3 -m spendsense.data_ingest --format json --file data/sample_users.json
+```
+
+**CSV Ingestion:**
+```bash
+PYTHONPATH=src python3 -m spendsense.data_ingest --format csv \
+  --users data/sample_users.csv \
+  --accounts data/sample_accounts.csv \
+  --transactions data/sample_transactions.csv \
+  --credit-cards data/sample_credit_cards.csv \
+  --liabilities data/sample_liabilities.csv
+```
+
+**Custom Database Path:**
+```bash
+PYTHONPATH=src python3 -m spendsense.data_ingest --format json --file data.json --db-path custom.db
+```
+
+### Field Mapping
+
+The ingestion system automatically maps Plaid-compatible fields to the database schema:
+
+- **Nested Values**: `balances.available` → `available_balance`, `balances.current` → `current_balance`
+- **Date Formats**: ISO format (YYYY-MM-DD) preferred, with fallback parsing
+- **Optional Fields**: Missing optional fields use defaults (e.g., `iso_currency_code` defaults to 'USD')
+- **Foreign Keys**: Account IDs are resolved automatically (Plaid `account_id` strings → database integer IDs)
+
+### Error Handling
+
+- **Validation**: All required fields are validated before insertion
+- **Transaction Safety**: Each user (JSON) or file (CSV) is processed in a transaction (rollback on errors)
+- **Error Reporting**: Detailed error messages with file/row information for debugging
+- **Duplicate Handling**: Duplicate emails or account_ids are skipped with warnings
+
+### Sample Data
+
+Sample data files are provided in the `data/` directory:
+- `sample_users.json` - Complete JSON example with nested structure
+- `sample_users.csv`, `sample_accounts.csv`, etc. - CSV examples
+
+See `md_files/CSV_JSON_INGESTION_DESIGN.md` for detailed field mappings and format specifications.
 
 ## Phase 6 Features (Production Readiness)
 
@@ -262,12 +341,41 @@ The test suite includes:
 - **Deployment Ready**: Environment configuration and deployment documentation
 - **Production Verified**: Render.com deployment with full verification
 
+### End-User Application (Phase 8A)
+- **User Authentication**: Session-based authentication with email/user ID login, logout functionality
+- **Personalized Dashboard**: User-specific dashboard showing persona, key signals, quick stats, recommendation preview, consent banner
+- **Recommendation Feed**: Full recommendation feed with education items, partner offers, feedback functionality, consent enforcement
+- **Financial Profile**: Detailed profile with all signals organized by category, 30d/180d window toggle, account summary, transaction insights
+- **Consent Management**: User-facing consent interface with status display, explanation, toggle functionality, immediate effect on recommendations
+- **Interactive Calculators**: Three financial calculators:
+  - Emergency Fund Calculator (3-6 months coverage)
+  - Debt Paydown Calculator (amortization schedule)
+  - Savings Goal Calculator (monthly savings needed)
+- **Protected Routes**: All user routes (`/portal/*`) require authentication, operator routes remain public
+- **Test Coverage**: 100+ total tests (Phase 8A: 20+ new tests including unit, integration, and Playwright E2E tests)
+
+### Compliance & Audit Interface (Phase 8B)
+- **Consent Audit Log**: Complete audit trail of all consent changes with timestamps, actions, and who made changes
+- **Compliance Dashboard**: Real-time compliance metrics (consent coverage, violations, failures, recommendation compliance)
+- **Recommendation Compliance Review**: 5-point compliance checking per recommendation:
+  1. Active Consent at generation time
+  2. Eligibility Check performed
+  3. Required Disclaimer present
+  4. Complete Decision Trace (all 4 steps)
+  5. Rationale Cites Data
+- **Regulatory Reporting**: Exportable reports (CSV/JSON/Markdown) for regulatory submissions:
+  - Consent audit reports
+  - Recommendation compliance reports
+  - Compliance summary reports
+- **Operator Authentication**: Simple API key authentication for compliance routes
+- **Recent Issues Detection**: Automatic identification of compliance issues (missing disclaimers, etc.)
+
 ## Known Limitations (MVP)
 
 ### Technical Limitations
 - **SQLite Database**: Not suitable for production scale (single-file, limited concurrent writes). Sufficient for demo with 50-100 users. PostgreSQL migration path available.
 - **No Real-Time Updates**: Data is pre-generated. No live transaction streaming or real-time signal detection.
-- **No User Authentication**: Operator view only. No end-user interface or authentication system.
+- **Simple Authentication**: Demo-grade session-based authentication (no password hashing, email/user ID lookup only). Production would require OAuth, MFA, etc.
 - **Simple Subscription Detection**: Pattern matching may miss edge cases with irregular patterns or varying merchant names.
 - **Credit Score Not Tracked**: Credit score checks are placeholder (allows by default if not available). Real implementation would require credit score integration.
 - **Income Estimation**: Income estimated from payroll transactions. May not be 100% accurate for all income types.
@@ -344,7 +452,7 @@ See `planning/post_mvp_roadmap.md` for planned features:
 - ✅ 180-day analysis window (Phase 5)
 - ✅ Partner offer integration (Phase 6)
 - ✅ Evaluation harness (Phase 6)
-- ⏳ End-user interface (Future phase)
+- ✅ End-user interface (Phase 8A)
 
 ## Documentation
 

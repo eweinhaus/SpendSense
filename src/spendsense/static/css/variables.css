@@ -1,0 +1,126 @@
+/* Design System Variables - Phase 8C
+ * Color Palette, Typography, and Spacing Tokens
+ */
+
+/* Inter Font Import */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ============================================
+   COLOR PALETTE
+   ============================================ */
+
+/* Primary Colors */
+:root {
+  --color-primary: #2563EB;
+  --color-primary-dark: #1D4ED8;
+  --color-primary-light: #3B82F6;
+
+  /* Secondary Color */
+  --color-secondary: #7C3AED;
+
+  /* Semantic Colors - Success */
+  --color-success: #10B981;
+  --color-success-light: #D1FAE5;
+  --color-success-dark: #059669;
+
+  /* Semantic Colors - Warning */
+  --color-warning: #F59E0B;
+  --color-warning-light: #FEF3C7;
+  --color-warning-dark: #D97706;
+
+  /* Semantic Colors - Error */
+  --color-error: #EF4444;
+  --color-error-light: #FEE2E2;
+  --color-error-dark: #DC2626;
+
+  /* Neutral Gray Scale */
+  --color-neutral-50: #F9FAFB;
+  --color-neutral-100: #F3F4F6;
+  --color-neutral-200: #E5E7EB;
+  --color-neutral-300: #D1D5DB;
+  --color-neutral-400: #9CA3AF;
+  --color-neutral-500: #6B7280;
+  --color-neutral-600: #4B5563;
+  --color-neutral-700: #374151;
+  --color-neutral-800: #1F2937;
+  --color-neutral-900: #111827;
+
+  /* Persona Colors */
+  --color-persona-high-utilization: #F97316;
+  --color-persona-variable-income: #F59E0B;
+  --color-persona-savings-builder: #10B981;
+  --color-persona-financial-newcomer: #3B82F6;
+  --color-persona-subscription-heavy: #8B5CF6;
+  --color-persona-neutral: #6B7280;
+}
+
+/* Color Usage Guidelines:
+ * - Primary: Use for primary buttons, links, and brand elements
+ * - Secondary: Use for secondary actions and highlights
+ * - Success: Use for success messages and positive indicators
+ * - Warning: Use for warning messages and caution indicators
+ * - Error: Use for error messages and danger actions
+ * - Neutral: Use for text, backgrounds, and borders
+ * - Persona Colors: Use for persona badges and persona-specific elements
+ * 
+ * All colors meet WCAG AA contrast requirements (4.5:1 minimum for text)
+ */
+
+/* ============================================
+   TYPOGRAPHY SYSTEM
+   ============================================ */
+
+:root {
+  /* Font Family */
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Font Sizes */
+  --font-size-base: 1rem;      /* 16px - Body text */
+  --font-size-sm: 0.875rem;    /* 14px - Small text */
+  --font-size-lg: 1.125rem;    /* 18px - Large text */
+  --font-size-xl: 1.25rem;     /* 20px - H4 */
+  --font-size-2xl: 1.5rem;     /* 24px - H3 */
+  --font-size-3xl: 2rem;      /* 32px - H2 */
+  --font-size-4xl: 2.5rem;    /* 40px - H1 */
+
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Line Heights */
+  --line-height-tight: 1.2;    /* For headings */
+  --line-height-normal: 1.5;   /* For body text */
+}
+
+/* Typography Hierarchy:
+ * - H1: 2.5rem (40px), bold, line-height-tight
+ * - H2: 2rem (32px), bold, line-height-tight
+ * - H3: 1.5rem (24px), semibold, line-height-tight
+ * - H4: 1.25rem (20px), semibold, line-height-tight
+ * - Body: 1rem (16px), normal, line-height-normal
+ * - Small: 0.875rem (14px), normal, line-height-normal
+ */
+
+/* ============================================
+   SPACING SYSTEM
+   ============================================ */
+
+:root {
+  /* Spacing Scale (4px base unit) */
+  --spacing-1: 0.25rem;   /* 4px */
+  --spacing-2: 0.5rem;    /* 8px */
+  --spacing-4: 1rem;      /* 16px */
+  --spacing-6: 1.5rem;    /* 24px */
+  --spacing-8: 2rem;      /* 32px */
+  --spacing-12: 3rem;     /* 48px */
+  --spacing-16: 4rem;     /* 64px */
+}
+
+/* Spacing Usage Guidelines:
+ * - Use spacing variables for consistent spacing throughout
+ * - Base unit is 4px (0.25rem)
+ * - Common spacing: 1 (4px), 2 (8px), 4 (16px), 6 (24px), 8 (32px)
+ */
+

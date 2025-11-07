@@ -106,6 +106,15 @@ erDiagram
         json data_cited
         timestamp created_at
     }
+    
+    consent_audit_log {
+        int id PK
+        int user_id FK
+        string action
+        timestamp timestamp
+        string changed_by
+        boolean previous_status
+    }
 ```
 
 ## Table Descriptions
@@ -287,6 +296,31 @@ Stores 4-step decision traces for each recommendation (auditability).
 2. Persona Assigned
 3. Recommendation Selected
 4. Rationale Generated
+
+### consent_audit_log (Phase 8B)
+
+Stores audit trail of all consent changes for regulatory compliance.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER | Primary key, auto-increment |
+| user_id | INTEGER | Foreign key to users.id |
+| action | TEXT | Action taken ('granted' or 'revoked') |
+| timestamp | DATETIME | Timestamp of consent change (default: CURRENT_TIMESTAMP) |
+| changed_by | TEXT | Who changed consent ('user', 'operator', or 'system') |
+| previous_status | BOOLEAN | Previous consent status before change |
+
+**Indexes:**
+- Primary key on `id`
+- Foreign key on `user_id` → users.id
+- Index on `user_id` for efficient user-specific queries
+- Index on `timestamp` for efficient date range queries
+
+**Purpose:**
+- Complete audit trail for regulatory compliance
+- Track all consent changes with timestamps
+- Identify who made consent changes
+- Enable filtering and export for regulatory audits
 
 ## Migration Notes
 

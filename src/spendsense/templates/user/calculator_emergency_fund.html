@@ -1,0 +1,61 @@
+{% extends "user/base.html" %}
+
+{% block title %}Emergency Fund Calculator - SpendSense{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Emergency Fund Calculator</h1>
+        <p>Calculate how much you should have in your emergency fund. Financial experts recommend 3-6 months of expenses.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" action="/portal/calculators/emergency-fund">
+                    <div class="mb-3">
+                        <label for="monthly_expenses" class="form-label">Monthly Expenses</label>
+                        <input type="number" class="form-control" id="monthly_expenses" name="monthly_expenses" 
+                               value="{{ prefill_expenses }}" step="0.01" min="0" required>
+                        <small class="form-text text-muted">Your average monthly expenses (pre-filled from your data if available)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="months" class="form-label">Target Months</label>
+                        <select class="form-select" id="months" name="months">
+                            <option value="3" {% if not result or result.months == 3 %}selected{% endif %}>3 months</option>
+                            <option value="4" {% if result and result.months == 4 %}selected{% endif %}>4 months</option>
+                            <option value="5" {% if result and result.months == 5 %}selected{% endif %}>5 months</option>
+                            <option value="6" {% if result and result.months == 6 %}selected{% endif %}>6 months</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Calculate</button>
+                </form>
+                
+                {% if error %}
+                <div class="alert alert-danger mt-3">{{ error }}</div>
+                {% endif %}
+                
+                {% if result and not result.error %}
+                <div class="alert alert-success mt-3">
+                    <h5>Results</h5>
+                    <p><strong>Target Emergency Fund ({{ result.months }} months):</strong> ${{ "{:,.2f}".format(result.target) }}</p>
+                    <hr>
+                    <p><strong>3-month target:</strong> ${{ "{:,.2f}".format(result.target_3mo) }}</p>
+                    <p><strong>6-month target:</strong> ${{ "{:,.2f}".format(result.target_6mo) }}</p>
+                    <small class="text-muted">Based on monthly expenses of ${{ "{:,.2f}".format(result.monthly_expenses) }}</small>
+                </div>
+                {% elif result and result.error %}
+                <div class="alert alert-danger mt-3">{{ result.error }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="/portal/calculators" class="btn btn-outline-secondary">Back to Calculators</a>
+</div>
+{% endblock %}
+

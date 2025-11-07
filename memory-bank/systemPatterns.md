@@ -10,6 +10,7 @@ SpendSense follows a modular, layered architecture designed for explainability a
 ┌─────────────────────────────────────────┐
 │         Operator View (FastAPI)          │
 │      Server-rendered HTML templates       │
+│  - Dashboard, User Detail, Compliance    │
 └────────────────┬──────────────────────────┘
                  │
 ┌────────────────┴──────────────────────────┐
@@ -31,6 +32,14 @@ SpendSense follows a modular, layered architecture designed for explainability a
 │  │     Guardrails System              │  │
 │  │  - Consent Tracking                │  │
 │  │  - Eligibility Checks              │  │
+│  │  - Tone Validation                 │  │
+│  └─────────────────┬──────────────────┘  │
+│                    │                       │
+│  ┌─────────────────┴──────────────────┐  │
+│  │     Compliance & Audit System       │  │
+│  │  - Consent Audit Log               │  │
+│  │  - Compliance Checking             │  │
+│  │  - Regulatory Reporting            │  │
 │  └─────────────────┬──────────────────┘  │
 └────────────────────┼──────────────────────┘
                      │
@@ -39,6 +48,7 @@ SpendSense follows a modular, layered architecture designed for explainability a
 │  - users, accounts, transactions        │
 │  - credit_cards, liabilities, signals   │
 │  - personas, recommendations, traces    │
+│  - consent_audit_log (Phase 8B)         │
 └─────────────────────────────────────────┘
 ```
 
@@ -218,12 +228,13 @@ User → Consent Check → Generate Recommendations → Display
 
 ## Code Organization Patterns
 
-### Current Structure (Phase 7 Complete)
+### Current Structure (CSV/JSON Ingestion Complete)
 
 ```
 spendsense/
 ├── database.py         # SQLite setup & schema (Phase 4: liabilities table)
 ├── generate_data.py     # Synthetic data generator (Phase 4: scaled to 75 users)
+├── data_ingest.py      # CSV/JSON ingestion module (NEW: JSON and CSV support) ✅
 ├── detect_signals.py   # Signal detection engine (Phase 5: savings, income, dual-window) ✅
 ├── personas.py         # Persona assignment (Phase 2, Phase 5: 3 new personas) ✅
 ├── recommendations.py  # Recommendation engine (Phase 2, Phase 4: consent, Phase 5: new templates, Phase 6B: AI integration, 72 items) ✅
@@ -234,13 +245,42 @@ spendsense/
 ├── eligibility.py      # Eligibility checks (Phase 3, Phase 4: consent, Phase 6: enhanced) ✅
 ├── tone_validator.py   # Tone validation (Phase 6: new) ✅
 ├── evaluation.py       # Evaluation harness (Phase 6: new) ✅
-├── app.py              # FastAPI app (Phase 3, Phase 4: consent, Phase 5: dual-window signals, Phase 6B: partner offers, Phase 7: enhanced persona display) ✅
+├── app.py              # FastAPI app (Phase 3, Phase 4: consent, Phase 5: dual-window signals, Phase 6B: partner offers, Phase 7: enhanced persona display, Phase 8A: user routes, auth) ✅
+├── auth.py             # Authentication module (Phase 8A: session-based auth, login/logout) ✅
+├── user_data.py        # User data aggregation helpers (Phase 8A: persona summary, signals, accounts, stats) ✅
 ├── scripts/
 │   ├── deploy_render.py      # Automated Render deployment script (Phase 6: new) ✅
 │   └── test_operator_view.py # Manual testing automation script (Phase 7: new) ✅
-├── templates/          # Jinja2 templates (Phase 3, Phase 4: consent, Phase 5: dual-window tabs, Phase 6: persona badges, Phase 6B: partner offers, Phase 7: enhanced decision traces) ✅
-├── static/             # CSS/JS (Phase 3, Phase 4: auto-reload) ✅
-├── tests/              # Test suite (90+ tests)
+├── templates/          # Jinja2 templates ✅
+│   ├── base.html       # Operator base template
+│   ├── dashboard.html  # Operator dashboard
+│   ├── user_detail.html # Operator user detail
+│   ├── error.html      # Error pages
+│   └── user/           # End-user templates (Phase 8A) ✅
+│       ├── base.html
+│       ├── login.html
+│       ├── dashboard.html
+│       ├── recommendations.html
+│       ├── profile.html
+│       ├── consent.html
+│       ├── calculators.html
+│       └── calculator_*.html (3 calculator templates)
+├── static/             # CSS/JS (Phase 3, Phase 4: auto-reload, Phase 8C: design system) ✅
+│   ├── css/
+│   │   ├── variables.css    # Design tokens (Phase 8C: new) ✅
+│   │   ├── base.css         # Base styles (Phase 8C: new) ✅
+│   │   ├── components.css   # Component library (Phase 8C: new) ✅
+│   │   ├── layout.css       # Layout utilities (Phase 8C: new) ✅
+│   │   ├── utilities.css    # Utility classes (Phase 8C: new) ✅
+│   │   └── style.css        # Main stylesheet (Phase 8C: updated) ✅
+│   ├── demo.html            # Design system demo page (Phase 8C: new) ✅
+│   └── js/
+├── icon_helper.py      # Icon helper for templates (Phase 8C: new) ✅
+├── tests/              # Test suite (120+ tests) ✅
+│   ├── test_phase8a.py # Phase 8A tests (20 tests) ✅
+│   ├── test_phase8a_auth.py # Phase 8A auth unit tests ✅
+│   ├── test_phase8a_e2e.py # Phase 8A Playwright E2E tests ✅
+│   └── test_data_ingest.py # CSV/JSON ingestion tests (20 tests) ✅
 │   ├── __init__.py
 │   ├── test_database.py
 │   ├── test_signals.py (Phase 5: updated for windows)
@@ -255,7 +295,9 @@ spendsense/
 │   ├── test_partner_offers.py    # Phase 6B: new ✅
 │   ├── test_phase4.py         # Phase 4 ✅
 │   ├── test_phase5.py         # Phase 5 ✅
-│   └── test_phase7.py         # Phase 7: new (13 tests) ✅
+│   ├── test_phase7.py         # Phase 7: new (13 tests) ✅
+│   ├── test_phase8a.py        # Phase 8A: new (20 tests) ✅
+│   └── test_phase8c_design_system.py # Phase 8C: new (14 Playwright tests) ✅
 ├── requirements.txt    # Python dependencies (Phase 6B: openai>=1.0.0)
 ├── pytest.ini         # Test configuration
 ├── spendsense.db       # SQLite database (79 users, 238 accounts, 10 liabilities)
@@ -434,7 +476,20 @@ spendsense/
 - Neutral: 10 items
 - Total: 72 items
 
-### 11. Partner Offers System (Phase 6B)
+### 11. Compliance & Audit Interface (Phase 8B)
+**Decision:** Comprehensive compliance module with audit logging, dashboard, and reporting  
+**Rationale:** Demonstrates regulatory awareness, enables auditability, required for production compliance  
+**Trade-off:** Adds complexity and database overhead, but critical for regulatory compliance  
+**Status:** ✅ Implemented in Phase 8B (compliance.py)
+**Features:**
+- Consent audit log with timestamp and actor tracking
+- 5-point compliance checking for recommendations (active consent, eligibility, disclaimer, decision trace, rationale data citation)
+- Real-time compliance metrics dashboard
+- Exportable reports (CSV, JSON, Markdown) for regulatory submission
+- Operator authentication via API key (X-Operator-API-Key header)
+- Comprehensive UI testing with Playwright (10 tests passing)
+
+### 12. Partner Offers System (Phase 6B)
 **Decision:** Eligibility-based partner offers with data-driven rationales  
 **Rationale:** Provides relevant financial products while maintaining compliance  
 **Trade-off:** Adds complexity, but enhances user value and potential revenue  
@@ -444,6 +499,20 @@ spendsense/
 - High-Yield Savings Accounts (HYSA)
 - Budgeting Apps
 - Subscription Management Tools
+
+### 13. End-User Authentication (Phase 8A)
+**Decision:** Simple session-based authentication with email/user ID lookup (no password hashing)  
+**Rationale:** Demo-grade authentication for MVP, fast to implement, sufficient for proof of concept  
+**Trade-off:** Not production-ready (no password security, no OAuth/MFA), but enables full user flow testing  
+**Status:** ✅ Implemented in Phase 8A (auth.py, app.py)
+**Features:**
+- Session middleware with secure cookies (HttpOnly, secure flag for HTTPS)
+- Email or user ID login (no password required in demo mode)
+- Protected routes via dependency injection (`Depends(get_current_user)`)
+- Route namespacing (`/portal/*` for user routes, `/` for operator routes)
+- Session expiration (24 hours)
+- Immediate logout functionality
+**Future Enhancement:** OAuth, MFA, password hashing for production deployment
 
 ## Extension Points
 
@@ -456,9 +525,9 @@ spendsense/
 - Additional prohibited phrases (tone validation) ✅ Extensible in Phase 6
 
 ### Requires Refactoring
-- AI/LLM integration (tone validation ready, OpenAI integration ready)
-- Partner offers (eligibility system ready)
-- End-user interface
+- AI/LLM integration (tone validation ready, OpenAI integration ready) ✅ Implemented Phase 6B
+- Partner offers (eligibility system ready) ✅ Implemented Phase 6B
+- End-user interface ✅ Implemented Phase 8A
 - Real-time data updates
 
 ## Testing Patterns

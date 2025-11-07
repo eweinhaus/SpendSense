@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Compliance Detail - Recommendation {{ detail.recommendation.id }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6); flex-wrap: wrap; gap: var(--spacing-2);">
+    <h2 style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin: 0;">
+        Compliance Detail - Recommendation #{{ detail.recommendation.id }}
+    </h2>
+    <a href="/compliance/recommendations" class="btn btn-secondary">Back to List</a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-4); margin-bottom: var(--spacing-6);">
+    <div class="card">
+        <div class="card-header">Recommendation Information</div>
+        <div>
+            <p style="margin-bottom: var(--spacing-2);">
+                <strong>Title:</strong> {{ detail.recommendation.title }}
+            </p>
+            <p style="margin-bottom: var(--spacing-2);">
+                <strong>User:</strong> <a href="/user/{{ detail.user.id }}" style="color: var(--color-primary); text-decoration: none;">{{ detail.user.name }} (ID: {{ detail.user.id }})</a>
+            </p>
+            <p style="margin-bottom: var(--spacing-2);">
+                <strong>Persona:</strong> {{ detail.recommendation.persona_matched }}
+            </p>
+            <p style="margin: 0;">
+                <strong>Created:</strong> {{ detail.recommendation.created_at }}
+            </p>
+        </div>
+    </div>
+    
+    <div class="card" style="{% if detail.compliance.compliant %}border-left: 4px solid var(--color-success);{% else %}border-left: 4px solid var(--color-error);{% endif %}">
+        <div class="card-header">Compliance Status</div>
+        <div>
+            {% if detail.compliance.compliant %}
+                <div style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); color: var(--color-success); margin-bottom: var(--spacing-2);">
+                    ✓ Compliant
+                </div>
+            {% else %}
+                <div style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); color: var(--color-error); margin-bottom: var(--spacing-2);">
+                    ✗ Non-Compliant
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: var(--spacing-6);">
+    <div class="card-header">Compliance Checks</div>
+    <div>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--color-neutral-200);">
+                    <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Check</th>
+                    <th style="padding: var(--spacing-2) var(--spacing-4); text-align: left; font-weight: var(--font-weight-semibold); color: var(--color-neutral-900);">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom: 1px solid var(--color-neutral-200);">
+                    <td style="padding: var(--spacing-2) var(--spacing-4); color: var(--color-neutral-700);">Active Consent at Generation</td>
+                    <td style="padding: var(--spacing-2) var(--spacing-4);">
+                        {% if detail.compliance.checks.active_consent %}
+                            <span class="badge badge-success">Pass</span>
+                        {% else %}
+                            <span class="badge badge-error">Fail</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--color-neutral-200);">
+                    <td style="padding: var(--spacing-2) var(--spacing-4); color: var(--color-neutral-700);">Eligibility Check Performed</td>
+                    <td style="padding: var(--spacing-2) var(--spacing-4);">
+                        {% if detail.compliance.checks.eligibility_check %}
+                            <span class="badge badge-success">Pass</span>
+                        {% else %}
+                            <span class="badge badge-error">Fail</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--color-neutral-200);">
+                    <td style="padding: var(--spacing-2) var(--spacing-4); color: var(--color-neutral-700);">Required Disclaimer Present</td>
+                    <td style="padding: var(--spacing-2) var(--spacing-4);">
+                        {% if detail.compliance.checks.required_disclaimer %}
+                            <span class="badge badge-success">Pass</span>
+                        {% else %}
+                            <span class="badge badge-error">Fail</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--color-neutral-200);">
+                    <td style="padding: var(--spacing-2) var(--spacing-4); color: var(--color-neutral-700);">Complete Decision Trace (4 steps)</td>
+                    <td style="padding: var(--spacing-2) var(--spacing-4);">
+                        {% if detail.compliance.checks.complete_trace %}
+                            <span class="badge badge-success">Pass</span>
+                        {% else %}
+                            <span class="badge badge-error">Fail</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: var(--spacing-2) var(--spacing-4); color: var(--color-neutral-700);">Rationale Cites Data</td>
+                    <td style="padding: var(--spacing-2) var(--spacing-4);">
+                        {% if detail.compliance.checks.rationale_cites_data %}
+                            <span class="badge badge-success">Pass</span>
+                        {% else %}
+                            <span class="badge badge-error">Fail</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: var(--spacing-6);">
+    <div class="card-header">Recommendation Content</div>
+    <div>
+        <div style="margin-bottom: var(--spacing-4);">
+            <strong style="color: var(--color-neutral-900);">Content:</strong>
+            <div style="margin-top: var(--spacing-2); padding: var(--spacing-4); background-color: var(--color-neutral-50); border-radius: 0.375rem; border-left: 3px solid var(--color-primary); color: var(--color-neutral-700);">
+                {{ detail.recommendation.content }}
+            </div>
+        </div>
+        <div>
+            <strong style="color: var(--color-neutral-900);">Rationale:</strong>
+            <div style="margin-top: var(--spacing-2); padding: var(--spacing-4); background-color: var(--color-neutral-50); border-radius: 0.375rem; border-left: 3px solid var(--color-primary); color: var(--color-neutral-700);">
+                {{ detail.recommendation.rationale }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: var(--spacing-6);">
+    <div class="card-header">Decision Trace</div>
+    <div>
+        {% if detail.decision_traces %}
+        <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
+            {% for trace in detail.decision_traces %}
+            <details {% if trace.step == 1 %}open{% endif %} style="background-color: var(--color-neutral-50); border-radius: 0.375rem; padding: var(--spacing-2);">
+                <summary style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); cursor: pointer; padding: var(--spacing-2); list-style: none;">
+                    <span style="display: flex; align-items: center; gap: var(--spacing-2);">
+                        <span class="badge badge-info">Step {{ trace.step }}</span>
+                        {{ trace.reasoning[:50] }}{% if trace.reasoning|length > 50 %}...{% endif %}
+                    </span>
+                </summary>
+                <div style="padding: var(--spacing-4); margin-top: var(--spacing-2); border-top: 1px solid var(--color-neutral-200);">
+                    <p style="margin-bottom: var(--spacing-4);">
+                        <strong>Reasoning:</strong> {{ trace.reasoning }}
+                    </p>
+                    {% if trace.data_cited %}
+                    <div>
+                        <strong>Data Cited:</strong>
+                        <pre style="margin-top: var(--spacing-2); padding: var(--spacing-4); background-color: white; border-radius: 0.375rem; border: 1px solid var(--color-neutral-200); overflow-x: auto; font-size: var(--font-size-sm);">{{ trace.data_cited | tojsonpretty }}</pre>
+                    </div>
+                    {% endif %}
+                </div>
+            </details>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-warning">
+            <strong>No decision traces found.</strong> This recommendation may not have complete audit trail.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div style="margin-top: var(--spacing-6); display: flex; gap: var(--spacing-2); flex-wrap: wrap;">
+    <a href="/compliance/recommendations" class="btn btn-secondary">Back to Compliance Review</a>
+    <a href="/user/{{ detail.user.id }}" class="btn btn-primary">View User Details</a>
+</div>
+
+<style>
+    @media (max-width: 767px) {
+        div[style*="grid-template-columns"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+    
+    details summary::-webkit-details-marker {
+        display: none;
+    }
+    
+    details summary::before {
+        content: '▶ ';
+        display: inline-block;
+        margin-right: var(--spacing-2);
+        transition: transform 0.2s ease;
+    }
+    
+    details[open] summary::before {
+        transform: rotate(90deg);
+    }
+</style>
+{% endblock %}

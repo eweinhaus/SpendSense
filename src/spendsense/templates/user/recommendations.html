@@ -1,0 +1,120 @@
+{% extends "user/base.html" %}
+
+{% block title %}Recommendations - SpendSense{% endblock %}
+
+{% block content %}
+<h1 style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-6);">
+    Your Recommendations
+</h1>
+
+{% if no_consent %}
+<div class="alert alert-warning" role="alert">
+    <div style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin-bottom: var(--spacing-2);">
+        Consent Required
+    </div>
+    <p style="margin-bottom: var(--spacing-2);">
+        To view personalized recommendations, please <a href="/portal/consent" style="color: inherit; text-decoration: underline;">grant consent</a> for data processing.
+    </p>
+    <div style="border-top: 1px solid var(--color-warning); margin: var(--spacing-4) 0; padding-top: var(--spacing-4);">
+        <p style="margin: 0;">
+            Consent enables us to provide you with personalized financial education and recommendations based on your financial patterns.
+        </p>
+    </div>
+</div>
+{% else %}
+
+<!-- Education Recommendations -->
+{% if recommendations %}
+<div style="margin-bottom: var(--spacing-6);">
+    <h2 style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">
+        Personalized Education
+    </h2>
+    <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
+        {% for rec in recommendations %}
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-4); flex-wrap: wrap; gap: var(--spacing-2);">
+                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin: 0;">
+                    {{ rec.title }}
+                </h5>
+                <span class="badge badge-info">Article</span>
+            </div>
+            <p style="color: var(--color-neutral-700); margin-bottom: var(--spacing-4); line-height: var(--line-height-normal);">
+                {{ rec.content }}
+            </p>
+            <div style="background-color: var(--color-neutral-50); padding: var(--spacing-4); border-radius: 0.375rem; margin-bottom: var(--spacing-4); border-left: 3px solid var(--color-primary);">
+                <div style="font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-2);">
+                    Why this matters:
+                </div>
+                <p style="font-size: var(--font-size-sm); color: var(--color-neutral-700); margin: 0;">
+                    {{ rec.rationale }}
+                </p>
+            </div>
+            <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap; margin-bottom: var(--spacing-4);">
+                <button type="button" class="btn btn-secondary btn-sm">Learn More</button>
+                <button type="button" class="btn btn-secondary btn-sm">Save for Later</button>
+                <form method="post" action="/portal/recommendations/{{ rec.id }}/feedback" style="display: inline;">
+                    <input type="hidden" name="feedback_type" value="not_relevant">
+                    <button type="submit" class="btn btn-danger btn-sm">Not Relevant</button>
+                </form>
+            </div>
+            <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); font-style: italic; padding-top: var(--spacing-4); border-top: 1px solid var(--color-neutral-200);">
+                <em>This is educational content only and does not constitute financial advice. 
+                Please consult with a financial advisor for personalized guidance.</em>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info" role="alert">
+    <p style="margin: 0;">No recommendations available at this time. Check back later for personalized content.</p>
+</div>
+{% endif %}
+
+<!-- Partner Offers -->
+{% if partner_offers %}
+<div style="margin-bottom: var(--spacing-6);">
+    <h2 style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">
+        Eligible Partner Offers
+    </h2>
+    <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
+        {% for offer in partner_offers %}
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-4); flex-wrap: wrap; gap: var(--spacing-2);">
+                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin: 0;">
+                    {{ offer.title }}
+                </h5>
+                <span class="badge badge-success">Partner Offer</span>
+            </div>
+            <p style="color: var(--color-neutral-700); margin-bottom: var(--spacing-4); line-height: var(--line-height-normal);">
+                {{ offer.description }}
+            </p>
+            <div style="background-color: var(--color-success-light); padding: var(--spacing-4); border-radius: 0.375rem; margin-bottom: var(--spacing-4); border-left: 3px solid var(--color-success);">
+                <div style="font-weight: var(--font-weight-semibold); color: var(--color-success-dark); margin-bottom: var(--spacing-2);">
+                    Why you're eligible:
+                </div>
+                <p style="font-size: var(--font-size-sm); color: var(--color-success-dark); margin: 0;">
+                    {{ offer.rationale }}
+                </p>
+            </div>
+            {% if offer.link %}
+            <div style="margin-bottom: var(--spacing-4);">
+                <a href="{{ offer.link }}" class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">Learn More</a>
+            </div>
+            {% endif %}
+            <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); font-style: italic; padding-top: var(--spacing-4); border-top: 1px solid var(--color-neutral-200);">
+                <em>Partner offers are provided for informational purposes only. 
+                Terms and conditions apply. Please review all details carefully before applying.</em>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+<div style="margin-top: var(--spacing-6);">
+    <a href="/portal/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+{% endblock %}

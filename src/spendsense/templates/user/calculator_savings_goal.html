@@ -1,0 +1,69 @@
+{% extends "user/base.html" %}
+
+{% block title %}Savings Goal Calculator - SpendSense{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Savings Goal Calculator</h1>
+        <p>Calculate how much you need to save each month to reach your financial goal.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" action="/portal/calculators/savings-goal">
+                    <div class="mb-3">
+                        <label for="goal_amount" class="form-label">Goal Amount</label>
+                        <input type="number" class="form-control" id="goal_amount" name="goal_amount" 
+                               step="0.01" min="0" required>
+                        <small class="form-text text-muted">The amount you want to save</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="target_date" class="form-label">Target Date</label>
+                        <input type="date" class="form-control" id="target_date" name="target_date" required>
+                        <small class="form-text text-muted">When you want to reach your goal</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="current_savings" class="form-label">Current Savings</label>
+                        <input type="number" class="form-control" id="current_savings" name="current_savings" 
+                               value="{{ prefill_savings }}" step="0.01" min="0" required>
+                        <small class="form-text text-muted">How much you've already saved (pre-filled from your data if available)</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Calculate</button>
+                </form>
+                
+                {% if error %}
+                <div class="alert alert-danger mt-3">{{ error }}</div>
+                {% endif %}
+                
+                {% if result and not result.error and not result.message %}
+                <div class="alert alert-success mt-3">
+                    <h5>Results</h5>
+                    <p><strong>Monthly Savings Needed:</strong> ${{ "{:,.2f}".format(result.monthly_savings) }}</p>
+                    <p><strong>Total Contributions:</strong> ${{ "{:,.2f}".format(result.total_contributions) }}</p>
+                    <p><strong>Time Period:</strong> {{ result.months }} months</p>
+                    <hr>
+                    <small class="text-muted">
+                        Goal: ${{ "{:,.2f}".format(result.goal_amount) }} | 
+                        Current: ${{ "{:,.2f}".format(result.current_savings) }} | 
+                        Remaining: ${{ "{:,.2f}".format(result.remaining) }}
+                    </small>
+                </div>
+                {% elif result and result.message %}
+                <div class="alert alert-info mt-3">{{ result.message }}</div>
+                {% elif result and result.error %}
+                <div class="alert alert-danger mt-3">{{ result.error }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="/portal/calculators" class="btn btn-outline-secondary">Back to Calculators</a>
+</div>
+{% endblock %}
+
