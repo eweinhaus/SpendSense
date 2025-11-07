@@ -84,14 +84,12 @@
             <div class="card-header">Detected Signals</div>
             <div style="padding-top: var(--spacing-2);">
                 <!-- Tabs for 30d and 180d windows -->
-                <div style="display: flex; gap: var(--spacing-4); margin-bottom: var(--spacing-6); border-bottom: 2px solid var(--color-neutral-200); padding-bottom: var(--spacing-4);">
-                    <button class="nav-link active" id="tab-30d" type="button" role="tab" 
-                            style="padding: var(--spacing-2) var(--spacing-4); border: none; background: none; border-bottom: 3px solid var(--color-primary); color: var(--color-primary); font-weight: var(--font-weight-medium); cursor: pointer;">
-                        30-Day Window
+                <div class="window-tabs-container" style="display: flex; gap: var(--spacing-4); margin-bottom: var(--spacing-3); padding-bottom: var(--spacing-4); position: relative;">
+                    <button class="window-tab-btn window-tab-active" id="tab-30d" type="button" role="tab">
+                        <span class="window-tab-text">30-Day Window</span>
                     </button>
-                    <button class="nav-link" id="tab-180d" type="button" role="tab"
-                            style="padding: var(--spacing-2) var(--spacing-4); border: none; background: none; border-bottom: 3px solid transparent; color: var(--color-neutral-600); font-weight: var(--font-weight-medium); cursor: pointer;">
-                        180-Day Window
+                    <button class="window-tab-btn" id="tab-180d" type="button" role="tab">
+                        <span class="window-tab-text">180-Day Window</span>
                     </button>
                 </div>
                 
@@ -100,7 +98,7 @@
                     <div class="tab-pane fade show active" id="panel-30d" role="tabpanel">
                         {% set window_signals = signals.get('30d', {}) %}
                         
-                        <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
+                        <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
                             {% if window_signals.get('credit') %}
                             <div class="signal-section">
                                 <h5 class="signal-section-title">Credit Utilization</h5>
@@ -152,9 +150,9 @@
                             {% endif %}
                             
                             {% if window_signals.get('subscription') %}
-                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
-                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Subscriptions</h5>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-2) !important; padding-bottom: 0 !important; margin-top: var(--spacing-3) !important; margin-bottom: 0 !important;">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: 32px !important; margin-top: 0 !important;">Subscriptions</h5>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 2px !important; column-gap: var(--spacing-4); margin-bottom: 0 !important;">
                                     <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Recurring Merchants:</strong> {{ window_signals.subscription.count }}</div>
                                     <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Monthly Spend:</strong> ${{ "%.2f"|format(window_signals.subscription.monthly_spend) }}</div>
                                     <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Subscription Share:</strong> {{ "%.1f"|format(window_signals.subscription.share) }}%</div>
@@ -168,9 +166,9 @@
                             {% endif %}
                             
                             {% if window_signals.get('savings') %}
-                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
-                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Savings Signals</h5>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-2) !important; padding-bottom: 0 !important; margin-top: var(--spacing-3) !important; margin-bottom: 0 !important;">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: 32px !important; margin-top: 0 !important;">Savings Signals</h5>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 2px !important; column-gap: var(--spacing-4); margin-bottom: 0 !important;">
                                     {% if window_signals.savings.net_inflow is defined %}
                                     <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Net Inflow:</strong> ${{ "%.2f"|format(window_signals.savings.net_inflow) }}</div>
                                     {% endif %}
@@ -185,25 +183,25 @@
                             {% endif %}
                             
                             {% if window_signals.get('income') %}
-                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
-                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Income Signals</h5>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-2) !important; padding-bottom: 0 !important; margin-top: var(--spacing-3) !important; margin-bottom: 0 !important;">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: 32px !important; margin-top: 0 !important;">Income Signals</h5>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 2px !important; column-gap: var(--spacing-4); margin-bottom: 0 !important;">
                                     {% if window_signals.income.frequency is defined %}
-                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Payment Frequency:</strong> {{ window_signals.income.frequency }}</div>
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Payment Frequency:</strong> {{ window_signals.income.frequency }}</div>
                                     {% endif %}
                                     {% if window_signals.income.variability is defined %}
-                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</div>
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</div>
                                     {% endif %}
                                     {% if window_signals.income.cash_flow_buffer is defined %}
-                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</div>
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</div>
                                     {% endif %}
                                     {% if window_signals.income.median_pay_gap is defined %}
-                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</div>
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</div>
                                     {% endif %}
                                 </div>
                             </div>
                             {% else %}
-                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-4); margin-top: var(--spacing-3);">
                                 <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Income Signals</h5>
                                 <div class="empty-state">
                                     <p class="empty-state-description">No income signals detected in this window. This could mean there's insufficient transaction data or income transactions don't match expected patterns.</p>
@@ -221,7 +219,7 @@
                     <div class="tab-pane fade" id="panel-180d" role="tabpanel">
                         {% set window_signals = signals.get('180d', {}) %}
                         
-                        <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
+                        <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
                             {% if window_signals.get('credit') %}
                             <div class="signal-section">
                                 <h5 class="signal-section-title">Credit Utilization</h5>
@@ -273,9 +271,9 @@
                             {% endif %}
                             
                             {% if window_signals.get('subscription') %}
-                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
-                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Subscriptions</h5>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-2) !important; padding-bottom: 0 !important; margin-top: var(--spacing-3) !important; margin-bottom: 0 !important;">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: 32px !important; margin-top: 0 !important;">Subscriptions</h5>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 2px !important; column-gap: var(--spacing-4); margin-bottom: 0 !important;">
                                     <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Recurring Merchants:</strong> {{ window_signals.subscription.count }}</div>
                                     <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Monthly Spend:</strong> ${{ "%.2f"|format(window_signals.subscription.monthly_spend) }}</div>
                                     <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Subscription Share:</strong> {{ "%.1f"|format(window_signals.subscription.share) }}%</div>
@@ -289,9 +287,9 @@
                             {% endif %}
                             
                             {% if window_signals.get('savings') %}
-                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
-                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Savings Signals</h5>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-2) !important; padding-bottom: 0 !important; margin-top: var(--spacing-3) !important; margin-bottom: 0 !important;">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: 32px !important; margin-top: 0 !important;">Savings Signals</h5>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 2px !important; column-gap: var(--spacing-4); margin-bottom: 0 !important;">
                                     {% if window_signals.savings.net_inflow is defined %}
                                     <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Net Inflow:</strong> ${{ "%.2f"|format(window_signals.savings.net_inflow) }}</div>
                                     {% endif %}
@@ -306,25 +304,25 @@
                             {% endif %}
                             
                             {% if window_signals.get('income') %}
-                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
-                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Income Signals</h5>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-2) !important; padding-bottom: 0 !important; margin-top: var(--spacing-3) !important; margin-bottom: 0 !important;">
+                                <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: 32px !important; margin-top: 0 !important;">Income Signals</h5>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 2px !important; column-gap: var(--spacing-4); margin-bottom: 0 !important;">
                                     {% if window_signals.income.frequency is defined %}
-                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Payment Frequency:</strong> {{ window_signals.income.frequency }}</div>
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Payment Frequency:</strong> {{ window_signals.income.frequency }}</div>
                                     {% endif %}
                                     {% if window_signals.income.variability is defined %}
-                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</div>
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Payment Variability:</strong> {{ "%.4f"|format(window_signals.income.variability) }}</div>
                                     {% endif %}
                                     {% if window_signals.income.cash_flow_buffer is defined %}
-                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</div>
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Cash-Flow Buffer:</strong> {{ "%.2f"|format(window_signals.income.cash_flow_buffer) }} months</div>
                                     {% endif %}
                                     {% if window_signals.income.median_pay_gap is defined %}
-                                    <div style="padding: var(--spacing-1) 0;"><strong style="margin-right: var(--spacing-2);">Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</div>
+                                    <div style="padding-top: 4px !important; padding-bottom: 0 !important; margin: 0 !important;"><strong style="margin-right: var(--spacing-2);">Median Pay Gap:</strong> {{ "%.0f"|format(window_signals.income.median_pay_gap) }} days</div>
                                     {% endif %}
                                 </div>
                             </div>
                             {% else %}
-                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-6); margin-top: var(--spacing-6);">
+                            <div style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--spacing-4); margin-top: var(--spacing-3);">
                                 <h5 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin-bottom: var(--spacing-4);">Income Signals</h5>
                                 <div class="empty-state">
                                     <p class="empty-state-description">No income signals detected in this window. This could mean there's insufficient transaction data or income transactions don't match expected patterns.</p>
@@ -378,7 +376,7 @@
                                 <div class="collapse mt-3" id="trace-{{ rec.id }}" style="margin-top: var(--spacing-4);">
                                     <div style="padding: var(--spacing-4); background-color: var(--color-neutral-50); border-radius: 0.375rem;">
                                         {% if traces.get(rec.id) %}
-                                            <div style="display: flex; flex-direction: column; gap: var(--spacing-4);">
+                                            <div style="display: flex; flex-direction: column; gap: var(--spacing-2);">
                                                 {% for trace_step in traces[rec.id] %}
                                                 <div style="padding-bottom: var(--spacing-5); border-bottom: 1px solid var(--color-neutral-200); margin-bottom: var(--spacing-4);">
                                                     <div style="display: flex; align-items: center; gap: var(--spacing-3); margin-bottom: var(--spacing-3);">
@@ -796,22 +794,22 @@
     }
     
     .signal-section {
-        margin-bottom: var(--spacing-6);
+        margin-bottom: var(--spacing-3);
     }
     
     .signal-section-title {
         font-size: var(--font-size-xl);
         font-weight: var(--font-weight-semibold);
         color: var(--color-neutral-900);
-        margin-bottom: var(--spacing-4);
-        margin-top: var(--spacing-5);
+        margin-bottom: var(--spacing-2);
+        margin-top: var(--spacing-2);
     }
     
     .signal-details {
         display: flex;
         flex-direction: column;
         gap: var(--spacing-4);
-        margin-bottom: var(--spacing-6);
+        margin-bottom: var(--spacing-3);
     }
     
     .signal-detail-row {
@@ -868,7 +866,7 @@
     }
     
     .credit-utilization-progress {
-        margin-top: var(--spacing-6);
+        margin-top: var(--spacing-3);
         padding: var(--spacing-6) var(--spacing-6); /* More top/bottom padding */
         background-color: var(--color-neutral-50);
         border-radius: 0.5rem;
@@ -930,12 +928,12 @@
     }
     
     #signals-section h5 {
-        margin-bottom: var(--spacing-4) !important;
-        margin-top: var(--spacing-4) !important;
+        margin-bottom: var(--spacing-2) !important;
+        margin-top: var(--spacing-2) !important;
     }
     
     #signals-section .tab-content h5:first-of-type {
-        margin-top: var(--spacing-5) !important;
+        margin-top: var(--spacing-2) !important;
     }
     
     /* Tabs spacing */
@@ -962,8 +960,8 @@
     
     /* Border-top sections spacing */
     #signals-section div[style*="border-top"] {
-        padding-top: var(--spacing-6) !important;
-        margin-top: var(--spacing-6) !important;
+        padding-top: var(--spacing-4) !important;
+        margin-top: var(--spacing-3) !important;
     }
     
     /* Text line spacing */
@@ -1417,18 +1415,63 @@
         }
     }
     
-    /* Tab styling */
-    .nav-link.active {
-        border-bottom-color: var(--color-primary) !important;
-        color: var(--color-primary) !important;
+    /* Window Tab styling with arc effect */
+    .window-tabs-container {
+        border-bottom: 1px solid var(--color-neutral-200);
+        position: relative;
     }
     
-    .nav-link:not(.active) {
-        border-bottom-color: transparent !important;
+    .window-tab-btn {
+        position: relative;
+        padding: var(--spacing-2) var(--spacing-4);
+        border: none;
+        background: none;
+        color: var(--color-neutral-600);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        transition: color 0.2s ease;
     }
     
-    .nav-link:hover:not(.active) {
-        color: var(--color-primary) !important;
+    .window-tab-btn .window-tab-text {
+        position: relative;
+        display: inline-block;
+    }
+    
+    /* Active tab styling */
+    .window-tab-btn.window-tab-active {
+        color: var(--color-primary);
+    }
+    
+    /* Arc above active tab - subtle curved line */
+    .window-tab-btn.window-tab-active .window-tab-text::before {
+        content: '';
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% + 24px);
+        height: 2px;
+        background: var(--color-primary);
+        border-radius: 100px 100px 0 0;
+        opacity: 0.35;
+    }
+    
+    /* Underline below active tab - extends beyond text */
+    .window-tab-btn.window-tab-active .window-tab-text::after {
+        content: '';
+        position: absolute;
+        bottom: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% + 24px);
+        height: 3px;
+        background: var(--color-primary);
+        border-radius: 0;
+    }
+    
+    /* Hover state for inactive tabs */
+    .window-tab-btn:hover:not(.window-tab-active) {
+        color: var(--color-primary);
         opacity: 0.8;
     }
     
@@ -1540,17 +1583,9 @@
                 // Show the active panel
                 showPanel.classList.add('show', 'active');
                 
-                // Update tab classes
-                activeTab.classList.add('active');
-                inactiveTab.classList.remove('active');
-                
-                // Update tab styles
-                activeTab.style.borderBottom = '3px solid var(--color-primary)';
-                activeTab.style.color = 'var(--color-primary)';
-                activeTab.style.fontWeight = 'var(--font-weight-medium)';
-                inactiveTab.style.borderBottom = '3px solid transparent';
-                inactiveTab.style.color = 'var(--color-neutral-600)';
-                inactiveTab.style.fontWeight = 'var(--font-weight-medium)';
+                // Update tab classes - use window-tab-active for styling
+                activeTab.classList.add('window-tab-active');
+                inactiveTab.classList.remove('window-tab-active');
             }
             
             // Handle 30d tab click
