@@ -65,3 +65,6 @@ echo ""
 echo "To stop all instances, run: ./stop_all_instances.sh"
 echo "Or manually: kill \$(cat /tmp/spendsense_*.pid)"
 
+
+
+

@@ -155,3 +155,6 @@ def test_logout(page: Page, base_url):
     # Should redirect back to login or show 401
     expect(page.url).to_contain("/login")
 
+
+
+
