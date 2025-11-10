@@ -82,11 +82,20 @@ async def startup_event():
         # Initialize database synchronously (FastAPI handles this)
         init_database()
         print("✅ Database initialized successfully")
+        
+        # Verify database is accessible
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = cursor.fetchall()
+        conn.close()
+        print(f"✅ Database verified - {len(tables)} tables found")
     except Exception as e:
-        print(f"⚠️  Warning: Database initialization failed: {e}")
+        print(f"❌ ERROR: Database initialization failed: {e}")
         import traceback
         traceback.print_exc()
-        print("   Application will continue, but database operations may fail")
+        # Don't continue if database fails - this is critical
+        raise RuntimeError(f"Database initialization failed: {e}") from e
     
     # Ensure filter is registered (safety check)
     templates.env.filters['tojsonpretty'] = tojsonpretty
