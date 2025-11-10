@@ -157,22 +157,20 @@ def generate_users_for_personas(persona_counts: dict) -> dict:
                     profile = generator_func()
                     profile['persona_type'] = persona_name
                     
-                    # Ensure unique email by checking database
-                    from faker import Faker
-                    fake = Faker()
-                    max_attempts = 10
-                    for attempt in range(max_attempts):
-                        email = fake.unique.email()
-                        cursor = conn.cursor()
-                        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
-                        if not cursor.fetchone():
-                            # Update profile with unique email
-                            profile['email'] = email
-                            break
-                    else:
-                        # Fallback: use timestamp-based email
-                        import time
-                        profile['email'] = f"user_{int(time.time())}_{user_num}@example.com"
+                    # Ensure unique email by using timestamp + random
+                    import time
+                    import random as random_module
+                    base_time = int(time.time() * 1000)  # milliseconds for better uniqueness
+                    random_suffix = random_module.randint(1000, 9999)
+                    email = f"user_{base_time}_{user_num}_{random_suffix}@example.com"
+                    
+                    # Double-check uniqueness (very unlikely collision but safe)
+                    cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+                    if cursor.fetchone():
+                        # If somehow collides, add more randomness
+                        email = f"user_{base_time}_{user_num}_{random_suffix}_{random_module.randint(10000, 99999)}@example.com"
+                    
+                    profile['email'] = email
                     
                     # Generate user
                     user_id = generate_user(profile, conn)
