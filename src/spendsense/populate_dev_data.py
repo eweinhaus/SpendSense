@@ -40,6 +40,7 @@ def populate_dev_data(num_users: int = 75, skip_existing: bool = False) -> dict:
         'signals_detected': 0,
         'personas_assigned': 0,
         'recommendations_generated': 0,
+        'by_persona': {},
         'errors': []
     }
     
@@ -62,10 +63,36 @@ def populate_dev_data(num_users: int = 75, skip_existing: bool = False) -> dict:
             if existing_users > 0:
                 print(f"⚠️  {existing_users} users already exist. Generating additional users...")
             
-            # Generate users
-            print(f"\nGenerating {num_users} users...")
-            gen_summary = generate_all_users(get_db_connection())
+            # Generate users with diverse persona distribution
+            print(f"\nGenerating {num_users} users with diverse personas...")
+            
+            # Calculate persona distribution to ensure variety
+            # Target: ~20% each for major personas, ~10% for others
+            total = num_users
+            high_util = max(1, int(total * 0.20))  # 20%
+            var_income = max(1, int(total * 0.20))  # 20%
+            sub_heavy = max(1, int(total * 0.20))  # 20%
+            savings_builder = max(1, int(total * 0.20))  # 20%
+            financial_newcomer = max(1, int(total * 0.10))  # 10%
+            neutral = total - high_util - var_income - sub_heavy - savings_builder - financial_newcomer  # Remaining
+            
+            persona_counts = {
+                'high_utilization': high_util,
+                'variable_income': var_income,
+                'subscription_heavy': sub_heavy,
+                'savings_builder': savings_builder,
+                'financial_newcomer': financial_newcomer,
+                'neutral': max(0, neutral)  # Ensure non-negative
+            }
+            
+            print(f"  Persona distribution:")
+            for persona, count in persona_counts.items():
+                if count > 0:
+                    print(f"    - {persona}: {count} users")
+            
+            gen_summary = generate_users_for_personas(persona_counts)
             summary['users_created'] = gen_summary.get('users_created', 0)
+            summary['by_persona'] = gen_summary.get('by_persona', {})
             if gen_summary.get('errors'):
                 summary['errors'].extend(gen_summary['errors'])
         

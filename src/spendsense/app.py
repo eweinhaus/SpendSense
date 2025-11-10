@@ -1685,6 +1685,69 @@ async def savings_goal_calculate(request: Request, user: Dict = Depends(get_curr
         })
 
 
+@app.post("/admin/clear-dev-data", dependencies=[Depends(operator_auth)])
+async def clear_dev_data_endpoint(request: Request):
+    """
+    Clear all development data from database (operator only).
+    
+    This will delete all users, accounts, transactions, signals, personas, and recommendations.
+    Use with caution!
+    
+    Returns:
+        JSON response with summary
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get counts before deletion
+        cursor.execute("SELECT COUNT(*) FROM users")
+        users_before = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM signals")
+        signals_before = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM personas")
+        personas_before = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM recommendations")
+        recs_before = cursor.fetchone()[0]
+        
+        # Delete all data (in correct order due to foreign keys)
+        cursor.execute("DELETE FROM recommendations")
+        cursor.execute("DELETE FROM personas")
+        cursor.execute("DELETE FROM signals")
+        cursor.execute("DELETE FROM transactions")
+        cursor.execute("DELETE FROM credit_cards")
+        cursor.execute("DELETE FROM liabilities")
+        cursor.execute("DELETE FROM accounts")
+        cursor.execute("DELETE FROM users")
+        
+        conn.commit()
+        conn.close()
+        
+        return JSONResponse({
+            "success": True,
+            "message": "Dev data cleared successfully",
+            "summary": {
+                "users_deleted": users_before,
+                "signals_deleted": signals_before,
+                "personas_deleted": personas_before,
+                "recommendations_deleted": recs_before
+            }
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": str(e)
+            }
+        )
+
+
 @app.post("/admin/populate-dev-data", dependencies=[Depends(operator_auth)])
 async def populate_dev_data_endpoint(request: Request):
     """
@@ -1720,6 +1783,7 @@ async def populate_dev_data_endpoint(request: Request):
                 "signals_detected": summary['signals_detected'],
                 "personas_assigned": summary['personas_assigned'],
                 "recommendations_generated": summary['recommendations_generated'],
+                "by_persona": summary.get('by_persona', {}),
                 "errors": summary['errors'][:10] if summary['errors'] else []
             }
         })

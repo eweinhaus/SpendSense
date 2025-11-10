@@ -56,6 +56,17 @@
             <li>Assign personas</li>
             <li>Generate recommendations (for users with consent)</li>
         </ul>
+        <div class="alert alert-info" style="margin-bottom: var(--spacing-4);">
+            <strong>Persona Distribution:</strong> Users will be generated with a diverse distribution:
+            <ul style="margin-top: var(--spacing-2); margin-bottom: 0;">
+                <li>~20% High Utilization</li>
+                <li>~20% Variable Income Budgeter</li>
+                <li>~20% Subscription-Heavy</li>
+                <li>~20% Savings Builder</li>
+                <li>~10% Financial Newcomer</li>
+                <li>Remaining: Neutral</li>
+            </ul>
+        </div>
         
         <form id="populateForm" style="max-width: 500px;">
             <div style="margin-bottom: var(--spacing-4);">
@@ -142,6 +153,15 @@ document.getElementById('populateForm').addEventListener('submit', async functio
         const data = await response.json();
         
         if (data.success) {
+            let personaBreakdown = '';
+            if (data.summary.by_persona && Object.keys(data.summary.by_persona).length > 0) {
+                personaBreakdown = '<li style="margin-top: var(--spacing-2);"><strong>Persona breakdown:</strong><ul style="margin-left: var(--spacing-4); margin-top: var(--spacing-1);">';
+                for (const [persona, count] of Object.entries(data.summary.by_persona)) {
+                    personaBreakdown += `<li>${persona}: ${count} users</li>`;
+                }
+                personaBreakdown += '</ul></li>';
+            }
+            
             resultDiv.innerHTML = `
                 <div class="alert alert-success">
                     <strong>Success!</strong> Dev data population completed.
@@ -150,6 +170,7 @@ document.getElementById('populateForm').addEventListener('submit', async functio
                         <li>Signals detected: ${data.summary.signals_detected}</li>
                         <li>Personas assigned: ${data.summary.personas_assigned}</li>
                         <li>Recommendations generated: ${data.summary.recommendations_generated}</li>
+                        ${personaBreakdown}
                     </ul>
                 </div>
             `;
