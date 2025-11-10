@@ -1685,6 +1685,95 @@ async def savings_goal_calculate(request: Request, user: Dict = Depends(get_curr
         })
 
 
+@app.post("/admin/populate-dev-data", dependencies=[Depends(operator_auth)])
+async def populate_dev_data_endpoint(request: Request):
+    """
+    Populate database with development data (operator only).
+    
+    This endpoint runs the full data pipeline:
+    - Generate users, accounts, transactions
+    - Detect signals (30d and 180d windows)
+    - Assign personas
+    - Generate recommendations
+    
+    Form parameters:
+        num_users: Number of users to generate (default: 75)
+        skip_existing: If True, skip if users already exist
+        
+    Returns:
+        JSON response with summary
+    """
+    try:
+        form_data = await request.form()
+        num_users = int(form_data.get("num_users", 75))
+        skip_existing = form_data.get("skip_existing") == "on" or form_data.get("skip_existing") == "true"
+        
+        from .populate_dev_data import populate_dev_data
+        
+        summary = populate_dev_data(num_users=num_users, skip_existing=skip_existing)
+        
+        return JSONResponse({
+            "success": summary['success'],
+            "message": "Dev data population completed",
+            "summary": {
+                "users_created": summary['users_created'],
+                "signals_detected": summary['signals_detected'],
+                "personas_assigned": summary['personas_assigned'],
+                "recommendations_generated": summary['recommendations_generated'],
+                "errors": summary['errors'][:10] if summary['errors'] else []
+            }
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": str(e)
+            }
+        )
+
+
+@app.get("/admin/populate-dev-data", response_class=HTMLResponse, dependencies=[Depends(operator_auth)])
+def populate_dev_data_page(request: Request):
+    """Display dev data population page (operator only)."""
+    try:
+        # Check current data status
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT COUNT(*) FROM users")
+        user_count = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM signals")
+        signal_count = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM personas")
+        persona_count = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM recommendations")
+        rec_count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return templates.TemplateResponse("admin/populate_dev_data.html", {
+            "request": request,
+            "current_stats": {
+                "users": user_count,
+                "signals": signal_count,
+                "personas": persona_count,
+                "recommendations": rec_count
+            }
+        })
+    except Exception as e:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_code": 500,
+            "error_message": f"Error loading page: {str(e)}"
+        })
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

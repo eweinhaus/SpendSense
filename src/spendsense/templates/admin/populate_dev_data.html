@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Populate Dev Data - SpendSense{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6); flex-wrap: wrap; gap: var(--spacing-2);">
+    <h2 style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-semibold); color: var(--color-neutral-900); margin: 0;">
+        Populate Development Data
+    </h2>
+    <span class="badge badge-warning">Operator Only</span>
+</div>
+
+<!-- Current Stats -->
+<div class="card" style="margin-bottom: var(--spacing-6);">
+    <div class="card-header">Current Database Status</div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-4);">
+            <div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-bottom: var(--spacing-1);">Users</div>
+                <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-primary);">
+                    {{ current_stats.users }}
+                </div>
+            </div>
+            <div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-bottom: var(--spacing-1);">Signals</div>
+                <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-primary);">
+                    {{ current_stats.signals }}
+                </div>
+            </div>
+            <div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-bottom: var(--spacing-1);">Personas</div>
+                <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-primary);">
+                    {{ current_stats.personas }}
+                </div>
+            </div>
+            <div>
+                <div style="font-size: var(--font-size-sm); color: var(--color-neutral-600); margin-bottom: var(--spacing-1);">Recommendations</div>
+                <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-primary);">
+                    {{ current_stats.recommendations }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Population Form -->
+<div class="card">
+    <div class="card-header">Generate Development Data</div>
+    <div class="card-body">
+        <p style="margin-bottom: var(--spacing-4); color: var(--color-neutral-700);">
+            This will run the full data pipeline:
+        </p>
+        <ul style="margin-bottom: var(--spacing-4); color: var(--color-neutral-700);">
+            <li>Generate users, accounts, and transactions</li>
+            <li>Detect signals (30d and 180d windows)</li>
+            <li>Assign personas</li>
+            <li>Generate recommendations (for users with consent)</li>
+        </ul>
+        
+        <form id="populateForm" style="max-width: 500px;">
+            <div style="margin-bottom: var(--spacing-4);">
+                <label for="num_users" style="display: block; margin-bottom: var(--spacing-2); font-weight: var(--font-weight-medium);">
+                    Number of Users
+                </label>
+                <input 
+                    type="number" 
+                    id="num_users" 
+                    name="num_users" 
+                    value="75" 
+                    min="1" 
+                    max="200"
+                    class="form-control"
+                    style="width: 100%;"
+                    required
+                >
+                <small style="color: var(--color-neutral-600); display: block; margin-top: var(--spacing-1);">
+                    Recommended: 75 users (default)
+                </small>
+            </div>
+            
+            <div style="margin-bottom: var(--spacing-4);">
+                <label style="display: flex; align-items: center; gap: var(--spacing-2); cursor: pointer;">
+                    <input 
+                        type="checkbox" 
+                        id="skip_existing" 
+                        name="skip_existing"
+                        style="width: auto;"
+                    >
+                    <span>Skip if users already exist</span>
+                </label>
+            </div>
+            
+            <div style="display: flex; gap: var(--spacing-2);">
+                <button 
+                    type="submit" 
+                    class="btn btn-primary"
+                    id="populateBtn"
+                >
+                    Populate Database
+                </button>
+                <a href="/" class="btn btn-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+        
+        <div id="result" style="margin-top: var(--spacing-4); display: none;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('populateForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const btn = document.getElementById('populateBtn');
+    const resultDiv = document.getElementById('result');
+    const originalText = btn.textContent;
+    
+    // Disable button and show loading
+    btn.disabled = true;
+    btn.textContent = 'Populating...';
+    resultDiv.style.display = 'none';
+    
+    const formData = new FormData(e.target);
+    const numUsers = formData.get('num_users');
+    const skipExisting = formData.has('skip_existing');
+    
+    try {
+        const response = await fetch('/admin/populate-dev-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                num_users: numUsers,
+                skip_existing: skipExisting
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>Success!</strong> Dev data population completed.
+                    <ul style="margin-top: var(--spacing-2); margin-bottom: 0;">
+                        <li>Users created: ${data.summary.users_created}</li>
+                        <li>Signals detected: ${data.summary.signals_detected}</li>
+                        <li>Personas assigned: ${data.summary.personas_assigned}</li>
+                        <li>Recommendations generated: ${data.summary.recommendations_generated}</li>
+                    </ul>
+                </div>
+            `;
+            
+            // Reload page after 2 seconds to show updated stats
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>Error:</strong> ${data.error || 'Unknown error occurred'}
+                </div>
+            `;
+        }
+        
+        resultDiv.style.display = 'block';
+    } catch (error) {
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <strong>Error:</strong> ${error.message}
+            </div>
+        `;
+        resultDiv.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+});
+</script>
+{% endblock %}
+

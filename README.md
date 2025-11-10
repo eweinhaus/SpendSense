@@ -57,14 +57,37 @@ This creates the SQLite database (`spendsense.db`) with all required tables and 
 
 4. **Generate or ingest data**:
 
-   **Option A: Generate synthetic data** (default):
+   **Option A: Populate dev data (recommended - runs full pipeline)**:
+   ```bash
+   PYTHONPATH=src python3 -m spendsense.populate_dev_data
+   ```
+   
+   This runs the complete data pipeline:
+   - Generates 75 users (configurable via `--num-users`) with diverse financial profiles
+   - Detects signals (30d and 180d windows)
+   - Assigns personas
+   - Generates recommendations (for users with consent)
+   
+   **Option B: Generate synthetic data only**:
    ```bash
    PYTHONPATH=src python3 -m spendsense.generate_data
    ```
    
    This generates 75 users (configurable via `NUM_USERS` env var) with diverse financial profiles.
+   
+   Then run the pipeline steps separately:
+   ```bash
+   # Detect signals
+   PYTHONPATH=src python3 -m spendsense.detect_signals
+   
+   # Assign personas
+   PYTHONPATH=src python3 -c "from spendsense.personas import assign_personas_for_all_users; assign_personas_for_all_users()"
+   
+   # Generate recommendations
+   PYTHONPATH=src python3 -c "from spendsense.recommendations import generate_recommendations_for_all_users; generate_recommendations_for_all_users()"
+   ```
 
-   **Option B: Ingest from CSV/JSON files**:
+   **Option C: Ingest from CSV/JSON files**:
    ```bash
    # JSON ingestion (nested structure)
    PYTHONPATH=src python3 -m spendsense.data_ingest --format json --file data/sample_users.json
@@ -79,23 +102,8 @@ This creates the SQLite database (`spendsense.db`) with all required tables and 
    ```
    
    Sample data files are provided in the `data/` directory. See [Data Ingestion](#data-ingestion-from-csvjson) section below for details.
-
-5. **Detect signals**:
-```bash
-PYTHONPATH=src python3 -m spendsense.detect_signals
-```
-
-This analyzes transactions and accounts to detect behavioral signals (credit utilization, subscriptions).
-
-6. **Assign personas**:
-```bash
-PYTHONPATH=src python3 -c "from spendsense.personas import assign_personas_for_all_users; assign_personas_for_all_users()"
-```
-
-7. **Generate recommendations**:
-```bash
-PYTHONPATH=src python3 -c "from spendsense.recommendations import generate_recommendations_for_all_users; generate_recommendations_for_all_users()"
-```
+   
+   **Note:** After ingesting CSV/JSON data, you'll still need to run signal detection, persona assignment, and recommendation generation (see Option B above).
 
 8. **Start the web server**:
 ```bash
@@ -432,6 +440,31 @@ See `docs/DEPLOYMENT.md` for detailed deployment instructions.
    - Start command: `gunicorn -w 2 -k uvicorn.workers.UvicornWorker spendsense.app:app --bind 0.0.0.0:$PORT`
 3. Set environment variables (see `.env.example`)
 4. Deploy and verify
+
+### Populating Deployed App with Dev Data
+
+After deployment, populate your database with development data:
+
+**Option 1: Admin Web Interface (Recommended)**
+1. Navigate to: `https://your-app.onrender.com/admin/populate-dev-data`
+2. Authenticate as an operator
+3. Fill in the form and click "Populate Database"
+
+**Option 2: API Endpoint**
+```bash
+curl -X POST "https://your-app.onrender.com/admin/populate-dev-data" \
+  -H "Cookie: operator_session=your_session_cookie" \
+  -d "num_users=75"
+```
+
+**Option 3: Render Shell** (if available)
+```bash
+cd /opt/render/project/src
+export PYTHONPATH=/opt/render/project/src/src
+python3 -m spendsense.populate_dev_data --num-users 75
+```
+
+See `docs/POPULATE_DEV_DATA.md` for detailed instructions.
 
 ### Environment Variables
 
