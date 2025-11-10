@@ -74,7 +74,7 @@ If your repository has `render.yaml` in the root, Render will automatically dete
 In the Render dashboard, go to "Environment" section and add:
 
 ```
-PYTHONPATH=/opt/render/project/src
+   PYTHONPATH=/opt/render/project/src/src
 DATABASE_URL=sqlite:///spendsense.db
 DEBUG=False
 OPENAI_API_KEY=your_api_key_here

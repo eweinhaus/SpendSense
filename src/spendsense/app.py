@@ -14,7 +14,7 @@ from typing import Optional, Dict, List
 # This ensures the spendsense module can be found
 if os.getenv("RENDER"):
     # On Render, add the src directory to sys.path
-    src_path = "/opt/render/project/src"
+    src_path = "/opt/render/project/src/src"
     if src_path not in sys.path:
         sys.path.insert(0, src_path)
 

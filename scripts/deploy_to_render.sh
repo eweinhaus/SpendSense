@@ -26,7 +26,7 @@ if ! command -v render &> /dev/null; then
     echo "   - Build Command: pip install -r requirements.txt"
     echo "   - Start Command: gunicorn -w 2 -k uvicorn.workers.UvicornWorker spendsense.app:app --bind 0.0.0.0:\$PORT"
     echo "5. Set environment variables:"
-    echo "   - PYTHONPATH=/opt/render/project/src"
+    echo "   - PYTHONPATH=/opt/render/project/src/src"
     echo "   - DATABASE_URL=sqlite:///spendsense.db"
     echo "   - DEBUG=False"
     echo "   - OPENAI_API_KEY=your_key_here"
