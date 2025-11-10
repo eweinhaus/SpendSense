@@ -36,7 +36,7 @@ def generate_user(user_profile: dict, conn: sqlite3.Connection) -> int:
     Generate a single user with synthetic name and email.
     
     Args:
-        user_profile: Dictionary with user profile information
+        user_profile: Dictionary with user profile information (can include 'name' and 'email')
         conn: Database connection
         
     Returns:
@@ -44,8 +44,9 @@ def generate_user(user_profile: dict, conn: sqlite3.Connection) -> int:
     """
     cursor = conn.cursor()
     
-    name = fake.name()
-    email = fake.unique.email()
+    # Use provided name/email or generate new ones
+    name = user_profile.get('name', fake.name())
+    email = user_profile.get('email', fake.unique.email())
     
     cursor.execute("""
         INSERT INTO users (name, email, consent_given)
