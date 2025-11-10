@@ -157,18 +157,19 @@ def generate_users_for_personas(persona_counts: dict) -> dict:
                     profile = generator_func()
                     profile['persona_type'] = persona_name
                     
-                    # Ensure unique email by using timestamp + random
+                    # Ensure unique email by using timestamp + user_num + persona + random
                     import time
                     import random as random_module
-                    base_time = int(time.time() * 1000)  # milliseconds for better uniqueness
-                    random_suffix = random_module.randint(1000, 9999)
-                    email = f"user_{base_time}_{user_num}_{random_suffix}@example.com"
+                    import uuid
+                    base_time = int(time.time() * 1000000)  # microseconds for better uniqueness
+                    unique_id = str(uuid.uuid4())[:8]  # First 8 chars of UUID
+                    email = f"persona_{persona_name}_{user_num}_{base_time}_{unique_id}@example.com"
                     
                     # Double-check uniqueness (very unlikely collision but safe)
                     cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
                     if cursor.fetchone():
                         # If somehow collides, add more randomness
-                        email = f"user_{base_time}_{user_num}_{random_suffix}_{random_module.randint(10000, 99999)}@example.com"
+                        email = f"persona_{persona_name}_{user_num}_{base_time}_{unique_id}_{random_module.randint(100000, 999999)}@example.com"
                     
                     profile['email'] = email
                     
