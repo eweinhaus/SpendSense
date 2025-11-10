@@ -2,13 +2,13 @@ services:
   - type: web
     name: spendsense
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -w 2 -k uvicorn.workers.UvicornWorker spendsense.app:app --bind 0.0.0.0:$PORT
+    buildCommand: pip install -r requirements.txt && chmod +x start.sh
+    startCommand: ./start.sh
     envVars:
       - key: PYTHONPATH
         value: /opt/render/project/src
       - key: DATABASE_URL
-        value: sqlite:////opt/render/project/src/spendsense.db
+        value: sqlite:////opt/render/project/spendsense.db
       - key: RENDER
         value: true
       - key: DEBUG
