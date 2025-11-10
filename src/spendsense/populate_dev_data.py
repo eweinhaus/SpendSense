@@ -134,6 +134,7 @@ def generate_users_for_personas(persona_counts: dict) -> dict:
     
     try:
         conn = get_db_connection()
+        cursor = conn.cursor()
         
         total_users = sum(persona_counts.values())
         user_num = 0
@@ -155,6 +156,23 @@ def generate_users_for_personas(persona_counts: dict) -> dict:
                     # Generate profile
                     profile = generator_func()
                     profile['persona_type'] = persona_name
+                    
+                    # Ensure unique email by checking database
+                    from faker import Faker
+                    fake = Faker()
+                    max_attempts = 10
+                    for attempt in range(max_attempts):
+                        email = fake.unique.email()
+                        cursor = conn.cursor()
+                        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+                        if not cursor.fetchone():
+                            # Update profile with unique email
+                            profile['email'] = email
+                            break
+                    else:
+                        # Fallback: use timestamp-based email
+                        import time
+                        profile['email'] = f"user_{int(time.time())}_{user_num}@example.com"
                     
                     # Generate user
                     user_id = generate_user(profile, conn)
