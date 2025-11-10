@@ -118,7 +118,7 @@ def create_web_service(owner_id: str, repo_id: Optional[str] = None) -> Optional
             },
             {
                 "key": "DATABASE_URL",
-                "value": "sqlite:///spendsense.db"
+                "value": "sqlite:////opt/render/project/persistent/spendsense.db"
             },
             {
                 "key": "DEBUG",
@@ -220,7 +220,7 @@ def main():
         print("Updating environment variables...")
         env_vars = [
             {"key": "PYTHONPATH", "value": "/opt/render/project/src/src"},
-            {"key": "DATABASE_URL", "value": "sqlite:///spendsense.db"},
+            {"key": "DATABASE_URL", "value": "sqlite:////opt/render/project/persistent/spendsense.db"},
             {"key": "DEBUG", "value": "False"}
         ]
         update_service_env_vars(service_id, env_vars)
