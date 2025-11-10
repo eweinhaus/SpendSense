@@ -2,9 +2,8 @@ services:
   - type: web
     name: spendsense
     env: python
-    rootDir: src
-    buildCommand: pip install -r ../requirements.txt
-    startCommand: gunicorn -w 2 -k uvicorn.workers.UvicornWorker spendsense.app:app --bind 0.0.0.0:$PORT
+    buildCommand: pip install -r requirements.txt
+    startCommand: sh -c 'export PYTHONPATH=/opt/render/project/src:$PYTHONPATH && cd /opt/render/project/src && gunicorn -w 2 -k uvicorn.workers.UvicornWorker spendsense.app:app --bind 0.0.0.0:$PORT'
     envVars:
       - key: PYTHONPATH
         value: /opt/render/project/src
