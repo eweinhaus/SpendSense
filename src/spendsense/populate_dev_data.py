@@ -172,8 +172,17 @@ def generate_users_for_personas(persona_counts: dict) -> dict:
                     
                     profile['email'] = email
                     
+                    # Ensure name is set
+                    if 'name' not in profile:
+                        from faker import Faker
+                        fake_name = Faker()
+                        profile['name'] = fake_name.name()
+                    
                     # Generate user
                     user_id = generate_user(profile, conn)
+                    
+                    if not user_id or user_id == 0:
+                        raise ValueError(f"Failed to create user - user_id is {user_id}")
                     
                     # Generate accounts
                     accounts_info = generate_accounts(user_id, profile, conn)
@@ -216,9 +225,12 @@ def generate_users_for_personas(persona_counts: dict) -> dict:
                     summary['by_persona'][persona_name] += 1
                     
                 except Exception as e:
+                    import traceback
+                    error_details = traceback.format_exc()
                     error_msg = f"Error generating user {user_num} for {persona_name}: {str(e)}"
                     summary['errors'].append(error_msg)
                     print(f"⚠️  {error_msg}")
+                    print(f"   Details: {error_details[:500]}")
         
         conn.close()
         print(f"\n✅ Generated {summary['users_created']} users for specified personas!")
