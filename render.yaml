@@ -4,11 +4,15 @@ services:
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn -w 2 -k uvicorn.workers.UvicornWorker spendsense.app:app --bind 0.0.0.0:$PORT
+    disk:
+      name: spendsense-disk
+      mountPath: /opt/render/project/persistent
+      sizeGB: 1
     envVars:
       - key: PYTHONPATH
         value: /opt/render/project/src
       - key: DATABASE_URL
-        value: sqlite:////opt/render/project/src/spendsense.db
+        value: sqlite:////opt/render/project/persistent/spendsense.db
       - key: RENDER
         value: true
       - key: DEBUG
