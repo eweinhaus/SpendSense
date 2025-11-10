@@ -92,8 +92,20 @@ def generate_accounts(user_id: int, profile: dict, conn: sqlite3.Connection) -> 
         'student_loans': []
     }
     
+    # Helper to generate unique account_id
+    def get_unique_account_id():
+        max_attempts = 10
+        for _ in range(max_attempts):
+            account_id = f"acc_{random.randint(100000, 999999)}"  # Use 6 digits for better uniqueness
+            cursor.execute("SELECT id FROM accounts WHERE account_id = ?", (account_id,))
+            if not cursor.fetchone():
+                return account_id
+        # Fallback: use timestamp + random
+        import time
+        return f"acc_{int(time.time() * 1000)}_{random.randint(1000, 9999)}"
+    
     # Generate checking account for all users
-    checking_account_id = f"acc_{random.randint(10000, 99999)}"
+    checking_account_id = get_unique_account_id()
     checking_balance = profile.get('checking_balance', random.uniform(500, 5000))
     
     cursor.execute("""
@@ -178,7 +190,7 @@ def generate_accounts(user_id: int, profile: dict, conn: sqlite3.Connection) -> 
     # Generate credit cards based on profile
     credit_cards = profile.get('credit_cards', [])
     for card_spec in credit_cards:
-        card_account_id = f"acc_{random.randint(10000, 99999)}"
+        card_account_id = get_unique_account_id()
         limit = card_spec['limit']
         balance = card_spec['balance']
         utilization = (balance / limit) * 100 if limit > 0 else 0
