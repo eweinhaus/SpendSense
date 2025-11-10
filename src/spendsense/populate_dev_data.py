@@ -69,9 +69,6 @@ def populate_dev_data(num_users: int = 75, skip_existing: bool = False) -> Dict[
         summary['users_created'] = cursor.fetchone()[0] - existing_users
         conn.close()
         
-        # Re-open connection for next steps
-        conn = get_db_connection()
-        
         # Step 2: Detect signals
         print("Detecting signals...")
         signal_summary = detect_signals_for_all_users()
