@@ -180,10 +180,12 @@ def generate_users_for_personas(persona_counts: dict) -> dict:
                         profile['name'] = fake_name.name()
                     
                     # Generate user
-                    user_id = generate_user(profile, conn)
-                    
-                    if not user_id or user_id == 0:
-                        raise ValueError(f"Failed to create user - user_id is {user_id}")
+                    try:
+                        user_id = generate_user(profile, conn)
+                        if not user_id or user_id == 0:
+                            raise ValueError(f"generate_user returned invalid user_id: {user_id}")
+                    except Exception as user_error:
+                        raise ValueError(f"generate_user failed: {str(user_error)}") from user_error
                     
                     # Generate accounts
                     accounts_info = generate_accounts(user_id, profile, conn)
