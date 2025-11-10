@@ -9,7 +9,7 @@ and recommendation generation.
 import os
 from typing import Dict, Any, Optional
 from .database import get_db_connection
-from .generate_data import generate_users
+from .generate_data import generate_all_users
 from .detect_signals import detect_signals_for_all_users
 from .personas import assign_personas_for_all_users
 from .recommendations import generate_recommendations_for_all_users
@@ -58,8 +58,9 @@ def populate_dev_data(num_users: int = 75, skip_existing: bool = False) -> Dict[
         # Step 1: Generate users
         print(f"Generating {num_users} users...")
         os.environ['NUM_USERS'] = str(num_users)
-        from .generate_data import main as generate_main
-        generate_main()
+        conn = get_db_connection()
+        generate_all_users(conn)
+        conn.close()
         
         # Count users created
         conn = get_db_connection()
@@ -67,6 +68,9 @@ def populate_dev_data(num_users: int = 75, skip_existing: bool = False) -> Dict[
         cursor.execute("SELECT COUNT(*) FROM users")
         summary['users_created'] = cursor.fetchone()[0] - existing_users
         conn.close()
+        
+        # Re-open connection for next steps
+        conn = get_db_connection()
         
         # Step 2: Detect signals
         print("Detecting signals...")
@@ -131,8 +135,9 @@ def generate_users_for_personas(persona_counts: Dict[str, int]) -> Dict[str, Any
         
         print(f"Generating {total_users} users for specific personas...")
         os.environ['NUM_USERS'] = str(total_users)
-        from .generate_data import main as generate_main
-        generate_main()
+        conn = get_db_connection()
+        generate_all_users(conn)
+        conn.close()
         
         # Count users created
         conn = get_db_connection()
