@@ -48,15 +48,25 @@ def generate_user(user_profile: dict, conn: sqlite3.Connection) -> int:
     name = user_profile.get('name', fake.name())
     email = user_profile.get('email', fake.unique.email())
     
-    cursor.execute("""
-        INSERT INTO users (name, email, consent_given)
-        VALUES (?, ?, ?)
-    """, (name, email, False))
-    
-    user_id = cursor.lastrowid
-    conn.commit()
-    
-    return user_id
+    try:
+        cursor.execute("""
+            INSERT INTO users (name, email, consent_given)
+            VALUES (?, ?, ?)
+        """, (name, email, False))
+        
+        user_id = cursor.lastrowid
+        conn.commit()
+        
+        if not user_id or user_id == 0:
+            raise ValueError(f"Failed to insert user - lastrowid is {user_id}")
+        
+        return user_id
+    except sqlite3.IntegrityError as e:
+        conn.rollback()
+        raise ValueError(f"Database constraint error: {str(e)}")
+    except Exception as e:
+        conn.rollback()
+        raise ValueError(f"Error inserting user: {str(e)}")
 
 
 def generate_accounts(user_id: int, profile: dict, conn: sqlite3.Connection) -> dict:
@@ -104,7 +114,7 @@ def generate_accounts(user_id: int, profile: dict, conn: sqlite3.Connection) -> 
     
     # Generate savings account (if specified in profile)
     if profile.get('savings_balance') is not None:
-        savings_account_id = f"acc_{random.randint(10000, 99999)}"
+        savings_account_id = get_unique_account_id()
         savings_balance = profile.get('savings_balance', random.uniform(1000, 10000))
         
         cursor.execute("""
@@ -125,7 +135,7 @@ def generate_accounts(user_id: int, profile: dict, conn: sqlite3.Connection) -> 
     
     # Generate money market account (if specified)
     if profile.get('money_market_balance') is not None:
-        mm_account_id = f"acc_{random.randint(10000, 99999)}"
+        mm_account_id = get_unique_account_id()
         mm_balance = profile.get('money_market_balance', random.uniform(5000, 50000))
         
         cursor.execute("""
@@ -146,7 +156,7 @@ def generate_accounts(user_id: int, profile: dict, conn: sqlite3.Connection) -> 
     
     # Generate HSA account (if specified)
     if profile.get('hsa_balance') is not None:
-        hsa_account_id = f"acc_{random.randint(10000, 99999)}"
+        hsa_account_id = get_unique_account_id()
         hsa_balance = profile.get('hsa_balance', random.uniform(1000, 10000))
         
         cursor.execute("""
@@ -195,7 +205,7 @@ def generate_accounts(user_id: int, profile: dict, conn: sqlite3.Connection) -> 
     # Generate mortgages (if specified)
     mortgages = profile.get('mortgages', [])
     for mortgage_spec in mortgages:
-        mortgage_account_id = f"acc_{random.randint(10000, 99999)}"
+        mortgage_account_id = get_unique_account_id()
         balance = mortgage_spec.get('balance', random.uniform(100000, 500000))
         
         cursor.execute("""
@@ -218,7 +228,7 @@ def generate_accounts(user_id: int, profile: dict, conn: sqlite3.Connection) -> 
     # Generate student loans (if specified)
     student_loans = profile.get('student_loans', [])
     for loan_spec in student_loans:
-        loan_account_id = f"acc_{random.randint(10000, 99999)}"
+        loan_account_id = get_unique_account_id()
         balance = loan_spec.get('balance', random.uniform(10000, 100000))
         
         cursor.execute("""
