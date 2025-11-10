@@ -6,8 +6,18 @@ Web interface for operator dashboard and user detail pages.
 import sqlite3
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Optional, Dict, List
+
+# Add src directory to Python path for Render deployment
+# This ensures the spendsense module can be found
+if os.getenv("RENDER"):
+    # On Render, add the src directory to sys.path
+    src_path = "/opt/render/project/src"
+    if src_path not in sys.path:
+        sys.path.insert(0, src_path)
+
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
