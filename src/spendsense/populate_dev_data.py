@@ -230,10 +230,13 @@ def generate_users_for_personas(persona_counts: dict) -> dict:
                 except Exception as e:
                     import traceback
                     error_details = traceback.format_exc()
-                    error_msg = f"Error generating user {user_num} for {persona_name}: {str(e)}"
+                    # Get full error information
+                    error_type = type(e).__name__
+                    error_str = str(e) if str(e) else repr(e)
+                    error_msg = f"Error generating user {user_num} for {persona_name}: {error_type}: {error_str}"
                     summary['errors'].append(error_msg)
                     print(f"⚠️  {error_msg}")
-                    print(f"   Details: {error_details[:500]}")
+                    print(f"   Full traceback: {error_details[:1000]}")
         
         conn.close()
         print(f"\n✅ Generated {summary['users_created']} users for specified personas!")
