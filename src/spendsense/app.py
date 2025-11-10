@@ -1735,6 +1735,61 @@ async def populate_dev_data_endpoint(request: Request):
         )
 
 
+@app.post("/admin/generate-persona-users", dependencies=[Depends(operator_auth)])
+async def generate_persona_users_endpoint(request: Request):
+    """
+    Generate users for specific personas (operator only).
+    
+    Form parameters:
+        persona_counts: JSON string with persona counts, e.g.
+            '{"high_utilization": 10, "variable_income": 10, ...}'
+        
+    Returns:
+        JSON response with summary
+    """
+    try:
+        form_data = await request.form()
+        persona_counts_json = form_data.get("persona_counts", "{}")
+        
+        import json
+        persona_counts = json.loads(persona_counts_json)
+        
+        from .populate_dev_data import generate_users_for_personas
+        from .detect_signals import detect_signals_for_all_users
+        from .personas import assign_personas_for_all_users
+        
+        # Generate users for specified personas
+        gen_summary = generate_users_for_personas(persona_counts)
+        
+        # Detect signals for new users
+        signals_summary = detect_signals_for_all_users()
+        
+        # Assign personas
+        personas_summary = assign_personas_for_all_users()
+        
+        return JSONResponse({
+            "success": gen_summary['success'],
+            "message": "Persona users generated",
+            "summary": {
+                "users_created": gen_summary['users_created'],
+                "by_persona": gen_summary.get('by_persona', {}),
+                "signals_detected": signals_summary.get('total_signals', 0),
+                "personas_assigned": sum(personas_summary.get('personas_assigned', {}).values()) if personas_summary.get('personas_assigned') else 0,
+                "errors": gen_summary['errors'][:10] if gen_summary['errors'] else []
+            }
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": str(e)
+            }
+        )
+
+
 @app.get("/admin/populate-dev-data", response_class=HTMLResponse, dependencies=[Depends(operator_auth)])
 def populate_dev_data_page(request: Request):
     """Display dev data population page (operator only)."""

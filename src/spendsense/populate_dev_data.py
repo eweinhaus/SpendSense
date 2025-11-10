@@ -5,8 +5,15 @@ This script runs the full data pipeline: generate data, detect signals, assign p
 
 import os
 import sys
+import random
 from .database import get_db_connection, init_database
-from .generate_data import generate_all_users
+from .generate_data import (
+    generate_all_users, generate_user, generate_accounts, 
+    generate_credit_card, generate_liability, generate_transactions,
+    generate_high_utilization_profile, generate_variable_income_profile,
+    generate_subscription_heavy_profile, generate_savings_builder_profile,
+    generate_custom_persona_profile, generate_neutral_profile
+)
 from .detect_signals import detect_signals_for_all_users
 from .personas import assign_personas_for_all_users
 from .recommendations import generate_recommendations_for_all_users
@@ -91,6 +98,119 @@ def populate_dev_data(num_users: int = 75, skip_existing: bool = False) -> dict:
         summary['success'] = False
         summary['errors'].append(str(e))
         print(f"\n❌ Error during population: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    return summary
+
+
+def generate_users_for_personas(persona_counts: dict) -> dict:
+    """
+    Generate users for specific personas.
+    
+    Args:
+        persona_counts: Dictionary mapping persona names to counts, e.g.
+            {'high_utilization': 10, 'variable_income': 10, ...}
+            
+    Returns:
+        Dictionary with summary of operations
+    """
+    # Map persona names to profile generators
+    persona_generators = {
+        'high_utilization': generate_high_utilization_profile,
+        'variable_income': generate_variable_income_profile,
+        'subscription_heavy': generate_subscription_heavy_profile,
+        'savings_builder': generate_savings_builder_profile,
+        'financial_newcomer': generate_custom_persona_profile,  # custom_persona is Financial Newcomer
+        'neutral': generate_neutral_profile,
+    }
+    
+    summary = {
+        'success': True,
+        'users_created': 0,
+        'by_persona': {},
+        'errors': []
+    }
+    
+    try:
+        conn = get_db_connection()
+        
+        total_users = sum(persona_counts.values())
+        user_num = 0
+        
+        for persona_name, count in persona_counts.items():
+            if persona_name not in persona_generators:
+                summary['errors'].append(f"Unknown persona: {persona_name}")
+                continue
+            
+            generator_func = persona_generators[persona_name]
+            summary['by_persona'][persona_name] = 0
+            
+            for i in range(count):
+                user_num += 1
+                try:
+                    if user_num % 10 == 0:
+                        print(f"Generating user {user_num}/{total_users}...")
+                    
+                    # Generate profile
+                    profile = generator_func()
+                    profile['persona_type'] = persona_name
+                    
+                    # Generate user
+                    user_id = generate_user(profile, conn)
+                    
+                    # Generate accounts
+                    accounts_info = generate_accounts(user_id, profile, conn)
+                    
+                    # Generate credit card liability data
+                    for card_info in accounts_info['credit_cards']:
+                        # Find matching card spec
+                        card_spec = None
+                        for card_spec_item in profile['credit_cards']:
+                            if abs(card_spec_item['limit'] - card_info['limit']) < 0.01:
+                                card_spec = card_spec_item
+                                break
+                        if not card_spec and profile['credit_cards']:
+                            card_spec = profile['credit_cards'][0]
+                        
+                        if card_spec:
+                            generate_credit_card(card_info['db_id'], card_spec, conn)
+                    
+                    # Generate liability data for mortgages
+                    for mortgage_info in accounts_info['mortgages']:
+                        mortgage_spec = mortgage_info.get('spec', {})
+                        generate_liability(mortgage_info['db_id'], 'mortgage', mortgage_spec, conn)
+                    
+                    # Generate liability data for student loans
+                    for loan_info in accounts_info['student_loans']:
+                        loan_spec = loan_info.get('spec', {})
+                        generate_liability(loan_info['db_id'], 'student', loan_spec, conn)
+                    
+                    # Generate transactions
+                    # Checking account transactions
+                    if accounts_info['checking']:
+                        checking_id = accounts_info['checking'][0]['db_id']
+                        generate_transactions(checking_id, 'checking', profile, conn)
+                    
+                    # Credit card transactions
+                    for card_info in accounts_info['credit_cards']:
+                        generate_transactions(card_info['db_id'], 'credit', profile, conn)
+                    
+                    summary['users_created'] += 1
+                    summary['by_persona'][persona_name] += 1
+                    
+                except Exception as e:
+                    error_msg = f"Error generating user {user_num} for {persona_name}: {str(e)}"
+                    summary['errors'].append(error_msg)
+                    print(f"⚠️  {error_msg}")
+        
+        conn.close()
+        print(f"\n✅ Generated {summary['users_created']} users for specified personas!")
+        
+    except Exception as e:
+        summary['success'] = False
+        summary['errors'].append(str(e))
+        print(f"\n❌ Error during generation: {e}")
         import traceback
         traceback.print_exc()
     
