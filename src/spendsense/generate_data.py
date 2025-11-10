@@ -94,15 +94,18 @@ def generate_accounts(user_id: int, profile: dict, conn: sqlite3.Connection) -> 
     
     # Helper to generate unique account_id
     def get_unique_account_id():
-        max_attempts = 10
-        for _ in range(max_attempts):
-            account_id = f"acc_{random.randint(100000, 999999)}"  # Use 6 digits for better uniqueness
+        import time
+        import uuid
+        max_attempts = 20
+        for attempt in range(max_attempts):
+            # Use UUID for guaranteed uniqueness
+            unique_suffix = str(uuid.uuid4())[:12].replace('-', '')
+            account_id = f"acc_{int(time.time() * 1000000)}_{unique_suffix}"
             cursor.execute("SELECT id FROM accounts WHERE account_id = ?", (account_id,))
             if not cursor.fetchone():
                 return account_id
-        # Fallback: use timestamp + random
-        import time
-        return f"acc_{int(time.time() * 1000)}_{random.randint(1000, 9999)}"
+        # Final fallback: timestamp + UUID + random
+        return f"acc_{int(time.time() * 1000000)}_{uuid.uuid4().hex[:12]}_{random.randint(100000, 999999)}"
     
     # Generate checking account for all users
     checking_account_id = get_unique_account_id()
